@@ -46,7 +46,7 @@ node make-manifest.js
 
 git add -A
 git commit -m "primeira versao do sistema"
-git push -u origin main
+git push -u origin main --force
 
 echo.
 echo  ------------------------------------------------------------
