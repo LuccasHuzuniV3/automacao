@@ -388,7 +388,17 @@
   var trust=t.trust||[];
   if(trust.length){var tone=trust.map(function(x,i){return '<span class="titem"><span class="tic">'+(ICONS[x.icon]||ICONS.check)+'</span><span class="tl" data-edit="trust.'+i+'.label">'+esc(x.label)+'</span></span>';}).join('');var tseg='';for(var tk=0;tk<3;tk++)tseg+=tone;document.getElementById('trustbar').innerHTML='<span class="mq">'+tseg+tseg+'</span>';show('trustbar',true);}
 
-  if(t.giftBar){var one=esc(t.giftBar)+'   🎁   ';var seg='';for(var gk=0;gk<5;gk++)seg+='<span class="gi2">'+one+'</span>';var inner='<span class="mq2">'+seg+seg+'</span>';document.getElementById('giftbar').innerHTML='<div class="ribbon r1">'+inner+'</div><div class="ribbon r2">'+inner+'</div>';show('giftbar',true);}else{show('giftbar',false);}
+  if(t.giftBar){var one=esc(t.giftBar)+'   🎁   ';var _greps=Math.max(1,Math.min(5,Math.ceil(2600/((String(t.giftBar).length||1)*11))));var seg='';for(var gk=0;gk<_greps;gk++)seg+='<span class="gi2">'+one+'</span>';var inner='<span class="mq2">'+seg+seg+'</span>';document.getElementById('giftbar').innerHTML='<div class="ribbon r1">'+inner+'</div><div class="ribbon r2">'+inner+'</div>';show('giftbar',true);}else{show('giftbar',false);}
+
+  /* FAIXAS: velocidade CONSTANTE (px/s) em qualquer PC. A animação anda translateX(-50%) (= metade da largura).
+     Com duração fixa, a velocidade dependia da largura (que muda com fonte/zoom/PC). Aqui a duração é calculada pela largura real. */
+  function fixMarqueeSpeed(){var SP=90;Array.prototype.forEach.call(document.querySelectorAll('.mq,.mq2'),function(el){var w=el.scrollWidth||el.offsetWidth||0;if(w<10)return;var dur=Math.max(8,Math.round((w/2)/SP));el.style.animationDuration=dur+'s';});}
+  fixMarqueeSpeed();
+  requestAnimationFrame(fixMarqueeSpeed);
+  if(!window.__mqHook){window.__mqHook=1;
+    window.addEventListener('resize',function(){clearTimeout(window.__mqT);window.__mqT=setTimeout(fixMarqueeSpeed,150);});
+    if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fixMarqueeSpeed);
+  }
 
   var bonus=t.bonus||[];
   if(bonus.length){document.getElementById('bonus').innerHTML='<div class="bgrid">'+

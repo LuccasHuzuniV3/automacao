@@ -1616,7 +1616,7 @@ $('btnOpen').onclick=function(){window.open('index.html?preview=1&ebook='+encode
     undoPush(undoSnap());
     if(kind==='grad')T.extras.push({x:80,y:sc+140,w:420,h:72,c1:'#7c2fe0',c2:'#c98bff',r:10,bg:1});   /* decoração: atrás do texto */
     else if(kind==='text')T.extras.push({type:'text',x:80,y:sc+140,txt:'Clique para editar',fs:28,color:'#ffffff',fw:800});
-    else T.extras.push({x:80,y:sc+140,w:340,h:200,c1:'#0a0a14',c2:'#0a0a14',r:14,bg:1});   /* caixa de FUNDO nasce ATRÁS do conteúdo */
+    else T.extras.push({x:80,y:sc+140,w:340,h:200,c1:'#3d5a8a',c2:'#3d5a8a',r:14,bg:1});   /* caixa de FUNDO: cor VISÍVEL ao nascer (pra você ver/posicionar; recolore depois). Antes nascia quase-preta e sumia atrás do conteúdo. */
     save();updatePreview();toast('Elemento adicionado — passa o mouse nele pra mover/recolorir');close();}
   b.onclick=function(e){e.preventDefault();if(menu){close();return;}
     menu=document.createElement('div');var r=b.getBoundingClientRect();
