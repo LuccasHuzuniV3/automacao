@@ -192,7 +192,7 @@
 </head>
 <body>
 <div class="topbar">
-  <div class="brand"><span class="logo">◧</span><b>Painel de Vendas</b><span class="ver">v1.0</span></div>
+  <div class="brand"><span class="logo">◧</span><b>Painel de Vendas</b><span class="ver" id="verBadge" title="Versão do sistema">v1</span></div>
   <span class="sep"></span>
   <div class="pills"><span class="pill" id="pillApp">App</span><span class="pill" id="pillVercel">Vercel</span></div>
   <button class="btn" id="btnMulti" style="display:none">🌍 Multi-idioma</button>
@@ -1353,6 +1353,15 @@ function bTokQS(){var t=($('viewToken')&&$('viewToken').value||'').trim();return
     else{alert('⚠️ '+((d&&d.error)||'Não consegui atualizar agora.'));}
   }).catch(function(){b.disabled=false;b.textContent=old;alert('⚠️ Sem conexão pra atualizar (o app local tá rodando?).');});
 };})();
+/* mostra a versão e avisa se tem versão nova no GitHub */
+(function(){fetch('/api/version').then(function(r){return r.json();}).then(function(d){
+  if(!d||!d.ok)return;var b=$('verBadge'),u=$('btnSysUpdate'),loc=d.local||0;
+  if(b)b.textContent='v'+loc;
+  if(d.latest!=null&&d.latest>loc){
+    if(b){b.textContent='v'+loc+' → v'+d.latest;b.style.cssText='color:#ffb38a;border-color:rgba(255,150,90,.55);background:rgba(255,150,90,.12)';b.title='Versão nova disponível! Clique em Atualizar sistema.';}
+    if(u){u.style.borderColor='#ff9b6b';u.style.color='#ffd0b0';u.textContent='🔄 Atualizar (v'+d.latest+')';}
+  }
+}).catch(function(){});})();
 /* receita do Analytics por moeda: usa d.receitas {MOEDA:valor}; senão cai pro total em R$ */
 function anRecStr(receitas,fallbackNum){
   if(receitas&&Object.keys(receitas).length){return Object.keys(receitas).sort().map(function(c){return fmtMoney(receitas[c],c);}).join(' · ');}

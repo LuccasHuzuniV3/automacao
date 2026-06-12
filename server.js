@@ -174,6 +174,23 @@ const server = http.createServer(async function (req, res) {
     return;
   }
 
+  // ---- versao do sistema: local (version.json) vs ultima no GitHub (manifest) ----
+  if (p === '/api/version' && req.method === 'GET') {
+    let local = 0;
+    try { local = parseInt(JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')).version, 10) || 0; } catch (e) {}
+    let latest = null;
+    try {
+      const cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'sys-config.json'), 'utf8')) || {};
+      const rawBase = String(cfg.rawBase || '').replace(/\/+$/, '');
+      if (/^https:\/\/raw\.githubusercontent\.com\/.+/i.test(rawBase)) {
+        const man = await fetch(rawBase + '/manifest.json?t=' + Date.now(), { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; });
+        if (man && typeof man.version !== 'undefined') latest = parseInt(man.version, 10);
+      }
+    } catch (e) {}
+    json(res, 200, { ok: true, local: local, latest: latest });
+    return;
+  }
+
   // ---- arquivos estaticos ----
   let rel = decodeURIComponent(p === '/' ? '/builder.html' : p);
   let fp = path.join(ROOT, rel);
