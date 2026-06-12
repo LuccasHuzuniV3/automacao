@@ -1276,7 +1276,17 @@ function wireInlineEdit(){
       box=doc.createElement('div');box.style.cssText='position:absolute;z-index:9990;border:2px dashed #d9b3ff;border-radius:8px;pointer-events:none';
       grip=doc.createElement('div');grip.title='arraste para MOVER o degradê';grip.textContent='✛';grip.style.cssText='position:absolute;z-index:9993;width:28px;height:28px;background:#b56bff;border:2px solid #1b0b34;border-radius:50%;pointer-events:auto;cursor:move;display:flex;align-items:center;justify-content:center;font-size:16px;color:#fff;font-weight:900;box-shadow:0 2px 10px rgba(0,0,0,.6)';
       rez=doc.createElement('div');rez.title='arraste para EXPANDIR (largura/altura livre)';rez.textContent='⤡';rez.style.cssText='position:absolute;z-index:9993;width:26px;height:26px;background:#2dd4bf;border:2px solid #06251f;border-radius:6px;pointer-events:auto;cursor:nwse-resize;display:flex;align-items:center;justify-content:center;font-size:14px;color:#06251f;font-weight:900;box-shadow:0 2px 10px rgba(0,0,0,.6)';
-      lab=mkTag(doc,'✨ Degradê — ⧉ duplica · ✛ move','#b56bff');
+      function tema(){return model[curEbook].tema||(model[curEbook].tema={});}
+      function hlSwatch(ck,def,title){var s=doc.createElement('button');s.title=title;s.style.cssText='cursor:pointer;width:26px;height:22px;border:1px solid rgba(0,0,0,.45);border-radius:6px;flex:0 0 auto;padding:0;background:'+(tema()[ck]||def);
+        s.onmousedown=function(e){e.preventDefault();e.stopPropagation();};
+        s.onclick=function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());var cur=tema()[ck]||def;
+          colorPop(doc,s,cur,function(v){tema()[ck]=v;s.style.background=v;doc.documentElement.style.setProperty('--'+ck,v);save();},
+                   function(){delete tema()[ck];s.style.background=def;doc.documentElement.style.setProperty('--'+ck,def);save();});};
+        return s;}
+      lab=doc.createElement('div');lab.style.cssText='position:absolute;z-index:9994;display:flex;align-items:center;gap:6px;background:#b56bff;color:#1b0b34;font:800 11px system-ui,Segoe UI,Arial;padding:4px 8px;border-radius:8px;pointer-events:auto;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.45)';
+      var ltx=doc.createElement('span');ltx.textContent='✨ Degradê';lab.appendChild(ltx);
+      lab.appendChild(hlSwatch('hl1','#7c2fe0','cor da ESQUERDA'));
+      lab.appendChild(hlSwatch('hl2','#c98bff','cor da DIREITA'));
       dupb=doc.createElement('div');dupb.title='DUPLICAR este degradê';dupb.textContent='⧉';dupb.style.cssText='position:absolute;z-index:9993;width:28px;height:28px;background:#b56bff;border:2px solid #1b0b34;border-radius:8px;pointer-events:auto;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:#fff;font-weight:900;box-shadow:0 2px 10px rgba(0,0,0,.6)';
       dupb.addEventListener('mousedown',function(e){e.preventDefault();e.stopPropagation();});
       dupb.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();var T=model[curEbook].paises[curPais].t,tm=model[curEbook].tema||{},b=gb();if(!T.extras)T.extras=[];undoPush(undoSnap());
