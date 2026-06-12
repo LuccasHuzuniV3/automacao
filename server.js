@@ -11,7 +11,7 @@ const path = require('path');
 const { exec, execFile } = require('child_process');
 
 const ROOT = __dirname;
-const PORT = 4321;
+const PORT = parseInt(process.env.PORT, 10) || 4321;
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',

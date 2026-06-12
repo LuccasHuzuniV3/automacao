@@ -41,7 +41,8 @@
   .ankpi{display:flex;align-items:center;gap:13px;background:linear-gradient(180deg,rgba(22,34,55,.9),rgba(13,22,38,.7));border:1px solid var(--line);border-radius:14px;padding:15px 16px}
   .ankpi-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
   .ankpi-k{font-size:12px;color:var(--muted);margin-bottom:3px}
-  .ankpi-v{font-size:25px;font-weight:800;color:var(--txt);line-height:1.1}
+  .ankpi>div:last-child{min-width:0;flex:1}
+  .ankpi-v{font-size:23px;font-weight:800;color:var(--txt);line-height:1.15;white-space:nowrap;overflow:hidden}
   .ankpi-v small{font-size:12px;color:var(--muted);font-weight:600}
   .ankpi-v .pct{font-size:13px;font-weight:700}
   .anpanel{background:rgba(13,22,38,.7);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:20px}
@@ -193,6 +194,8 @@ function anRecStr(receitas,fallbackNum){
   return fmtMoney(fallbackNum||0,'BRL');
 }
 
+/* encolhe a fonte do valor do KPI até caber no card (nunca quebra o número) */
+function kpiFit(box){if(!box)return;Array.prototype.forEach.call(box.querySelectorAll('.ankpi-v'),function(el){el.style.fontSize='';var fs=23;while(el.scrollWidth>el.clientWidth+1&&fs>12){fs--;el.style.fontSize=fs+'px';}});}
 /* ===== Variação vs período anterior ===== */
 function anPct(cur,prev){
   if(prev==null)return '';
@@ -242,7 +245,7 @@ function anKpis(d,prev){
     {ic:'💰',bg:'rgba(91,214,107,.16)',fg:'#5bd66b',k:'Receita',v:anRecStr(clampRec(fxConsolidate(d.receitas)),0)},
     {ic:'📈',bg:'rgba(45,212,191,.16)',fg:'#2dd4bf',k:'Conversão',v:conv.toLocaleString('pt-BR')+'%'+anPts(conv,pconv)}
   ];
-  var cb=$('anCards');if(cb)cb.innerHTML=cards.map(function(c){return '<div class="ankpi"><div class="ankpi-ic" style="background:'+c.bg+';color:'+c.fg+'">'+c.ic+'</div><div><div class="ankpi-k">'+c.k+'</div><div class="ankpi-v">'+c.v+'</div></div></div>';}).join('');
+  var cb=$('anCards');if(cb){cb.innerHTML=cards.map(function(c){return '<div class="ankpi"><div class="ankpi-ic" style="background:'+c.bg+';color:'+c.fg+'">'+c.ic+'</div><div><div class="ankpi-k">'+c.k+'</div><div class="ankpi-v">'+c.v+'</div></div></div>';}).join('');kpiFit(cb);}
 }
 function anFunnel(d){
   var box=$('anFunnel');if(!box)return;
@@ -314,7 +317,7 @@ function vdEmpty(msg){var b=$('vdBanner');if(b){b.innerHTML='⚠️ '+msg;b.styl
 var vdGroups={}, vdNav={canal:'',tema:''};
 function vdDt(ts){var dt=new Date(ts||0);if(isNaN(dt.getTime()))return '—';return ('0'+dt.getDate()).slice(-2)+'/'+('0'+(dt.getMonth()+1)).slice(-2)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);}
 function vdSetKpis(v,rec){var k=$('vdKpis');if(!k)return;v=nn(v);k.innerHTML='<div class="ankpi"><div class="ankpi-ic" style="background:rgba(91,214,107,.16);color:#5bd66b">🛒</div><div><div class="ankpi-k">Vendas</div><div class="ankpi-v">'+v+'</div></div></div>'+
-  '<div class="ankpi"><div class="ankpi-ic" style="background:rgba(91,214,107,.16);color:#5bd66b">💰</div><div><div class="ankpi-k">Receita</div><div class="ankpi-v">'+vdRecStrC(rec)+'</div></div></div>';}
+  '<div class="ankpi"><div class="ankpi-ic" style="background:rgba(91,214,107,.16);color:#5bd66b">💰</div><div><div class="ankpi-k">Receita</div><div class="ankpi-v">'+vdRecStrC(rec)+'</div></div></div>';kpiFit(k);}
 function vdPaint(d){
   var b=$('vdBanner');if(b){b.innerHTML='✅ <b>Vendas reais</b> (via webhook da Hotmart). <span style="opacity:.8">Totais: <b>R$</b> (Brasil) + <b>US$</b> (resto, convertido pela cotação do dia).</span>';b.style.cssText='background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.4);color:#7defc9;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}
   var f=d.filtros||{};vdFillSelect('vdCanal',f.canais);vdFillSelect('vdTema',f.temas);vdFillSelect('vdPais',f.paises,paisNome);

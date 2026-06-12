@@ -67,10 +67,19 @@ module.exports = async function (req, res) {
     if (moeda.length !== 3) moeda = 'BRL';
 
     let sign = 0;
-    if (/APPROV|COMPLET|APROVAD/.test(event)) sign = 1;                 // compra aprovada/completa
+    if (/APPROV|APROVAD/.test(event)) sign = 1;                          // SO a aprovacao conta a venda
     else if (/REFUND|CHARGEBACK|REEMBOLS|ESTORN|DISPUTE|PROTEST/.test(event)) sign = -1; // SO reembolso/chargeback REAL
-    // expirado / cancelado / boleto-pix nao pago / carrinho abandonado -> IGNORA (nao e venda nem reembolso)
+    // PURCHASE_COMPLETE = a MESMA venda mudando de status (fim da garantia) -> NAO conta de novo.
+    // expirado / cancelado / boleto-pix nao pago / carrinho abandonado -> IGNORA.
     if (!sign) { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: event || '?' })); return; }
+
+    // ANTI-DUPLICACAO: a mesma transacao NUNCA conta 2x (reenvio/retry da Hotmart, eventos repetidos)
+    const tx = String(purchase.transaction || data.transaction || '').trim();
+    if (tx) {
+      const dk = (sign > 0 ? 'txok:' : 'txref:') + tx;
+      const dr = await redis(['SET', dk, '1', 'NX', 'EX', '15552000']);   // 180 dias
+      if (!dr || dr.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'duplicado:' + tx })); return; }
+    }
 
     // src esperado: ebook_versao_canal_tema  (ex.: arcturianos_br_jazzlofi_ansiedade)
     const parts = String(src).split('_');
