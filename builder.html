@@ -1245,7 +1245,7 @@ function wireInlineEdit(){
         function paintUnder(v){
           var dv=el.querySelector('.divider');if(dv){dv.style.background=v;return;}
           var host=doc.getElementById('secbgs');
-          if(!host){host=doc.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:0;pointer-events:none';doc.body.insertBefore(host,doc.body.firstChild);}
+          if(!host){host=doc.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:-1;pointer-events:none';doc.body.insertBefore(host,doc.body.firstChild);}
           var u=doc.querySelector('[data-secbg="'+sk+'"]');
           if(!u){u=doc.createElement('div');u.setAttribute('data-secbg',sk);host.appendChild(u);}
           var sy2=doc.documentElement.scrollTop||0;var rr=el.getBoundingClientRect();var top=rr.top+sy2;
