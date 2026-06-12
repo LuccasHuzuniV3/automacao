@@ -82,9 +82,9 @@
   .block .th{width:110px;height:110px;border-radius:12px;object-fit:cover}
   .block h3{color:#fff;font-size:clamp(19px,1.5vw,23px);font-weight:800;margin-bottom:9px;text-align:center}
   .block p{color:var(--muted);line-height:1.6;font-size:clamp(14px,1.05vw,16px)}
-  .secimg{border-radius:16px;overflow:hidden;align-self:start}
+  .secimg{border-radius:16px;align-self:start}   /* sem overflow:hidden — deixa arrastar a imagem pra fora sem cortar */
   .secimg img{display:block;width:100%;height:auto;border-radius:16px}
-  .secimg.asvideo{position:relative;aspect-ratio:16/9;background:#000;border:1px solid rgba(255,255,255,.1);align-self:center;width:100%}
+  .secimg.asvideo{position:relative;aspect-ratio:16/9;background:#000;border:1px solid rgba(255,255,255,.1);align-self:center;width:100%;overflow:hidden}
   .secimg.asvideo iframe,.secimg.asvideo video{position:absolute;inset:0;width:100%;height:100%;border:0;object-fit:cover;background:#000}
   .vidcol{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1);min-height:460px;background:#000}
   .vidcol iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
