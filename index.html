@@ -212,6 +212,8 @@
   .track{display:none;position:fixed;z-index:9;left:16px;bottom:16px;max-width:430px;background:rgba(12,10,7,.94);border:1px solid var(--accent);border-radius:12px;padding:14px 16px;font-size:12.5px}
   .track.show{display:block}.track h4{font-size:11px;letter-spacing:.14em;color:var(--accent);text-transform:uppercase;margin-bottom:8px;display:flex;justify-content:space-between}
   .track h4 span{cursor:pointer;color:var(--muted)}.track .row{margin:5px 0;color:var(--muted);word-break:break-all}.track .row b{color:var(--txt)}.track code{color:#9be7a6}.track.min .body{display:none}
+  /* OCULTO (🗑 do editor): regra FINAL e mais específica — vence inclusive os !important do modo mobile */
+  [data-oculto],section[data-oculto],div[data-oculto],span[data-oculto],p[data-oculto],a[data-oculto],img[data-oculto],h1[data-oculto],h2[data-oculto],h3[data-oculto]{display:none!important;visibility:hidden!important}
 </style>
 </head>
 <body>
@@ -443,14 +445,25 @@
       var parent=nodes[0].parentNode,ref=nodes[nodes.length-1].nextSibling;
       fin.forEach(function(n){parent.insertBefore(n,ref);});
     }
-    Object.keys(t._secBg||{}).forEach(function(k){var n=document.querySelector('[data-sec="'+k+'"]');if(n){var dv=n.querySelector('.divider');(dv||n).style.background=t._secBg[k];}});
+    /* cor de fundo POR SEÇÃO numa SUBCAMADA (z0): fica embaixo das decorações (z1) e do conteúdo (z2) */
+    (function(){var keys=Object.keys(t._secBg||{});if(!keys.length)return;
+      var host=document.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:0;pointer-events:none';
+      document.body.insertBefore(host,document.body.firstChild);
+      function place(){host.innerHTML='';keys.forEach(function(k){var n=document.querySelector('[data-sec="'+k+'"]');if(!n)return;
+        var dv=n.querySelector('.divider');
+        if(dv){dv.style.background=t._secBg[k];return;}
+        var r=n.getBoundingClientRect(),sy=document.documentElement.scrollTop||document.body.scrollTop||0;
+        var u=document.createElement('div');u.setAttribute('data-secbg',k);
+        u.style.cssText='position:absolute;left:0;width:100%;top:'+Math.round(r.top+sy)+'px;height:'+Math.round(r.height)+'px;background:'+t._secBg[k];
+        host.appendChild(u);});}
+      place();window.addEventListener('load',place);window.addEventListener('resize',place);
+    })();
     Object.keys(t._hide||{}).forEach(function(k){
       var el2;
       if(k.indexOf('sec.')===0)el2=document.querySelector('[data-sec="'+k.slice(4)+'"]');
       else el2=document.querySelector('[data-edit="'+k+'"]')||document.querySelector('[data-img="'+k+'"]')||document.querySelector('[data-move="'+k+'"]');
       if(!el2)return;
-      if(EDIT){el2.style.opacity='.14';el2.setAttribute('data-hidden',k);}
-      else{el2.style.display='none';}
+      el2.setAttribute('data-oculto','1');el2.style.display='none';   /* some DE VEZ (atributo + CSS final vencem os !important do mobile) */
     });
   })();
   if(EDIT){Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.addEventListener('click',function(e){e.preventDefault();});});}

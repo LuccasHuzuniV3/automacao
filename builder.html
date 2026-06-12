@@ -227,7 +227,7 @@
   </section>
   <section class="preview">
     <div class="pbar"><span class="lbl">Prévia:</span><span class="lbl" id="pvLabel" style="color:var(--gold)"></span><span class="lbl" style="color:var(--teal)">✏️ clique no texto pra editar</span>
-      <span class="sep"></span><button class="btn" id="btnAddEl" title="Adicionar elemento livre: degradê, caixa de fundo ou texto">➕ Elemento</button><button class="btn" id="btnUndo" title="Desfazer o último movimento (Ctrl+Z)">↩ Desfazer</button><button class="btn" id="btnFocus">⛶ Modo edição (largura real)</button><button class="btn" id="wDesk">🖥️</button><button class="btn" id="wMob">📱</button><button class="btn" id="btnOpen">Abrir ↗</button></div>
+      <span class="sep"></span><button class="btn" id="btnAddEl" title="Adicionar elemento livre: degradê, caixa de fundo ou texto">➕ Elemento</button><button class="btn" id="btnOcultos" style="display:none" title="Elementos escondidos deste idioma — clique pra restaurar">👁 Ocultos (0)</button><button class="btn" id="btnUndo" title="Desfazer o último movimento (Ctrl+Z)">↩ Desfazer</button><button class="btn" id="btnFocus">⛶ Modo edição (largura real)</button><button class="btn" id="wDesk">🖥️</button><button class="btn" id="wMob">📱</button><button class="btn" id="btnOpen">Abrir ↗</button></div>
     <div class="frameWrap"><iframe id="frame"></iframe></div>
   </section>
   </main>
@@ -1165,7 +1165,17 @@ function wireInlineEdit(){
         var up=sbtn('▲','#3da5ff','SUBIR a seção inteira');up.onclick=function(e){e.preventDefault();e.stopPropagation();moveSec(-1);};
         var dn=sbtn('▼','#3da5ff','DESCER a seção inteira');dn.onclick=function(e){e.preventDefault();e.stopPropagation();moveSec(1);};
         sbar.appendChild(up);sbar.appendChild(dn);
-        var pc=sbtn('🎨','#8b5cf6','cor de FUNDO desta seção (só dela)');pc.onclick=function(e){e.preventDefault();e.stopPropagation();var cur=(t._secBg&&t._secBg[sk])||'#0b0a1a';colorPop(doc,pc,cur,function(v){if(!t._secBg)t._secBg={};t._secBg[sk]=v;el.style.background=v;save();},function(){if(t._secBg)delete t._secBg[sk];el.style.background='';save();});};
+        var pc=sbtn('🎨','#8b5cf6','cor de FUNDO desta seção (fica ATRÁS das decorações e do texto)');
+        function paintUnder(v){
+          var dv=el.querySelector('.divider');if(dv){dv.style.background=v;return;}
+          var host=doc.getElementById('secbgs');
+          if(!host){host=doc.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:0;pointer-events:none';doc.body.insertBefore(host,doc.body.firstChild);}
+          var u=doc.querySelector('[data-secbg="'+sk+'"]');
+          if(!u){u=doc.createElement('div');u.setAttribute('data-secbg',sk);host.appendChild(u);}
+          var rr=el.getBoundingClientRect(),sy2=doc.documentElement.scrollTop||0;
+          u.style.cssText='position:absolute;left:0;width:100%;top:'+Math.round(rr.top+sy2)+'px;height:'+Math.round(rr.height)+'px;background:'+v;
+        }
+        pc.onclick=function(e){e.preventDefault();e.stopPropagation();var cur=(t._secBg&&t._secBg[sk])||'#0b0a1a';colorPop(doc,pc,cur,function(v){if(!t._secBg)t._secBg={};t._secBg[sk]=v;paintUnder(v);save();},function(){if(t._secBg)delete t._secBg[sk];var u=doc.querySelector('[data-secbg="'+sk+'"]');if(u&&u.parentNode)u.parentNode.removeChild(u);var dv=el.querySelector('.divider');if(dv)dv.style.background='';save();});};
         sbar.appendChild(pc);
         if(hidden){var sh=sbtn('👁','#22a060','MOSTRAR esta seção de novo');sh.onclick=function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());if(t._hide)delete t._hide['sec.'+sk];save();updatePreview();};sbar.appendChild(sh);}
         else{var hd=sbtn('🗑','#ff6b6b','OCULTAR a seção inteira (some da página publicada; dá pra mostrar de novo)');hd.onclick=function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());if(!t._hide)t._hide={};t._hide['sec.'+sk]=1;save();updatePreview();};sbar.appendChild(hd);}
@@ -1174,16 +1184,8 @@ function wireInlineEdit(){
       el.addEventListener('mouseenter',sshow);el.addEventListener('mouseleave',smaybe);
       doc.addEventListener('scroll',slay,true);
     });
-    /* 👁 elementos OCULTOS aparecem "fantasma" no editor — clique no crachá pra mostrar de novo */
-    Array.prototype.forEach.call(doc.querySelectorAll('[data-hidden]'),function(hel){
-      var hk=hel.getAttribute('data-hidden');
-      if(hk.indexOf('sec.')===0)return;   /* seção tem o 👁 na barra lateral dela */
-      var r=hel.getBoundingClientRect(),sx=doc.documentElement.scrollLeft||0,sy=doc.documentElement.scrollTop||0;
-      var tag=doc.createElement('button');tag.textContent='👁 mostrar';tag.title='este elemento está OCULTO na página publicada — clique pra mostrar de novo';
-      tag.style.cssText='position:absolute;z-index:9994;cursor:pointer;border:1px solid rgba(255,209,102,.6);background:rgba(8,12,20,.95);color:#ffd166;font-weight:800;font-size:11px;padding:4px 8px;border-radius:7px;left:'+(r.left+sx)+'px;top:'+Math.max(2,r.top+sy-26)+'px';
-      tag.onclick=function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());if(t._hide)delete t._hide[hk];save();updatePreview();};
-      doc.body.appendChild(tag);
-    });
+    /* atualiza o "👁 Ocultos (N)" da barra de cima (é por lá que se restaura o que foi escondido) */
+    (function(){var hc=Object.keys(t._hide||{}).length;var ob=$('btnOcultos');if(ob){ob.style.display=hc?'':'none';ob.textContent='👁 Ocultos ('+hc+')';}})();
     /* ===== Barra de TEXTO (fixa em cima, estilo Canva): fonte · tamanho · cor — aparece ao clicar num texto ===== */
     var TT=null,TTel=null,TTkey=null;
     function ttEnsure(){if(TT)return TT;
@@ -1239,7 +1241,7 @@ function wireInlineEdit(){
       dupb.addEventListener('mousedown',function(e){e.preventDefault();e.stopPropagation();});
       dupb.addEventListener('click',function(e){e.preventDefault();e.stopPropagation();var T=model[curEbook].paises[curPais].t,tm=model[curEbook].tema||{},b=gb();if(!T.extras)T.extras=[];undoPush(undoSnap());
         var rr=el.getBoundingClientRect(),sx9=doc.documentElement.scrollLeft||0,sy9=doc.documentElement.scrollTop||0;
-        var nx={x:Math.round(rr.left+sx9+24),y:Math.round(rr.top+sy9+24),w:b.w||Math.round(rr.width)||420,h:b.h||Math.round(rr.height)||72,c1:tm.hl1||'#7c2fe0',c2:tm.hl2||'#c98bff',r:10};
+        var nx={x:Math.round(rr.left+sx9+24),y:Math.round(rr.top+sy9+24),w:b.w||Math.round(rr.width)||420,h:b.h||Math.round(rr.height)||72,c1:tm.hl1||'#7c2fe0',c2:tm.hl2||'#c98bff',r:10,bg:1};
         T.extras.push(nx);save();injectExtra(nx,T.extras.length-1);if(typeof toast==='function')toast('Degradê duplicado ✓');});
       doc.body.appendChild(box);doc.body.appendChild(grip);doc.body.appendChild(rez);doc.body.appendChild(lab);doc.body.appendChild(dupb);lay();
       grip.addEventListener('mousedown',mvStart);
@@ -1333,7 +1335,12 @@ function swapListOverrides(cont,list,a,b){
   });
 }
 function resetLayout(){
-  if(!confirm('Resetar o layout deste país?\n\nVolta ao padrão: posições, tamanhos, fontes, cores por seção/card, ordem das seções, elementos ocultos e elementos livres (degradês/caixas/textos soltos).\n\nSeus TEXTOS e IMAGENS não são apagados. (Ctrl+Z desfaz)'))return;
+  var moldeKey=model[curEbook].paises.br?'br':Object.keys(model[curEbook].paises)[0];
+  var ehTraducao=(curPais!==moldeKey);
+  var msg=ehTraducao
+    ?('Resetar o layout deste idioma?\n\nVolta pro PADRÃO do molde ('+moldeKey.toUpperCase()+'): mesmas posições e tamanhos do '+moldeKey.toUpperCase()+'. Limpa cores por seção/card, ocultos, ordem de seções e elementos livres.\n\nTextos e imagens NÃO são apagados. (Ctrl+Z desfaz)')
+    :'Resetar o layout deste país?\n\nVolta ao padrão: posições, tamanhos, fontes, cores por seção/card, ordem das seções, elementos ocultos e elementos livres.\n\nSeus TEXTOS e IMAGENS não são apagados. (Ctrl+Z desfaz)';
+  if(!confirm(msg))return;
   undoPush(undoSnap());
   var P=model[curEbook].paises[curPais];
   /* posições, tamanhos, fontes e larguras */
@@ -1346,7 +1353,9 @@ function resetLayout(){
   delete P.t.extras;delete P.t.hlBox;
   /* tamanhos por item e cores por card */
   ['blocos','bonus','bundle'].forEach(function(l){if(P.t[l])P.t[l].forEach(function(it){delete it.sz;delete it.dx;delete it.dy;delete it.bg1;delete it.bg2;});});
-  save();renderForm();updatePreview();toast('Layout resetado ✓ (Ctrl+Z desfaz)');
+  /* tradução volta pro PADRÃO FIXADO: re-aplica o esqueleto do molde (posições/tamanhos do br) */
+  if(ehTraducao){try{aplicarLayoutMolde(model[curEbook].paises[moldeKey].t,P.t);}catch(e){}}
+  save();renderForm();updatePreview();toast(ehTraducao?('Layout voltou pro padrão do '+moldeKey.toUpperCase()+' ✓ (Ctrl+Z desfaz)'):'Layout resetado ✓ (Ctrl+Z desfaz)');
 }
 function pickImageFor(path){
   if(path==='offerCapa')path='img.oferta';   /* capa da OFERTA tem imagem própria (não mexe na do topo) */
@@ -1493,7 +1502,7 @@ $('btnOpen').onclick=function(){window.open('index.html?preview=1&ebook='+encode
     var T=model[curEbook].paises[curPais].t;if(!T.extras)T.extras=[];
     var fr=$('frame'),sc=0;try{sc=fr.contentDocument.documentElement.scrollTop||0;}catch(e){}
     undoPush(undoSnap());
-    if(kind==='grad')T.extras.push({x:80,y:sc+140,w:420,h:72,c1:'#7c2fe0',c2:'#c98bff',r:10});
+    if(kind==='grad')T.extras.push({x:80,y:sc+140,w:420,h:72,c1:'#7c2fe0',c2:'#c98bff',r:10,bg:1});   /* decoração: atrás do texto */
     else if(kind==='text')T.extras.push({type:'text',x:80,y:sc+140,txt:'Clique para editar',fs:28,color:'#ffffff',fw:800});
     else T.extras.push({x:80,y:sc+140,w:340,h:200,c1:'#0a0a14',c2:'#0a0a14',r:14,bg:1});   /* caixa de FUNDO nasce ATRÁS do conteúdo */
     save();updatePreview();toast('Elemento adicionado — passa o mouse nele pra mover/recolorir');close();}
@@ -1508,6 +1517,30 @@ $('btnOpen').onclick=function(){window.open('index.html?preview=1&ebook='+encode
       it.onclick=function(){add(o[3]);};menu.appendChild(it);});
     document.body.appendChild(menu);
     setTimeout(function(){document.addEventListener('mousedown',function h(ev){if(menu&&!menu.contains(ev.target)&&ev.target!==b){close();document.removeEventListener('mousedown',h);}});},0);
+  };})();
+/* 👁 Ocultos: lista o que está escondido neste idioma e restaura com 1 clique */
+(function(){var b=$('btnOcultos');if(!b)return;var menu=null;
+  function close(){if(menu&&menu.parentNode)menu.parentNode.removeChild(menu);menu=null;}
+  function nice(k){
+    if(k.indexOf('sec.')===0){var nm={hero:'Topo (herói)',trust:'Faixa de confiança',blocos:'Blocos',gift:'Faixa do presente',bonus:'Bônus',bundle:'Combo',oferta:'Oferta',garantia:'Garantia',divisor1:'Divisor 1',divisor2:'Divisor 2'};return '📐 Seção: '+(nm[k.slice(4)]||k.slice(4));}
+    try{return '✏️ '+niceName(k);}catch(e){return '✏️ '+k;}
+  }
+  b.onclick=function(){if(menu){close();return;}
+    var T=model[curEbook].paises[curPais].t,ks=Object.keys(T._hide||{});
+    if(!ks.length){toast('Nada oculto neste idioma');return;}
+    menu=document.createElement('div');var r=b.getBoundingClientRect();
+    menu.style.cssText='position:fixed;z-index:99999;left:'+Math.round(r.left)+'px;top:'+Math.round(r.bottom+6)+'px;background:#10182a;border:1px solid rgba(150,170,205,.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:5px;box-shadow:0 14px 44px rgba(0,0,0,.6);min-width:270px;max-height:50vh;overflow:auto';
+    ks.forEach(function(k){
+      var row=document.createElement('div');row.style.cssText='display:flex;align-items:center;gap:10px;justify-content:space-between';
+      var lb=document.createElement('span');lb.textContent=nice(k);lb.style.cssText='color:#e8eef9;font:600 12.5px Inter,system-ui;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+      var bt=document.createElement('button');bt.textContent='👁 mostrar';bt.style.cssText='cursor:pointer;border:1px solid rgba(45,212,191,.5);background:rgba(45,212,191,.12);color:#7defc9;font:700 11.5px Inter,system-ui;padding:5px 9px;border-radius:7px;flex-shrink:0';
+      bt.onclick=function(){undoPush(undoSnap());delete T._hide[k];if(!Object.keys(T._hide).length)delete T._hide;save();updatePreview();close();toast('De volta ✓');};
+      row.appendChild(lb);row.appendChild(bt);menu.appendChild(row);});
+    var all=document.createElement('button');all.textContent='👁 Mostrar TODOS';all.style.cssText='cursor:pointer;border:1px solid rgba(150,170,205,.35);background:transparent;color:#9fb0d0;font:700 12px Inter,system-ui;padding:7px;border-radius:8px;margin-top:3px';
+    all.onclick=function(){undoPush(undoSnap());delete model[curEbook].paises[curPais].t._hide;save();updatePreview();close();toast('Tudo de volta ✓');};
+    menu.appendChild(all);
+    document.body.appendChild(menu);
+    setTimeout(function(){document.addEventListener('mousedown',function h2(ev){if(menu&&!menu.contains(ev.target)&&ev.target!==b){close();document.removeEventListener('mousedown',h2);}});},0);
   };})();
 $('dominio').oninput=function(){save();buildGen();};
 if($('viewToken'))$('viewToken').oninput=function(){save();};
