@@ -29,6 +29,7 @@
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.5;
     background-image:url("data:image/svg+xml,%3Csvg width='28' height='49' viewBox='0 0 28 49' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M13.99 9.25l13 7.5v15l-13 7.5L1 31.75v-15l12.99-7.5zM3 17.9v12.7l11 6.34 11-6.35V17.9l-11-6.34L3 17.9z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
   .wrap{position:relative;z-index:2;max-width:1600px;margin:0 auto;padding:0 clamp(20px,3vw,48px)}
+  [data-sec]:not(.wrap){position:relative;z-index:1}   /* seções static (trust/gift/garantia/footer) ficam ACIMA da camada de cor (z0), pra a cor não cobrir o texto */
   .marquee{position:relative;z-index:3;background:linear-gradient(90deg,#7a0d0d,#c01c1c,#7a0d0d);color:#ffe9c7;font-size:13px;letter-spacing:.12em;font-weight:700;text-align:center;padding:10px 12px;text-transform:uppercase}
   .lang{position:absolute;top:14px;right:18px;z-index:6;display:flex;gap:6px}
   .lang button{cursor:pointer;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:rgba(0,0,0,.35);color:var(--accent);font-weight:700;font-size:12px;padding:6px 10px;border-radius:8px}
@@ -453,7 +454,7 @@
     }
     /* cor de fundo POR SEÇÃO numa SUBCAMADA (z0): fica embaixo das decorações (z1) e do conteúdo (z2) */
     (function(){var keys=Object.keys(t._secBg||{});if(!keys.length)return;
-      var host=document.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:-1;pointer-events:none';   /* z:-1 = SEMPRE atrás do conteúdo (inclusive seções static como garantia/footer) */
+      var host=document.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:0;pointer-events:none';
       document.body.insertBefore(host,document.body.firstChild);
       function place(){host.innerHTML='';
         var sy=document.documentElement.scrollTop||document.body.scrollTop||0;
@@ -461,6 +462,7 @@
         keys.forEach(function(k){var n=document.querySelector('[data-sec="'+k+'"]');if(!n)return;
         var dv=n.querySelector('.divider');
         if(dv){dv.style.background=t._secBg[k];return;}
+        n.style.background=t._secBg[k];   /* pinta o PRÓPRIO elemento: cobre fundos nativos (ex.: gradiente da trustbar) */
         var r=n.getBoundingClientRect();var top=r.top+sy;
         var idx=-1;for(var j=0;j<all.length;j++){if(all[j].n===n){idx=j;break;}}
         var bottom=(idx>=0&&idx<all.length-1)?all[idx+1].top:(r.bottom+sy);   /* estende até a PRÓXIMA seção: preenche o vão/margem, sem buraco */
