@@ -1616,8 +1616,8 @@ $('btnOpen').onclick=function(){window.open('index.html?preview=1&ebook='+encode
     undoPush(undoSnap());
     if(kind==='grad')T.extras.push({x:80,y:sc+140,w:420,h:72,c1:'#7c2fe0',c2:'#c98bff',r:10,bg:1});   /* decoração: atrás do texto */
     else if(kind==='text')T.extras.push({type:'text',x:80,y:sc+140,txt:'Clique para editar',fs:28,color:'#ffffff',fw:800});
-    else T.extras.push({x:80,y:sc+140,w:340,h:200,c1:'#3d5a8a',c2:'#3d5a8a',r:14,bg:1});   /* caixa de FUNDO: cor VISÍVEL ao nascer (pra você ver/posicionar; recolore depois). Antes nascia quase-preta e sumia atrás do conteúdo. */
-    save();updatePreview();toast('Elemento adicionado — passa o mouse nele pra mover/recolorir');close();}
+    else T.extras.push({x:80,y:sc+140,w:340,h:200,c1:'#3d5a8a',c2:'#3d5a8a',r:14,bg:0});   /* nasce NA FRENTE + cor visível pra VOCÊ VER na hora (antes nascia atrás+preta e sumia). Use o ⬇ pra mandar pro fundo. */
+    save();updatePreview();toast(kind==='box'?'Caixa adicionada NA FRENTE (pra você ver) — recolore, posicione e clique no ⬇ pra mandar pro fundo':'Elemento adicionado — passa o mouse nele pra mover/recolorir');close();}
   b.onclick=function(e){e.preventDefault();if(menu){close();return;}
     menu=document.createElement('div');var r=b.getBoundingClientRect();
     menu.style.cssText='position:fixed;z-index:99999;left:'+Math.round(r.left)+'px;top:'+Math.round(r.bottom+6)+'px;background:#10182a;border:1px solid rgba(150,170,205,.35);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;box-shadow:0 14px 44px rgba(0,0,0,.6);min-width:250px';
