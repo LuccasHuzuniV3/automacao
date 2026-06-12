@@ -1333,10 +1333,20 @@ function swapListOverrides(cont,list,a,b){
   });
 }
 function resetLayout(){
-  if(!confirm('Resetar o layout deste país?\n\nVolta posições, tamanhos de bloco e de fonte ao padrão. Seus textos e imagens NÃO são apagados.'))return;
-  var P=model[curEbook].paises[curPais];delete P.t._pos;delete P.t._box;delete P.t._fs;
-  ['blocos','bonus','bundle'].forEach(function(l){if(P.t[l])P.t[l].forEach(function(it){delete it.sz;delete it.dx;delete it.dy;});});
-  save();renderForm();updatePreview();toast('Layout resetado ✓');
+  if(!confirm('Resetar o layout deste país?\n\nVolta ao padrão: posições, tamanhos, fontes, cores por seção/card, ordem das seções, elementos ocultos e elementos livres (degradês/caixas/textos soltos).\n\nSeus TEXTOS e IMAGENS não são apagados. (Ctrl+Z desfaz)'))return;
+  undoPush(undoSnap());
+  var P=model[curEbook].paises[curPais];
+  /* posições, tamanhos, fontes e larguras */
+  delete P.t._pos;delete P.t._box;delete P.t._fs;delete P.t._w;
+  /* fonte e cor POR TEXTO (barra de texto) */
+  delete P.t._ff;delete P.t._color;
+  /* seções: ordem, cores de fundo e ocultos */
+  delete P.t._secOrder;delete P.t._secBg;delete P.t._hide;
+  /* elementos livres (degradês/caixas/textos soltos) e degradê do título */
+  delete P.t.extras;delete P.t.hlBox;
+  /* tamanhos por item e cores por card */
+  ['blocos','bonus','bundle'].forEach(function(l){if(P.t[l])P.t[l].forEach(function(it){delete it.sz;delete it.dx;delete it.dy;delete it.bg1;delete it.bg2;});});
+  save();renderForm();updatePreview();toast('Layout resetado ✓ (Ctrl+Z desfaz)');
 }
 function pickImageFor(path){
   if(path==='offerCapa')path='img.oferta';   /* capa da OFERTA tem imagem própria (não mexe na do topo) */
