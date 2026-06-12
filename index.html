@@ -34,13 +34,14 @@
   .lang button{cursor:pointer;border:1px solid color-mix(in srgb,var(--accent) 40%,transparent);background:rgba(0,0,0,.35);color:var(--accent);font-weight:700;font-size:12px;padding:6px 10px;border-radius:8px}
   .lang button.on{background:var(--accent);color:#1a1206;border-color:transparent}
 
-  .hero{display:grid;grid-template-columns:0.9fr 1.1fr;gap:40px;align-items:center;padding:54px 0 30px}
+  .hero{display:grid;grid-template-columns:0.9fr 1.1fr;gap:40px;align-items:center;padding:84px 0 30px}
   .pill{display:inline-flex;align-items:center;gap:8px;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent);border-radius:999px;padding:8px 16px;color:var(--accent);font-size:12.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:22px}
   .pill::before{content:"\2726"}
   h1{font-family:var(--titleFont);font-weight:800;font-size:var(--szTitle,clamp(28px,3.2vw,46px));line-height:1.16;letter-spacing:.3px;position:relative;z-index:2}
   .herotext{position:relative}
-  .herotext>.pill,.herotext>.sub,.herotext>.cta,.herotext>.proof{position:relative;z-index:2}
+  .herotext>.pill,.herotext>.sub,.herotext>.cta,.herotext>.proof,.herotext>h1{position:relative;z-index:2}
   .hlbox{position:absolute;z-index:0;border-radius:10px;background:linear-gradient(90deg,var(--hl1,#7c2fe0),var(--hl2,#c98bff));box-shadow:0 10px 32px -8px var(--hl1,#7c2fe0);display:none}
+  .xtra{position:absolute;z-index:0;box-shadow:0 10px 32px -8px rgba(120,40,220,.5)}
   h1,.scarcity,.giftbar,.bonus h2,.bcard .bt,.offerInfo .line,.validade{font-family:var(--titleFont)}
   h1 .hl{background:linear-gradient(90deg,var(--hl1,#7c2fe0),var(--hl2,#c98bff));color:var(--hlTxt,#fff);padding:2px 12px;border-radius:4px;text-shadow:0 1px 4px rgba(0,0,0,.5);box-decoration-break:clone;-webkit-box-decoration-break:clone}
   .sub{margin-top:22px;font-size:clamp(15px,1.5vw,18px);color:var(--muted);max-width:560px;line-height:1.6}
@@ -221,6 +222,7 @@
     <section class="hero">
       <div class="herotext">
         <div id="hlbox" class="hlbox"></div>
+        <div id="extras"></div>
         <span class="pill" id="eyebrow"></span>
         <h1><span id="h1a"></span> <span class="hl" id="h1b"></span></h1>
         <p class="sub" id="sub"></p>
@@ -317,6 +319,16 @@
       if(livre){hbox.style.display='block';hbox.style.left=(b.x||0)+'px';hbox.style.top=(b.y||0)+'px';hbox.style.width=(b.w||360)+'px';hbox.style.height=(b.h||64)+'px';hbox.style.pointerEvents=EDIT?'auto':'none';if(EDIT)hbox.setAttribute('data-hlbox','1');}
       else{hbox.style.display='none';hbox.removeAttribute('data-hlbox');}
     }})();
+  (function(){var EXC=document.getElementById('extras');if(!EXC)return;
+    function nv(v,d){v=parseFloat(v);return isFinite(v)?v:d;}
+    function hx(c,d){return (/^#[0-9a-fA-F]{3,8}$/.test(c))?c:d;}
+    EXC.innerHTML=(t.extras||[]).map(function(x,i){
+      if(MOBILE)return '';
+      var c1=hx(x.c1,'#7c2fe0'),c2=hx(x.c2,'#c98bff'),r=nv(x.r,10);
+      var st='left:'+nv(x.x,0)+'px;top:'+nv(x.y,0)+'px;width:'+nv(x.w,240)+'px;height:'+nv(x.h,64)+'px;background:linear-gradient(90deg,'+c1+','+c2+');border-radius:'+r+'px;'+(EDIT?'pointer-events:auto;':'pointer-events:none;');
+      return '<div class="xtra"'+(EDIT?' data-extra="'+i+'"':'')+' style="'+st+'"></div>';
+    }).join('');
+  })();
   set('ctaTxt',t.cta);set('ctaTxt2',t.cta);set('prova',t.prova);
 
   function posCss(k){if(MOBILE)return '';var p=t._pos&&t._pos[k];if(!p)return '';var tf='translate('+(p.x||0)+'px,'+(p.y||0)+'px)';if(p.s&&p.s!=1)tf+=' scale('+p.s+')';return 'transform:'+tf+';';}
