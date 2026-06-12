@@ -1,0 +1,4 @@
+{
+  "prodUrl": "https://dist-gamma-sooty-36.vercel.app",
+  "_nota": "URL publica e estavel do projeto na Vercel. O botao Deploy do painel sobe a dist/ limpa e o conteudo passa a aparecer aqui. Se voce trocar o nome do projeto ou adicionar dominio proprio (ex.: thesalomoncode.com), atualize esta URL."
+}

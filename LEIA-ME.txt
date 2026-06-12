@@ -1,0 +1,34 @@
+=========================================================
+   PAINEL DE VENDAS  -  Leia-me primeiro
+=========================================================
+
+E facil, sao 2 passos.
+
+1) INSTALE O NODE.JS  (so 1 vez)
+   - Abra:  https://nodejs.org
+   - Baixe a versao "LTS" e instale (Proximo, Proximo, Concluir).
+
+2) DE 2 CLIQUES EM:   COMECE-AQUI.bat
+   - Ele instala o resto sozinho, pede o login da Vercel
+     (use a conta que te passaram) e abre o painel.
+
+PRONTO! O painel abre no navegador em:
+   http://localhost:4321
+
+---------------------------------------------------------
+NO DIA A DIA:
+   - Abrir o painel:    2 cliques em  START.bat
+   - Publicar no ar:    botao "Deploy" dentro do painel
+   - Os ebooks ja vem prontos: e so editar e publicar.
+
+COMO CRIAR/EDITAR:
+   - Aba "Ebooks"  -> seus ebooks (por pessoa)
+   - Aba "Editor"  -> edita a pagina (clica direto no texto/imagem)
+   - Botao "Links" -> pega o link de cada idioma/canal pra divulgar
+   - Aba "Analytics" e "Vendas" -> acompanha os numeros
+
+DICA: para gerar o link de um canal (ex.: youtube do fulano),
+use o "Gerador de link de canal" la embaixo no Editor.
+
+Qualquer duvida, chama o responsavel.
+=========================================================

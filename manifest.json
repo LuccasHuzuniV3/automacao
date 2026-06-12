@@ -1,0 +1,22 @@
+{
+  "version": "2026-06-12T01:27:50.001Z",
+  "files": [
+    "builder.html",
+    "painel.html",
+    "index.html",
+    "server.js",
+    "build-dist.js",
+    "vercel.json",
+    "README.md",
+    "LEIA-ME.txt",
+    "COMECE-AQUI.bat",
+    "start.bat",
+    "deploy.bat",
+    "login-vercel.bat",
+    "api/hotmart.js",
+    "api/reset.js",
+    "api/sales.js",
+    "api/stats.js",
+    "api/track.js"
+  ]
+}

@@ -1,0 +1,53 @@
+/* =====================================================================
+   /api/sales  —  lista as VENDAS individuais (registros gravados pelo
+   /api/hotmart). Filtra por ebook / canal / nicho(tema) / país / período.
+   Devolve a lista (mais nova primeiro) + totais. Sem dependências.
+   ===================================================================== */
+const { parse } = require('url');
+function pickEnv(re) { const ks = Object.keys(process.env); for (let i = 0; i < ks.length; i++) { if (re.test(ks[i]) && !/READ_?ONLY/i.test(ks[i])) return process.env[ks[i]]; } return ''; }
+const RURL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || pickEnv(/REST_API_URL$|REST_URL$/);
+const RTOK = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || pickEnv(/REST_API_TOKEN$|REST_TOKEN$/);
+const VIEW = process.env.VIEW_TOKEN || '';   // se definido, exige ?token= (protege o painel do "cara")
+async function redis(cmd) { const r = await fetch(RURL, { method: 'POST', headers: { Authorization: 'Bearer ' + RTOK, 'Content-Type': 'application/json' }, body: JSON.stringify(cmd) }); return r.json(); }
+
+module.exports = async function (req, res) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  if (req.method === 'OPTIONS') { res.statusCode = 204; res.end(); return; }
+  try {
+    if (!RURL || !RTOK) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: 'sem store' })); return; }
+    const q = parse(req.url, true).query || {};
+    if (VIEW && String(q.token || '') !== String(VIEW)) { res.statusCode = 401; res.end(JSON.stringify({ ok: false, auth: true, error: 'token' })); return; }
+    const days = Math.min(Math.max(parseInt(q.days || '30', 10) || 30, 1), 365);
+    const fE = q.ebook || '', fC = q.canal || '', fT = q.tema || '', fP = q.pais || '';
+
+    const base = Date.now(), dates = [];
+    for (let i = 0; i < days; i++) dates.push(new Date(base - i * 86400000).toISOString().slice(0, 10));
+    const results = await Promise.all(dates.map(dt => redis(['LRANGE', 'salelog:' + dt, '0', '-1']).catch(() => ({ result: [] }))));
+
+    const list = [];
+    results.forEach(day => {
+      (day && day.result || []).forEach(s => {
+        let o; try { o = JSON.parse(s); } catch (e) { return; }
+        if (fE && o.e !== fE) return;
+        if (fC && o.c !== fC) return;
+        if (fT && o.t !== fT) return;
+        if (fP && o.p !== fP) return;
+        list.push(o);
+      });
+    });
+    list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
+
+    let totV = 0, totRcents = 0; const canais = {}, temas = {}, ebooks = {}, paises = {}, receitasCents = {};
+    list.forEach(o => {
+      const sg = o.st === 'estorno' ? -1 : 1, cur = (o.cur || 'BRL');
+      totV += sg; totRcents += sg * (o.v || 0); receitasCents[cur] = (receitasCents[cur] || 0) + sg * (o.v || 0);
+      if (o.c) canais[o.c] = 1; if (o.t) temas[o.t] = 1; if (o.e) ebooks[o.e] = 1; if (o.p) paises[o.p] = 1;
+    });
+    const receitas = {}; Object.keys(receitasCents).forEach(c => { receitas[c] = receitasCents[c] / 100; });
+    res.statusCode = 200;
+    res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, list: list.slice(0, 500),
+      filtros: { ebooks: Object.keys(ebooks), canais: Object.keys(canais), temas: Object.keys(temas), paises: Object.keys(paises) } }));
+  } catch (e) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: String(e).slice(0, 150) })); }
+};

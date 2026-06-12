@@ -1,0 +1,10 @@
+# dados e gerados (nao vao pro repositorio publico de codigo)
+dist/
+node_modules/
+*.zip
+ebooks.js
+ebooks.bak.js
+_chk.js
+*.log
+.DS_Store
+Thumbs.db
