@@ -68,7 +68,8 @@ module.exports = async function (req, res) {
 
     let sign = 0;
     if (/APPROV|COMPLET|APROVAD/.test(event)) sign = 1;                 // compra aprovada/completa
-    else if (/REFUND|CHARGEBACK|REEMBOLS|CANCEL|EXPIRED/.test(event)) sign = -1; // reembolso/chargeback -> desconta
+    else if (/REFUND|CHARGEBACK|REEMBOLS|ESTORN|DISPUTE|PROTEST/.test(event)) sign = -1; // SO reembolso/chargeback REAL
+    // expirado / cancelado / boleto-pix nao pago / carrinho abandonado -> IGNORA (nao e venda nem reembolso)
     if (!sign) { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: event || '?' })); return; }
 
     // src esperado: ebook_versao_canal_tema  (ex.: arcturianos_br_jazzlofi_ansiedade)

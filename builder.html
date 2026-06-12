@@ -196,6 +196,7 @@
   <span class="sep"></span>
   <div class="pills"><span class="pill" id="pillApp">App</span><span class="pill" id="pillVercel">Vercel</span></div>
   <button class="btn" id="btnMulti" style="display:none">🌍 Multi-idioma</button>
+  <button class="btn" id="btnSysUpdate" title="Baixa a última versão do sistema (seus ebooks não são apagados)">🔄 Atualizar sistema</button>
   <button class="btn" id="btnLinks">🔗 Links</button>
   <button class="btn pri" id="btnDeploy" style="display:none">🚀 Deploy</button>
 </div>
@@ -227,12 +228,6 @@
     <div class="pbar"><span class="lbl">Prévia:</span><span class="lbl" id="pvLabel" style="color:var(--gold)"></span><span class="lbl" style="color:var(--teal)">✏️ clique no texto pra editar</span>
       <span class="sep"></span><button class="btn" id="btnFocus">⛶ Modo edição (largura real)</button><button class="btn" id="wDesk">🖥️</button><button class="btn" id="wMob">📱</button><button class="btn" id="btnOpen">Abrir ↗</button></div>
     <div class="frameWrap"><iframe id="frame"></iframe></div>
-    <div class="gen">
-      <h3>Gerador de link de canal (controle de src)</h3>
-      <div class="line"><span class="lbl">canal</span><input id="gCanal" placeholder="jazzlofi" style="width:130px"><span class="lbl">tema</span><input id="gTema" placeholder="ansiedade" style="width:130px"><button class="btn pri" id="gBtn">Gerar links de todos os idiomas</button></div>
-      <div id="gList"></div>
-      <div class="hint" id="gHint">Um link por idioma — copie e cole no canal de cada idioma. Na Hotmart o <code>src</code> vira <b>ebook_país_canal_tema</b> (assim a venda sabe de qual ebook, idioma e canal veio).</div>
-    </div>
   </section>
   </main>
   <div id="view-ebooks" class="view on">
@@ -287,11 +282,6 @@
         <div class="side-h">Acesso do visualizador (painel.html)</div>
         <label class="cfgrow" title="Se você protegeu o painel do 'cara' com a variável VIEW_TOKEN na Vercel, cole a MESMA senha aqui pro SEU painel continuar lendo os dados. Deixe vazio se não protegeu."><span>Senha do painel (VIEW_TOKEN) — opcional</span><input class="dom" id="viewToken" placeholder="deixe vazio se não protegeu"></label>
         <div class="hint">O <b>painel.html</b> (read-only) sobe junto no Deploy e fica em <b>seusite.com/painel.html</b>. Pra exigir senha, crie a variável <b>VIEW_TOKEN</b> na Vercel e passe a mesma senha pro "cara".</div>
-      </div>
-      <div class="cfgsec">
-        <div class="side-h">Sistema</div>
-        <button class="btn" id="btnSysUpdate">🔄 Atualizar sistema</button>
-        <div class="hint">Baixa a <b>última versão</b> do sistema (do criador) e atualiza os arquivos aqui. Depois é só <b>fechar e abrir o START.bat de novo</b>. Seus ebooks não são apagados.</div>
       </div>
       <div class="cfgsec">
         <div class="side-h">Tradução</div>
@@ -1168,9 +1158,9 @@ $('btnImport').onclick=function(){$('impText').value='';$('modal').classList.add
 $('impCancel').onclick=function(){$('modal').classList.remove('on');};
 $('impOk').onclick=function(){var code=$('impText').value;try{var fk={};(new Function('window',code))(fk);
   if(fk.EBOOKS&&Object.keys(fk.EBOOKS).length){model=fk.EBOOKS;curEbook=Object.keys(model)[0];curPais=Object.keys(model[curEbook].paises)[0];$('modal').classList.remove('on');save();render();toast('Importado!');}else toast('Não achei window.EBOOKS');}catch(e){toast('Erro: '+e.message);}};
-function buildGen(){var dom=$('dominio').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
+function buildGen(){var box=$('gList');if(!box)return;
+  var dom=$('dominio').value.trim().replace(/^https?:\/\//,'').replace(/\/$/,'');
   var canal=slugify($('gCanal').value)||'canal',tema=slugify($('gTema').value);
-  var box=$('gList');if(!box)return;
   var eb=model[curEbook]||{paises:{}},ps=Object.keys(eb.paises||{});if(!ps.length)ps=[curPais];
   box.innerHTML=ps.map(function(c){
     var link='https://'+dom+'/?ebook='+curEbook+'&p='+c+'&s='+canal+(tema?'_'+tema:'');
@@ -1178,11 +1168,12 @@ function buildGen(){var dom=$('dominio').value.trim().replace(/^https?:\/\//,'')
     return '<div class="genrow"><span class="genflag">'+flagEmoji(eb.paises[c]&&eb.paises[c].idioma)+' '+c.toUpperCase()+'</span><code class="genlink">'+link+'</code><button class="btn gencopy" data-l="'+link+'" title="'+nome+'">copiar</button></div>';
   }).join('');
   Array.prototype.forEach.call(box.querySelectorAll('.gencopy'),function(b){b.onclick=function(){try{navigator.clipboard.writeText(b.getAttribute('data-l'));toast('Link copiado!');}catch(e){}};});}
-$('gBtn').onclick=buildGen;$('gCanal').oninput=buildGen;$('gTema').oninput=buildGen;
+if($('gBtn')){$('gBtn').onclick=buildGen;$('gCanal').oninput=buildGen;$('gTema').oninput=buildGen;}
 $('wDesk').onclick=function(){$('frame').style.width='100%';};$('wMob').onclick=function(){$('frame').style.width='390px';};
 $('btnFocus').onclick=function(){var m=document.querySelector('main');var on=m.classList.toggle('focus');this.classList.toggle('on',on);this.textContent=on?'✕ Sair do modo edição':'⛶ Modo edição (largura real)';$('frame').style.width=on?'1600px':'100%';};
 $('btnOpen').onclick=function(){window.open('index.html?preview=1&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais),'_blank');};
 $('dominio').oninput=function(){save();buildGen();};
+if($('viewToken'))$('viewToken').oninput=function(){save();};
 var tT;function toast(m){var e=$('toast');e.textContent=m;e.classList.add('on');clearTimeout(tT);tT=setTimeout(function(){e.classList.remove('on')},2400);}
 
 /* ---------- App local: botoes Deploy e Multi-idioma ---------- */
