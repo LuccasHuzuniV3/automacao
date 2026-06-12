@@ -56,7 +56,7 @@
   .proof{display:flex;align-items:center;gap:10px;margin-top:22px;color:var(--muted);font-size:14px}
   .stars{color:#f2c94c;letter-spacing:2px}
   .art{position:relative;display:flex;align-items:center;justify-content:center;min-height:420px;min-width:0}
-  .glow{position:absolute;width:540px;height:540px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 42%,transparent),transparent 62%);filter:blur(8px)}
+  .glow{position:absolute;width:min(540px,86vw);height:min(540px,86vw);border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 42%,transparent),transparent 62%);filter:blur(8px);pointer-events:none}
   .art img{position:relative;max-width:100%;height:auto;width:var(--szHero,640px);max-height:none;filter:drop-shadow(-18px 24px 40px rgba(0,0,0,.6))}
   .book{position:relative;width:300px;height:420px;border-radius:6px;padding:30px 26px;display:flex;flex-direction:column;background:linear-gradient(155deg,#241b10,#120c06 70%);border:1px solid color-mix(in srgb,var(--accent) 35%,transparent);box-shadow:-22px 26px 60px -14px rgba(0,0,0,.7),inset 0 0 60px rgba(0,0,0,.6);transform:perspective(1400px) rotateY(-16deg)}
   .book .k{color:var(--accent);font-size:10px;letter-spacing:.18em;font-weight:700;text-transform:uppercase}
@@ -294,7 +294,8 @@
   var p=getParams();
   var EDIT=(p.q.get('edit')==='1');
   /* No celular (e fora do editor), ignora o posicionamento manual de desktop e usa o layout fluido/responsivo. */
-  var MOBILE=(!EDIT)&&((window.innerWidth||document.documentElement.clientWidth||0)<=880);
+  var FORCEDEV=p.q.get('device');   /* editor pode forçar 'mobile'/'desktop' pra pré-visualizar/editar no celular */
+  var MOBILE=(FORCEDEV==='mobile')||(FORCEDEV!=='desktop'&&(!EDIT)&&((window.innerWidth||document.documentElement.clientWidth||0)<=880));
   var ebook=(p.ebook&&EB[p.ebook])?p.ebook:Object.keys(EB)[0]; if(!ebook)return;
   var paises=EB[ebook].paises;
   function detectPais(P){var L=navigator.languages||[navigator.language||''],m={};
