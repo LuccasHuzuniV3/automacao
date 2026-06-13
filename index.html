@@ -83,19 +83,16 @@
   .block .th{width:110px;height:110px;border-radius:12px;object-fit:cover}
   .block h3{color:#fff;font-size:clamp(19px,1.5vw,23px);font-weight:800;margin-bottom:9px;text-align:center}
   .block p{color:var(--muted);line-height:1.6;font-size:clamp(14px,1.05vw,16px)}
-  .secimg{border-radius:16px;align-self:start}   /* sem overflow:hidden — deixa arrastar a imagem pra fora sem cortar */
+  .secimg{border-radius:16px;align-self:start;min-width:0;position:relative}   /* modelo NATURAL (igual à hero): imagem no tamanho dela, posicionada/escalada por transform — sem quadro fixo, sem espaço sobrando */
   .secimg img{display:block;width:100%;height:auto;border-radius:16px}
   .secimg.asvideo{position:relative;aspect-ratio:16/9;background:#000;border:1px solid rgba(255,255,255,.1);align-self:center;width:100%;overflow:hidden}
   .secimg.asvideo iframe,.secimg.asvideo video{position:absolute;inset:0;width:100%;height:100%;border:0;object-fit:cover;background:#000}
   .vidcol{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1);min-height:460px;background:#000}
   .vidcol iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-  .secimg img{width:100%;height:100%;object-fit:cover;display:block;max-height:var(--szBlocos,none)}
-  /* desktop: o tamanho salvo vira ALTURA REAL (não só teto) — o ⤢ consegue AUMENTAR além da proporção natural; o cover corta o excesso.
-     O CONTÊINER (.secimg) fica TRAVADO no tamanho salvo: arrastar o ⤢ ao vivo só transborda a imagem, SEM empurrar o que está embaixo. */
-  @media(min-width:881px){
-    .secimg:not(.asvideo){height:var(--szBlocos,auto)}
-    .secimg img{height:var(--szBlocos,auto);width:var(--szBlocosW,100%);max-width:none}
-  }
+  .secimg img{width:100%;height:auto;display:block;border-radius:16px}
+  /* (modelo NATURAL igual à hero: imagem em tamanho natural (width:100%, height:auto), posicionada e
+     ESCALADA por transform. Sem quadro de altura fixa, sem object-fit:cover, sem object-position.
+     Mover/escalar a imagem (transform) NÃO afeta o layout → nada embaixo se mexe; e não cria vão.) */
 
   .giftbar{position:relative;overflow:hidden;height:clamp(150px,15vw,205px);margin:14px 0}
   .ribbon{position:absolute;left:-7%;width:114%;top:50%;white-space:nowrap;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--giftBg,#e11d1d) 72%,#fff),var(--giftBg,#e11d1d) 52%,color-mix(in srgb,var(--giftBg,#e11d1d) 68%,#000));color:var(--giftTxt,#fff);font-weight:900;font-size:clamp(15px,1.85vw,24px);text-transform:uppercase;letter-spacing:.04em;padding:13px 0;box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.4);border-top:2px solid rgba(255,255,255,.35);border-bottom:2px solid rgba(0,0,0,.3)}
@@ -497,19 +494,20 @@
       E.style.position='absolute';E.style.top='0';E.style.left='0';E.style.margin='0';
     });
   }
-  /* ===== TRAVA dos títulos de bônus: o transform salvo (escala/posição grande) pode jogar o título
-     pra FORA do card (em cima da faixa). Esta trava garante que ele nunca suba além do topo do card —
-     fica sempre dentro, igual ao editor. Roda no load, quando a fonte carrega e ao redimensionar. ===== */
+  /* ===== TRAVA dos títulos de bônus: impede APENAS que o título suba acima da própria SEÇÃO de bônus
+     (pra não invadir a faixa de cima). NÃO empurra pra dentro do card — assim o texto do bônus
+     continua em tamanho normal (não encolhe). Editor e publicado idênticos (roda nos dois). ===== */
   if(!MOBILE&&t._pos){(function(){
     function clampTitulosBonus(){
+      var sec=document.querySelector('[data-sec="bonus"]');if(!sec)return;
+      var limTop=sec.getBoundingClientRect().top+4;   /* topo da seção de bônus (logo abaixo da faixa) */
       Array.prototype.forEach.call(document.querySelectorAll('.bcard [data-edit$=".titulo"]'),function(T){
-        var card=T.closest('.bcard');if(!card)return;
         var k=T.getAttribute('data-edit'),p=t._pos[k];if(!p)return;
         var baseY=(p.y||0);
         T.style.transform='translate('+(p.x||0)+'px,'+baseY+'px) scale('+(p.s||1)+')';   /* volta ao salvo antes de medir (idempotente) */
-        var tr=T.getBoundingClientRect(),cr=card.getBoundingClientRect(),pad=8;
-        if(tr.top<cr.top+pad){
-          var shift=(cr.top+pad)-tr.top;
+        var tr=T.getBoundingClientRect();
+        if(tr.top<limTop){
+          var shift=limTop-tr.top;
           T.style.transform='translate('+(p.x||0)+'px,'+(baseY+shift)+'px) scale('+(p.s||1)+')';
         }
       });
@@ -520,6 +518,9 @@
     window.addEventListener('resize',clampTitulosBonus);
     Array.prototype.forEach.call(document.querySelectorAll('.bcard img'),function(im){im.addEventListener('load',clampTitulosBonus);});
   })();}
+  /* (removido o hugBlocos: ele fazia a faixa SEGUIR a imagem — por isso mexer na imagem movia os itens
+     de baixo. Agora a imagem mora num QUADRO FIXO (.secimg): mover/zoom acontece DENTRO do quadro,
+     o quadro nunca muda de tamanho, então nada embaixo se mexe e editor=publicado.) */
   /* ===== Seções: ordem salva (▲▼ do editor) + elementos OCULTOS (🗑) ===== */
   (function(){
     var nodes=Array.prototype.slice.call(document.querySelectorAll('[data-sec]'));
@@ -538,7 +539,8 @@
       function place(){host.innerHTML='';
         var sy=document.documentElement.scrollTop||document.body.scrollTop||0;
         var all=Array.prototype.map.call(document.querySelectorAll('[data-sec]'),function(n){var rr=n.getBoundingClientRect();return {n:n,top:rr.top+sy};}).sort(function(a,b){return a.top-b.top;});
-        keys.forEach(function(k){var n=document.querySelector('[data-sec="'+k+'"]');if(!n)return;
+        keys.forEach(function(k){if(k==='gift')return;   /* a FAIXA (gift) tem o design próprio das fitas — fundo de seção atrás dela vira aquele "band cinza" feio; ignora de propósito */
+        var n=document.querySelector('[data-sec="'+k+'"]');if(!n)return;
         var dv=n.querySelector('.divider');
         if(dv){dv.style.background=t._secBg[k];return;}
         n.style.background=t._secBg[k];   /* pinta o PRÓPRIO elemento: cobre fundos nativos (ex.: gradiente da trustbar) */
@@ -559,39 +561,9 @@
       el2.setAttribute('data-oculto','1');el2.style.display='none';   /* some DE VEZ (atributo + CSS final vencem os !important do mobile) */
     });
   })();
-  /* ANTI-BAND (só publicado): a caixa de fundo de LARGURA TOTAL atrás do bloco nunca passa da altura
-     da imagem — assim não sobra aquela faixa de degradê abaixo da imagem. No editor não mexe. */
-  if(!MOBILE&&!EDIT){(function(){
-    var bgHost=document.getElementById('extrasBg');
-    var sec=document.querySelector('[data-sec="blocos"]');
-    if(!bgHost||!sec)return;
-    function fit(){
-      var img=document.querySelector('[data-img="img.blocos"]');if(!img)return;
-      var box=img.parentNode;if(!box)return;   /* o CONTÊINER .secimg: posição ESTÁVEL (o transform da imagem não mexe nele) */
-      var sy=window.scrollY||document.documentElement.scrollTop||0;
-      var secTop=sec.getBoundingClientRect().top+sy;
-      /* referência = MENOR entre (fim da imagem) e (fim do contêiner):
-         imagem SUBIU  -> caixa azul acompanha pra cima (sem band embaixo)
-         imagem DESCEU -> caixa azul trava no contêiner (NÃO cresce/persegue; a imagem opaca sobressai) */
-      var imgBot=img.getBoundingClientRect().bottom+sy;
-      var boxBot=box.getBoundingClientRect().bottom+sy;
-      var refBot=Math.min(imgBot,boxBot);
-      var vw=document.documentElement.clientWidth;
-      Array.prototype.forEach.call(bgHost.children,function(b){
-        if(b.getAttribute('data-fit0')==null)b.setAttribute('data-fit0',b.style.height||'');
-        else b.style.height=b.getAttribute('data-fit0');   /* restaura antes de remedir (resize seguro) */
-        var r=b.getBoundingClientRect(),top=r.top+sy,bot=r.bottom+sy;
-        var fullW=(r.left<=2&&r.width>=vw-4);
-        if(fullW&&top>=secTop-6&&top<refBot&&bot>refBot+1){
-          b.style.height=Math.max(20,Math.round(refBot-top))+'px';
-        }
-      });
-    }
-    fit();window.addEventListener('load',fit);window.addEventListener('resize',fit);
-    var im=document.querySelector('[data-img="img.blocos"]');
-    if(im&&!im.complete)im.addEventListener('load',fit);
-    if(window.ResizeObserver&&im){try{new ResizeObserver(fit).observe(im);}catch(e){}}
-  })();}
+  /* (removida a trava ANTI-BAND: ela rodava só no publicado — criava divergência com o editor —
+     e acoplava a caixa de fundo à imagem, quebrando a independência. Caixa de fundo agora é
+     100% independente: o tamanho que você dá no editor é EXATAMENTE o que aparece no publicado.) */
   if(EDIT){Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.addEventListener('click',function(e){e.preventDefault();});});}
 
   /* AUTO-AJUSTE GERAL: encolhe qualquer texto escalado pelo molde que vaze do lugar num idioma mais

@@ -1067,8 +1067,10 @@ function wireInlineEdit(){
       function hide(){[box,handle,bar,ilabel].forEach(function(x){if(x&&x.parentNode)x.parentNode.removeChild(x);});box=handle=bar=ilabel=null;}
       function maybeHide(){setTimeout(function(){if(!dragging&&box&&!el.matches(':hover')&&!handle.matches(':hover')&&!bar.matches(':hover'))hide();},180);}
       function startDrag(e){e.preventDefault();e.stopPropagation();dragging=true;
-        var p0=getP(),sx0=e.clientX,sy0=e.clientY,r0=el.getBoundingClientRect(),sw0=r0.width,sh0=r0.height,vert=(imgPath==='img.blocos'),isBundle=!vert,baseW=sw0/(p0.s||1);
-        function mm(ev){if(isBundle){var d=((ev.clientX-sx0)+(ev.clientY-sy0))/2;var ns=Math.max(0.2,Math.round((sw0+d)/baseW*100)/100);var p={x:p0.x,y:p0.y,s:ns};applyT(p);savePos(p);}else if(vert){var h=Math.max(80,Math.round(sh0+(ev.clientY-sy0)));var w=Math.max(120,Math.round(sw0+(ev.clientX-sx0)));el.style.height=h+'px';el.style.maxHeight=h+'px';el.style.width=w+'px';el.style.maxWidth='none';setSz(h+'px');if(!model[curEbook].tema)model[curEbook].tema={};model[curEbook].tema.szBlocosW=w+'px';}else{var d2=((ev.clientX-sx0)+(ev.clientY-sy0))/2;var w=Math.max(40,Math.round(sw0+d2));el.style.width=w+'px';el.style.maxWidth='none';el.style.maxHeight='none';el.style.height='auto';setSz(w+'px');}layout();var hsx=doc.documentElement.scrollLeft||0,hsy=doc.documentElement.scrollTop||0;handle.style.left=(ev.clientX+hsx-9)+'px';handle.style.top=(ev.clientY+hsy-9)+'px';}
+        /* TODAS as imagens (inclusive img.blocos) AUMENTAM por ESCALA (transform), igual à hero —
+           não mexe no layout, então nunca empurra nada embaixo e não cria espaço sobrando. */
+        var p0=getP(),sx0=e.clientX,sy0=e.clientY,r0=el.getBoundingClientRect(),sw0=r0.width,baseW=sw0/(p0.s||1);
+        function mm(ev){var d=((ev.clientX-sx0)+(ev.clientY-sy0))/2;var ns=Math.max(0.2,Math.round((sw0+d)/baseW*100)/100);var p={x:p0.x,y:p0.y,s:ns};applyT(p);savePos(p);layout();var hsx=doc.documentElement.scrollLeft||0,hsy=doc.documentElement.scrollTop||0;handle.style.left=(ev.clientX+hsx-9)+'px';handle.style.top=(ev.clientY+hsy-9)+'px';}
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);dragging=false;save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
       function show(){if(box)return;
@@ -1701,13 +1703,18 @@ var _bu=$('btnUndo');if(_bu)_bu.onclick=undoDo;
 document.addEventListener('keydown',function(ev){if((ev.ctrlKey||ev.metaKey)&&(ev.key==='z'||ev.key==='Z')){var ae=document.activeElement;if(ae&&(ae.isContentEditable||/INPUT|TEXTAREA/.test(ae.tagName)))return;ev.preventDefault();undoDo();}});
 $('btnFocus').onclick=function(){var m=$('view-editor')||document.querySelector('main');var on=m.classList.toggle('focus');var sb=$('shellbody');if(sb)sb.classList.toggle('efull',on);this.classList.toggle('on',on);this.textContent=on?'✕ Mostrar painel de campos':'⛶ Tela cheia';};
 /* Abrir = aba normal do navegador (o canvas de edição já é 1200px, igual ao desktop).
-   SALVA antes de abrir: grava o rascunho (EBOOKS_PREVIEW, lido pela aba preview) na hora,
-   e força a gravação no disco (ebooks.js) — assim a aba aberta mostra SEMPRE o estado atual do editor. */
+   No servidor (APP): GRAVA no disco e ESPERA terminar, depois abre lendo o ARQUIVO (sem preview=1).
+   Assim a aba aberta usa a MESMA fonte que o deploy (o ebooks.js do disco) — nunca um rascunho
+   desatualizado do localStorage. É o que elimina a divergência editor↔aba aberta. */
 $('btnOpen').onclick=function(){
-  var url='index.html?preview=1&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais);
-  try{save();}catch(e){}                 /* EBOOKS_PREVIEW atualizado síncronamente */
-  if(APP){ try{apiSave();}catch(e){} }    /* flush imediato no disco (sem esperar o debounce) */
-  window.open(url,'_blank');
+  var qs='ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais);
+  try{save();}catch(e){}
+  if(APP){
+    var open=function(){window.open('index.html?'+qs,'_blank');};   /* SEM preview=1 -> lê o disco */
+    try{ apiSave().then(open,open); }catch(e){ open(); }             /* espera o disco; abre de qualquer jeito */
+  }else{
+    window.open('index.html?preview=1&'+qs,'_blank');               /* file:// sem servidor -> usa o rascunho */
+  }
 };
 /* ➕ Elemento livre: menu visual (degradê, caixa de fundo, texto) */
 (function(){var b=$('btnAddEl');if(!b)return;var menu=null;
