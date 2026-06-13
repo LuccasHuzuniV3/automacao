@@ -366,12 +366,13 @@
       var locked=(EDIT&&x.lock);
       var peG=(EDIT&&!locked?'pointer-events:auto;':'pointer-events:none;');   /* só o TRAVADO vira click-through; fundo destravado é arrastável */
       var fwG=(x.fw?'left:0;width:100%;':'left:'+nv(x.x,0)+'px;width:'+nv(x.w,240)+'px;');   /* LARGURA TOTAL: preenche de ponta a ponta em qualquer tela */
-      /* caixa de FUNDO: o degradê fica "pintado" no tamanho cheio (pw) e PRESO À DIREITA —
-         fechando a caixa, a cor do COMEÇO vai sendo consumida e o FINAL permanece (estilo Canva) */
-      var pw=nv(x.pw,0),wBox=nv(x.w,240);
-      var fixo=(!x.fw&&pw>wBox)?'background-size:'+pw+'px 100%;background-position:right center;background-repeat:no-repeat;':'';
+      /* caixa de FUNDO: a zona de transição tem LARGURA FIXA (30% do tamanho cheio) grudada na ponta;
+         fechando a caixa, só a parte inicial da Cor 1 comprime — o degradê vai sumindo SUAVE, nunca fatiado */
+      var pw=nv(x.pw,0),zz=pw>0?Math.round(pw*0.3):0;
       var bgCss=(x.bg
-        ?'background:linear-gradient(90deg,'+c1+' 70%,'+c2+');'+fixo
+        ?(zz>0
+          ?'background:linear-gradient(90deg,'+c1+','+c1+' calc(100% - '+zz+'px),'+c2+');'
+          :'background:linear-gradient(90deg,'+c1+' 70%,'+c2+');')
         :'background:linear-gradient(90deg,'+c1+','+c2+');');
       var st=fwG+'top:'+nv(x.y,0)+'px;height:'+nv(x.h,64)+'px;'+bgCss+'border-radius:'+(x.fw?0:r)+'px;'+((EDIT&&!locked)?'outline:1.5px dashed rgba(181,107,255,.6);outline-offset:2px;':'')+peG;
       return '<div class="xtra"'+((EDIT&&!locked)?' data-extra="'+i+'" data-extype="grad"':'')+(locked?' data-locked="'+i+'"':'')+' style="'+st+'"></div>';
