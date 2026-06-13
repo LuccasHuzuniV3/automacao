@@ -497,6 +497,29 @@
       E.style.position='absolute';E.style.top='0';E.style.left='0';E.style.margin='0';
     });
   }
+  /* ===== TRAVA dos títulos de bônus: o transform salvo (escala/posição grande) pode jogar o título
+     pra FORA do card (em cima da faixa). Esta trava garante que ele nunca suba além do topo do card —
+     fica sempre dentro, igual ao editor. Roda no load, quando a fonte carrega e ao redimensionar. ===== */
+  if(!MOBILE&&t._pos){(function(){
+    function clampTitulosBonus(){
+      Array.prototype.forEach.call(document.querySelectorAll('.bcard [data-edit$=".titulo"]'),function(T){
+        var card=T.closest('.bcard');if(!card)return;
+        var k=T.getAttribute('data-edit'),p=t._pos[k];if(!p)return;
+        var baseY=(p.y||0);
+        T.style.transform='translate('+(p.x||0)+'px,'+baseY+'px) scale('+(p.s||1)+')';   /* volta ao salvo antes de medir (idempotente) */
+        var tr=T.getBoundingClientRect(),cr=card.getBoundingClientRect(),pad=8;
+        if(tr.top<cr.top+pad){
+          var shift=(cr.top+pad)-tr.top;
+          T.style.transform='translate('+(p.x||0)+'px,'+(baseY+shift)+'px) scale('+(p.s||1)+')';
+        }
+      });
+    }
+    clampTitulosBonus();
+    if(document.fonts&&document.fonts.ready){document.fonts.ready.then(clampTitulosBonus);}
+    window.addEventListener('load',clampTitulosBonus);
+    window.addEventListener('resize',clampTitulosBonus);
+    Array.prototype.forEach.call(document.querySelectorAll('.bcard img'),function(im){im.addEventListener('load',clampTitulosBonus);});
+  })();}
   /* ===== Seções: ordem salva (▲▼ do editor) + elementos OCULTOS (🗑) ===== */
   (function(){
     var nodes=Array.prototype.slice.call(document.querySelectorAll('[data-sec]'));
