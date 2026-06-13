@@ -567,17 +567,23 @@
     if(!bgHost||!sec)return;
     function fit(){
       var img=document.querySelector('[data-img="img.blocos"]');if(!img)return;
+      var box=img.parentNode;if(!box)return;   /* o CONTÊINER .secimg: posição ESTÁVEL (o transform da imagem não mexe nele) */
       var sy=window.scrollY||document.documentElement.scrollTop||0;
       var secTop=sec.getBoundingClientRect().top+sy;
+      /* referência = MENOR entre (fim da imagem) e (fim do contêiner):
+         imagem SUBIU  -> caixa azul acompanha pra cima (sem band embaixo)
+         imagem DESCEU -> caixa azul trava no contêiner (NÃO cresce/persegue; a imagem opaca sobressai) */
       var imgBot=img.getBoundingClientRect().bottom+sy;
+      var boxBot=box.getBoundingClientRect().bottom+sy;
+      var refBot=Math.min(imgBot,boxBot);
       var vw=document.documentElement.clientWidth;
       Array.prototype.forEach.call(bgHost.children,function(b){
         if(b.getAttribute('data-fit0')==null)b.setAttribute('data-fit0',b.style.height||'');
         else b.style.height=b.getAttribute('data-fit0');   /* restaura antes de remedir (resize seguro) */
         var r=b.getBoundingClientRect(),top=r.top+sy,bot=r.bottom+sy;
         var fullW=(r.left<=2&&r.width>=vw-4);
-        if(fullW&&top>=secTop-6&&top<imgBot&&bot>imgBot+1){
-          b.style.height=Math.max(20,Math.round(imgBot-top))+'px';
+        if(fullW&&top>=secTop-6&&top<refBot&&bot>refBot+1){
+          b.style.height=Math.max(20,Math.round(refBot-top))+'px';
         }
       });
     }
