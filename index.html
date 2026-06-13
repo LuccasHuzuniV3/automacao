@@ -366,10 +366,10 @@
       var locked=(EDIT&&x.lock);
       var peG=(EDIT&&!locked?'pointer-events:auto;':'pointer-events:none;');   /* só o TRAVADO vira click-through; fundo destravado é arrastável */
       var fwG=(x.fw?'left:0;width:100%;':'left:'+nv(x.x,0)+'px;width:'+nv(x.w,240)+'px;');   /* LARGURA TOTAL: preenche de ponta a ponta em qualquer tela */
-      /* caixa de FUNDO: Cor 1 segura 70% e o degradê é ANCORADO na largura da TELA (100vw) —
-         estreitar a caixa vai CORTANDO o degradê (ele some), em vez de recomprimir */
+      /* caixa de FUNDO estilo "sopro" (Canva): Cor 1 segura 70%, passa pela Cor 2 e DISSOLVE
+         pra transparente na ponta — a borda fica esfumaçada e some suave ao diminuir */
       var bgCss=(x.bg
-        ?'background-image:linear-gradient(90deg,'+c1+' 70%,'+c2+');background-size:100vw 100%;background-repeat:no-repeat;'
+        ?'background:linear-gradient(90deg,'+c1+' 70%,'+c2+' 88%,color-mix(in srgb,'+c2+' 0%,transparent));'
         :'background:linear-gradient(90deg,'+c1+','+c2+');');
       var st=fwG+'top:'+nv(x.y,0)+'px;height:'+nv(x.h,64)+'px;'+bgCss+'border-radius:'+(x.fw?0:r)+'px;'+((EDIT&&!locked)?'outline:1.5px dashed rgba(181,107,255,.6);outline-offset:2px;':'')+peG;
       return '<div class="xtra"'+((EDIT&&!locked)?' data-extra="'+i+'" data-extype="grad"':'')+(locked?' data-locked="'+i+'"':'')+' style="'+st+'"></div>';
