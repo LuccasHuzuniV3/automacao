@@ -1700,8 +1700,15 @@ $('wDesk').classList.add('on');
 var _bu=$('btnUndo');if(_bu)_bu.onclick=undoDo;
 document.addEventListener('keydown',function(ev){if((ev.ctrlKey||ev.metaKey)&&(ev.key==='z'||ev.key==='Z')){var ae=document.activeElement;if(ae&&(ae.isContentEditable||/INPUT|TEXTAREA/.test(ae.tagName)))return;ev.preventDefault();undoDo();}});
 $('btnFocus').onclick=function(){var m=$('view-editor')||document.querySelector('main');var on=m.classList.toggle('focus');var sb=$('shellbody');if(sb)sb.classList.toggle('efull',on);this.classList.toggle('on',on);this.textContent=on?'✕ Mostrar painel de campos':'⛶ Tela cheia';};
-/* Abrir = aba normal do navegador (o canvas de edição já é 1200px, igual ao desktop) */
-$('btnOpen').onclick=function(){window.open('index.html?preview=1&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais),'_blank');};
+/* Abrir = aba normal do navegador (o canvas de edição já é 1200px, igual ao desktop).
+   SALVA antes de abrir: grava o rascunho (EBOOKS_PREVIEW, lido pela aba preview) na hora,
+   e força a gravação no disco (ebooks.js) — assim a aba aberta mostra SEMPRE o estado atual do editor. */
+$('btnOpen').onclick=function(){
+  var url='index.html?preview=1&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais);
+  try{save();}catch(e){}                 /* EBOOKS_PREVIEW atualizado síncronamente */
+  if(APP){ try{apiSave();}catch(e){} }    /* flush imediato no disco (sem esperar o debounce) */
+  window.open(url,'_blank');
+};
 /* ➕ Elemento livre: menu visual (degradê, caixa de fundo, texto) */
 (function(){var b=$('btnAddEl');if(!b)return;var menu=null;
   function close(){if(menu&&menu.parentNode)menu.parentNode.removeChild(menu);menu=null;}

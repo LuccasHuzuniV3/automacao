@@ -536,6 +536,33 @@
       el2.setAttribute('data-oculto','1');el2.style.display='none';   /* some DE VEZ (atributo + CSS final vencem os !important do mobile) */
     });
   })();
+  /* ANTI-BAND (só publicado): a caixa de fundo de LARGURA TOTAL atrás do bloco nunca passa da altura
+     da imagem — assim não sobra aquela faixa de degradê abaixo da imagem. No editor não mexe. */
+  if(!MOBILE&&!EDIT){(function(){
+    var bgHost=document.getElementById('extrasBg');
+    var sec=document.querySelector('[data-sec="blocos"]');
+    if(!bgHost||!sec)return;
+    function fit(){
+      var img=document.querySelector('[data-img="img.blocos"]');if(!img)return;
+      var sy=window.scrollY||document.documentElement.scrollTop||0;
+      var secTop=sec.getBoundingClientRect().top+sy;
+      var imgBot=img.getBoundingClientRect().bottom+sy;
+      var vw=document.documentElement.clientWidth;
+      Array.prototype.forEach.call(bgHost.children,function(b){
+        if(b.getAttribute('data-fit0')==null)b.setAttribute('data-fit0',b.style.height||'');
+        else b.style.height=b.getAttribute('data-fit0');   /* restaura antes de remedir (resize seguro) */
+        var r=b.getBoundingClientRect(),top=r.top+sy,bot=r.bottom+sy;
+        var fullW=(r.left<=2&&r.width>=vw-4);
+        if(fullW&&top>=secTop-6&&top<imgBot&&bot>imgBot+1){
+          b.style.height=Math.max(20,Math.round(imgBot-top))+'px';
+        }
+      });
+    }
+    fit();window.addEventListener('load',fit);window.addEventListener('resize',fit);
+    var im=document.querySelector('[data-img="img.blocos"]');
+    if(im&&!im.complete)im.addEventListener('load',fit);
+    if(window.ResizeObserver&&im){try{new ResizeObserver(fit).observe(im);}catch(e){}}
+  })();}
   if(EDIT){Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.addEventListener('click',function(e){e.preventDefault();});});}
 
   /* AUTO-AJUSTE GERAL: encolhe qualquer texto escalado pelo molde que vaze do lugar num idioma mais
