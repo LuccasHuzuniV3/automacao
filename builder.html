@@ -807,6 +807,8 @@ function niceName(k){
   if(mi)return {hero:'Capa',blocos:'Imagem lateral',garantia:'Selo de garantia',atendente:'Atendente'}[mi[1]]||'Imagem';
   var mc=k.match(/^bcard\.(\d+)$/);
   if(mc)return 'Card bônus '+(+mc[1]+1);
+  var mk2=k.match(/^blkcard\.(\d+)$/);
+  if(mk2)return 'Card do bloco '+(+mk2[1]+1);
   return k;
 }
 function mkTag(doc,txt,bg){var d=doc.createElement('div');d.textContent=txt;d.style.cssText='position:absolute;z-index:9994;background:'+(bg||'#2dd4bf')+';color:#06251f;font:700 11px system-ui,Segoe UI,Arial;padding:3px 9px;border-radius:7px;pointer-events:none;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.4)';return d;}

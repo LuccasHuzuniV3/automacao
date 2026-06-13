@@ -373,7 +373,7 @@
   else art.innerHTML='<div class="glow"></div><div class="book"><div class="k">'+esc(cfg.nome||'')+'</div><div class="bt">'+esc(t.capaTit||'')+'</div><div class="bs">'+esc(t.capaSub||'')+'</div><div class="seal">&#10070;</div></div>';
 
   document.getElementById('blocks').innerHTML=(t.blocos||[]).map(function(b,i){
-    return '<div class="block'+(b.img?'':' noimg')+'"'+(EDIT?' data-blk="blocos.'+i+'"':'')+'>'+(b.img?'<img class="th" src="'+esc(b.img)+'"'+' data-img="blocos.'+i+'.img"'+styAttr('blocos.'+i+'.img',b.sz?'width:'+esc(b.sz)+';height:auto;':'')+' alt="">':'')+'<div><h3 data-edit="blocos.'+i+'.titulo">'+esc(b.titulo)+'</h3><p data-edit="blocos.'+i+'.texto">'+esc(b.texto)+'</p></div></div>';}).join('');
+    return '<div class="block'+(b.img?'':' noimg')+'" data-move="blkcard.'+i+'"'+(EDIT?' data-blk="blocos.'+i+'"':'')+'>'+(b.img?'<img class="th" src="'+esc(b.img)+'"'+' data-img="blocos.'+i+'.img"'+styAttr('blocos.'+i+'.img',b.sz?'width:'+esc(b.sz)+';height:auto;':'')+' alt="">':'')+'<div><h3 data-edit="blocos.'+i+'.titulo">'+esc(b.titulo)+'</h3><p data-edit="blocos.'+i+'.texto">'+esc(b.texto)+'</p></div></div>';}).join('');
 
   var mTipo=t.mediaTipo||(t.videoUrl?'video':'imagem');
   var secm=document.getElementById('secimg');
