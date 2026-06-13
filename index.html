@@ -465,6 +465,8 @@
   if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');var p=t._pos[k];if(!p)return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
   /* _w = largura (expansão lateral) dos TEXTOS — aplica como width do inline-block (controla a quebra de linha). */
   if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._w[k]){e.style.width=t._w[k];e.style.maxWidth='none';}});}
+  /* _h = altura extra de CARDS (↕ expandir pra baixo) — a margem negativa compensa o fluxo: NÃO empurra o vizinho de baixo */
+  if(!MOBILE&&t._h){Array.prototype.forEach.call(document.querySelectorAll('[data-move]'),function(e){var k=e.getAttribute('data-move'),H=parseFloat(t._h[k]);if(!H)return;var h0=e.offsetHeight;if(H>h0+1){e.style.minHeight=H+'px';e.style.marginBottom=(-(H-h0))+'px';}});}
   /* fonte e cor POR TEXTO (barra de texto do editor) — vale também no celular */
   if(t._ff){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._ff[k])e.style.fontFamily=t._ff[k];});}
   if(t._color){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._color[k])e.style.color=t._color[k];});}
