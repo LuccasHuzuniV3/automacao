@@ -379,7 +379,7 @@
   })();
   set('ctaTxt',t.cta);set('ctaTxt2',t.cta);set('prova',t.prova);
 
-  function posCss(k){if(MOBILE)return '';var p=t._pos&&t._pos[k];if(!p)return '';var tf='translate('+(p.x||0)+'px,'+(p.y||0)+'px)';if(p.s&&p.s!=1)tf+=' scale('+p.s+')';return 'transform:'+tf+';';}
+  function posCss(k){if(MOBILE)return '';var p=t._pos&&t._pos[k];if(!p)return '';var tf='translate('+(p.x||0)+'px,'+(p.y||0)+'px)';if(p.s&&p.s!=1)tf+=' scale('+p.s+')';if(p.vy&&p.vy!=1)tf+=' scaleY('+p.vy+')';return 'transform:'+tf+';';}
   function styAttr(k,extra){var s=(extra||'')+posCss(k);return s?' style="'+s+'"':'';}
 
   var art=document.getElementById('art');
