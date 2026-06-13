@@ -77,7 +77,7 @@
   /* BLOCOS + VIDEO lado a lado */
   .blkrow{display:grid;grid-template-columns:minmax(0,1fr);gap:40px;padding:60px 0;align-items:stretch}
   .blkrow.two{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
-  .blkcol{display:flex;flex-direction:column;gap:18px}
+  .blkcol{display:flex;flex-direction:column;gap:18px;align-self:start}   /* independente da imagem ao lado: expandir a imagem NÃO estica os cards */
   .block{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;align-content:center;flex:1 1 0;background:linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,.12));border-radius:14px;padding:20px 24px}
   .block.noimg{grid-template-columns:1fr}
   .block .th{width:110px;height:110px;border-radius:12px;object-fit:cover}
@@ -90,6 +90,12 @@
   .vidcol{position:relative;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1);min-height:460px;background:#000}
   .vidcol iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
   .secimg img{width:100%;height:100%;object-fit:cover;display:block;max-height:var(--szBlocos,none)}
+  /* desktop: o tamanho salvo vira ALTURA REAL (não só teto) — o ⤢ consegue AUMENTAR além da proporção natural; o cover corta o excesso.
+     O CONTÊINER (.secimg) fica TRAVADO no tamanho salvo: arrastar o ⤢ ao vivo só transborda a imagem, SEM empurrar o que está embaixo. */
+  @media(min-width:881px){
+    .secimg:not(.asvideo){height:var(--szBlocos,auto)}
+    .secimg img{height:var(--szBlocos,auto);width:var(--szBlocosW,100%);max-width:none}
+  }
 
   .giftbar{position:relative;overflow:hidden;height:clamp(150px,15vw,205px);margin:14px 0}
   .ribbon{position:absolute;left:-7%;width:114%;top:50%;white-space:nowrap;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--giftBg,#e11d1d) 72%,#fff),var(--giftBg,#e11d1d) 52%,color-mix(in srgb,var(--giftBg,#e11d1d) 68%,#000));color:var(--giftTxt,#fff);font-weight:900;font-size:clamp(15px,1.85vw,24px);text-transform:uppercase;letter-spacing:.04em;padding:13px 0;box-shadow:0 10px 26px rgba(0,0,0,.5),inset 0 2px 0 rgba(255,255,255,.4);border-top:2px solid rgba(255,255,255,.35);border-bottom:2px solid rgba(0,0,0,.3)}
@@ -129,8 +135,6 @@
   .bbonuses{display:flex;flex-direction:column;gap:clamp(16px,2vw,28px);flex:0 0 auto}
 
   .scarcity{text-align:center;color:#ff3030;font-weight:900;font-size:clamp(28px,5vw,58px);text-transform:uppercase;padding:30px 0 10px;letter-spacing:.02em;line-height:1.05;text-shadow:0 0 24px rgba(255,40,40,.45),0 2px 10px rgba(0,0,0,.5)}
-  /* Escassez "flutuante" no desktop: sai do fluxo, então mudar largura/escala dele NUNCA empurra a oferta. A margem reserva o espaço pra a oferta ficar no lugar. */
-  @media(min-width:881px){.wrap[data-sec="oferta"]{padding-top:162px}.wrap[data-sec="oferta"] .scarcity{position:absolute;top:0;z-index:3}}
   .offer{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:30px;align-items:center;padding:54px 0 64px}
   .offer::before{content:"";position:absolute;left:-4px;top:8%;bottom:8%;width:4px;border-radius:3px;background:linear-gradient(180deg,transparent,var(--accent),transparent);box-shadow:0 0 14px color-mix(in srgb,var(--accent) 60%,transparent)}
   .offer::after{content:"";position:absolute;left:4%;right:4%;bottom:-4px;height:4px;border-radius:3px;background:linear-gradient(90deg,transparent,var(--accent) 28%,#fff 50%,var(--accent) 72%,transparent)}
@@ -310,7 +314,7 @@
   window.__trackParams={ebook:ebook,versao:pais,rede:(p.src||'direto')};   /* ebook/versao RESOLVIDOS (nao o cru da URL) */
   try{if(window.__track)window.__track('view',window.__trackParams);}catch(e){}
   var R=document.documentElement.style;
-  ['bg1','bg2','accent','accent2','btn1','btn2','btnTxt','giftBg','giftTxt','hl1','hl2','priceNow','priceOld','bcardScale','titleFont','szTitle','szHero','szBlocos','szSeal','szAtend'].forEach(function(k){if(tema[k])R.setProperty('--'+k,tema[k]);});
+  ['bg1','bg2','accent','accent2','btn1','btn2','btnTxt','giftBg','giftTxt','hl1','hl2','priceNow','priceOld','bcardScale','titleFont','szTitle','szHero','szBlocos','szBlocosW','szSeal','szAtend'].forEach(function(k){if(tema[k])R.setProperty('--'+k,tema[k]);});
   function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
   function set(id,v){var e=document.getElementById(id);if(e)e.textContent=(v==null?'':v);}
   function show(id,on){var e=document.getElementById(id);if(e)e.style.display=on?'':'none';}
@@ -453,6 +457,27 @@
   /* fonte e cor POR TEXTO (barra de texto do editor) — vale também no celular */
   if(t._ff){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._ff[k])e.style.fontFamily=t._ff[k];});}
   if(t._color){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._color[k])e.style.color=t._color[k];});}
+  /* ===== Textos LIVRES (com posição salva) viram "flutuantes": cada um fica DENTRO de um espaçador do tamanho atual e é posicionado absoluto. Assim redimensionar/escalar um NUNCA empurra os vizinhos de baixo. Só desktop (no celular é fluxo normal). ===== */
+  if(!MOBILE&&t._pos){
+    var _free=[];
+    Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(E){
+      var k=E.getAttribute('data-edit');if(!t._pos[k])return;
+      if(!/^(DIV|P|H[1-6])$/.test(E.tagName))return;   /* só TEXTO de bloco (empilhado) — spans inline (preços) não empurram vertical e bagunçam baseline */
+      var pe=E.parentNode;if(!pe||(pe.getAttribute&&pe.getAttribute('data-free')==='1'))return;
+      var w=E.offsetWidth,h=E.offsetHeight;if(!w||!h)return;
+      var cs=getComputedStyle(E);
+      /* reserva = AVANÇO REAL no fluxo (até o próximo irmão), inclui o leading da linha — assim nada se desloca */
+      var ns=E.nextElementSibling,adv=h+(parseFloat(cs.marginBottom)||0);
+      if(ns&&ns.offsetParent===E.offsetParent){var a2=ns.offsetTop-E.offsetTop;if(a2>h-2)adv=a2;}
+      _free.push({E:E,w:w,adv:adv,inl:cs.display.indexOf('inline')>=0,mt:cs.marginTop,ml:cs.marginLeft,mr:cs.marginRight});
+    });
+    _free.forEach(function(f){var E=f.E,pe=E.parentNode;
+      var sp=document.createElement(f.inl?'span':'div');sp.setAttribute('data-free','1');
+      sp.style.cssText='position:relative;display:'+(f.inl?'inline-block':'block')+';width:'+f.w+'px;height:'+f.adv+'px;vertical-align:top;margin:'+f.mt+' '+f.mr+' 0 '+f.ml;
+      pe.insertBefore(sp,E);sp.appendChild(E);
+      E.style.position='absolute';E.style.top='0';E.style.left='0';E.style.margin='0';
+    });
+  }
   /* ===== Seções: ordem salva (▲▼ do editor) + elementos OCULTOS (🗑) ===== */
   (function(){
     var nodes=Array.prototype.slice.call(document.querySelectorAll('[data-sec]'));
