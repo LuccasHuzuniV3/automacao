@@ -23,8 +23,6 @@
   :root{--bg1:#0b0a08;--bg2:#161009;--accent:#e9c97a;--accent2:#b8860b;--btn1:#5bd66b;--btn2:#2fae3e;--btnTxt:#06340e;--txt:#f4f0e8;--muted:#c4bdb0;--titleFont:'Anton',Inter,system-ui,sans-serif}
   *{box-sizing:border-box;margin:0;padding:0}
   html{overflow-x:hidden}   /* rede de segurança: zero scroll horizontal em QUALQUER largura (o overhang decorativo dos marquees não vaza) */
-  #stage{position:relative}   /* palco contém os elementos posicionados (extras/seções) */
-  @media(min-width:881px){ #stagewrap{position:relative;overflow:hidden} }   /* desktop: o JS fixa a largura em 1280 e escala pra caber; o wrap clipa o transbordo do layout não-escalado */
   body{font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;color:var(--txt);
     background:radial-gradient(900px 540px at 80% 16%,color-mix(in srgb,var(--accent) 24%,transparent),transparent 60%),
       radial-gradient(800px 600px at 100% 100%,color-mix(in srgb,var(--accent) 14%,transparent),transparent 60%),
@@ -82,7 +80,7 @@
   .blkrow.two{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr)}
   .blkcol{display:flex;flex-direction:column;gap:22px;align-self:start}   /* independente da imagem ao lado: expandir a imagem NÃO estica os cards */
   .block{display:grid;grid-template-columns:auto minmax(0,1fr);gap:16px;align-items:center;align-content:center;flex:1 1 0;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.018));border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:22px 26px;box-shadow:0 14px 34px -16px rgba(0,0,0,.7)}   /* card NÍTIDO e bem definido (borda + sombra), não some no fundo */
-  .block.noimg{grid-template-columns:minmax(0,1fr)}   /* minmax(0,1fr) (nao 1fr) — senao o min 'auto'=max-content do titulo forca a coluna a estourar o card e corta o texto no mobile */
+  .block.noimg{grid-template-columns:1fr}
   .block .th{width:110px;height:110px;border-radius:12px;object-fit:cover}
   .block h3{color:#fff;font-size:clamp(19px,1.5vw,23px);font-weight:800;margin-bottom:9px;text-align:center}
   .block p{color:var(--muted);line-height:1.6;font-size:clamp(14px,1.05vw,16px)}
@@ -228,8 +226,6 @@
   <div class="marquee" id="banner"></div>
   <div class="lang" id="lang"></div>
 
-  <!-- PALCO (canvas fixo estilo Canva): tudo aqui dentro é desenhado em 1280px e escalado pra caber em qualquer tela (desktop). No mobile, escala desliga e usa o layout fluido. -->
-  <div id="stagewrap"><div id="stage">
   <!-- elementos LIVRES (degradê/caixa/texto): camada de FUNDO (atrás do conteúdo) e de FRENTE (por cima) -->
   <div id="extrasBg" style="position:absolute;left:0;top:0;width:100%;height:0;z-index:1;pointer-events:none"></div>
   <div id="extras" style="position:absolute;left:0;top:0;width:100%;height:0;z-index:5;pointer-events:none"></div>
@@ -288,7 +284,6 @@
     </div>
     <div class="copy" id="footerCopy"></div>
   </footer>
-  </div></div><!-- /#stage /#stagewrap -->
 
   <div class="track" id="track"><h4>RASTREAMENTO <span id="trkToggle">ocultar</span></h4>
     <div class="body"><div class="row"><b>País:</b> <span id="trkPais"></span></div><div class="row"><b>src recebido:</b> <span id="trkSrc"></span></div><div class="row"><b>enviado &#8594; Hotmart:</b> <code id="trkFinal"></code></div><div class="row"><b>checkout:</b> <span id="trkUrl"></span></div></div>
@@ -385,10 +380,7 @@
   })();
   set('ctaTxt',t.cta);set('ctaTxt2',t.cta);set('prova',t.prova);
 
-  /* _posReal: ignora posicao "identidade" (arraste acidental de ~1px, escala 1) — senao um nudge mínimo
-     rotearia o texto pelo caminho de "texto livre" (absolute/inline-block), que estoura o card no publicado. */
-  function _posReal(p){return !!(p&&(Math.abs(p.x||0)>2||Math.abs(p.y||0)>2||(p.s&&Math.abs(p.s-1)>0.02)));}
-  function posCss(k){if(MOBILE)return '';var p=t._pos&&t._pos[k];if(!_posReal(p))return '';var tf='translate('+(p.x||0)+'px,'+(p.y||0)+'px)';if(p.s&&p.s!=1)tf+=' scale('+p.s+')';return 'transform:'+tf+';';}
+  function posCss(k){if(MOBILE)return '';var p=t._pos&&t._pos[k];if(!p)return '';var tf='translate('+(p.x||0)+'px,'+(p.y||0)+'px)';if(p.s&&p.s!=1)tf+=' scale('+p.s+')';return 'transform:'+tf+';';}
   function styAttr(k,extra){var s=(extra||'')+posCss(k);return s?' style="'+s+'"':'';}
 
   var art=document.getElementById('art');
@@ -474,7 +466,7 @@
   var EDMAP={banner:'banner',eyebrow:'eyebrow',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato'};
   Object.keys(EDMAP).forEach(function(id){var e=document.getElementById(id);if(e)e.setAttribute('data-edit',EDMAP[id]);});
   if(!MOBILE&&t._fs){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fs[k])e.style.fontSize=t._fs[k];});}
-  if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
+  if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');var p=t._pos[k];if(!p)return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
   /* _w = largura (expansão lateral) dos TEXTOS — aplica como width do inline-block (controla a quebra de linha). */
   if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._w[k]){e.style.width=t._w[k];e.style.maxWidth='none';}});}
   /* _h = altura extra de CARDS (↕ expandir pra baixo) — a margem negativa compensa o fluxo: NÃO empurra o vizinho de baixo */
@@ -486,7 +478,7 @@
   if(!MOBILE&&t._pos){
     var _free=[];
     Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(E){
-      var k=E.getAttribute('data-edit');if(!_posReal(t._pos[k]))return;
+      var k=E.getAttribute('data-edit');if(!t._pos[k])return;
       if(!/^(DIV|P|H[1-6])$/.test(E.tagName))return;   /* só TEXTO de bloco (empilhado) — spans inline (preços) não empurram vertical e bagunçam baseline */
       var pe=E.parentNode;if(!pe||(pe.getAttribute&&pe.getAttribute('data-free')==='1'))return;
       var w=E.offsetWidth,h=E.offsetHeight;if(!w||!h)return;
@@ -616,34 +608,6 @@
   if(p.q.get('debug')==='1'){var box=document.getElementById('track');box.classList.add('show');
     set('trkPais',pais+' ('+(cfg.nome||'')+')'+(autoDetect?' — detectado':' — do link'));set('trkSrc',p.src||'(nenhum)');set('trkFinal',finalSrc);set('trkUrl',url);
     document.getElementById('trkToggle').onclick=function(){box.classList.toggle('min');this.textContent=box.classList.contains('min')?'mostrar':'ocultar';};}
-})();
-</script>
-<script>
-/* ===== PALCO estilo Canva: prancheta fixa (REF px) escalada pra caber em QUALQUER tela (desktop).
-   Assim quem edita (em qualquer monitor) e quem visita veem EXATAMENTE a mesma proporção.
-   No celular (<=880) a escala desliga e usa o layout fluido. ===== */
-(function(){
-  var REF=1280;   /* largura de referência da prancheta — TUNÁVEL */
-  var EDIT=/[?&]edit=1/.test(location.search);   /* no EDITOR: edita a 1280 em 1:1 (sem escalar, pra o arrasto bater certinho). Só o PUBLICADO escala. */
-  var wrap=document.getElementById('stagewrap'), stage=document.getElementById('stage');
-  if(!wrap||!stage)return;
-  var ticking=false;
-  function fit(){
-    var vw=document.documentElement.clientWidth||window.innerWidth||REF;
-    if(EDIT||vw<=880){ stage.style.width='';stage.style.transform='';stage.style.transformOrigin='';wrap.style.height='';return; }  /* editor (1:1) ou mobile = fluido, sem escala */
-    stage.style.width=REF+'px';
-    stage.style.transformOrigin='top left';
-    var scale=vw/REF;
-    stage.style.transform='scale('+scale+')';
-    wrap.style.height=Math.ceil(stage.offsetHeight*scale)+'px';   /* sincroniza altura: sem gap nem scroll sobrando */
-  }
-  function schedule(){ if(ticking)return; ticking=true; requestAnimationFrame(function(){ticking=false;fit();}); }
-  fit();
-  window.addEventListener('resize',schedule);
-  window.addEventListener('load',fit);
-  if(document.fonts&&document.fonts.ready){document.fonts.ready.then(fit);}
-  if(window.ResizeObserver){try{new ResizeObserver(schedule).observe(stage);}catch(e){}}
-  Array.prototype.forEach.call(document.images,function(im){if(!im.complete)im.addEventListener('load',fit);});
 })();
 </script>
 </body>

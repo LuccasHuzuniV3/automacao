@@ -1692,11 +1692,10 @@ function buildGen(){var box=$('gList');if(!box)return;
   }).join('');
   Array.prototype.forEach.call(box.querySelectorAll('.gencopy'),function(b){b.onclick=function(){try{navigator.clipboard.writeText(b.getAttribute('data-l'));toast('Link copiado!');}catch(e){}};});}
 if($('gBtn')){$('gBtn').onclick=buildGen;$('gCanal').oninput=buildGen;$('gTema').oninput=buildGen;}
-/* PRANCHETA FIXA 1280px (estilo Canva): o editor SEMPRE edita em 1280, em qualquer monitor → as posições
-   ficam idênticas pra qualquer um que edite. A página publicada escala essa prancheta pra caber na tela do
-   visitante (consistente pra todos). Se a área do editor for menor que 1280, o .frameWrap rola (overflow:auto). */
-$('frame').style.width='1280px';
-$('wDesk').onclick=function(){curDevice='desktop';$('frame').style.width='1280px';$('wDesk').classList.add('on');$('wMob').classList.remove('on');loadFrame();};
+/* TELA CHEIA 100%: o editor usa a largura inteira da janela — igual a página aberta no navegador (mesma largura = mesmas posições).
+   (fixar 1200px fazia as posições caírem em lugar diferente de quem abre numa tela maior) */
+$('frame').style.width='100%';
+$('wDesk').onclick=function(){curDevice='desktop';$('frame').style.width='100%';$('wDesk').classList.add('on');$('wMob').classList.remove('on');loadFrame();};
 $('wMob').onclick=function(){curDevice='mobile';$('frame').style.width='390px';$('wMob').classList.add('on');$('wDesk').classList.remove('on');loadFrame();if(typeof toast==='function')toast('📱 Modo celular — edite e veja igual no telefone');};
 $('wDesk').title='Computador — tela cheia (igual ao Abrir no navegador)';$('wMob').title='Celular (390px) — edita e mostra o layout REAL do telefone';
 $('wDesk').classList.add('on');
