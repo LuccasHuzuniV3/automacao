@@ -461,7 +461,7 @@
   if(bonus.length){document.getElementById('bonus').innerHTML='<div class="bgrid">'+
     bonus.map(function(b,i){var cSt=(b.bg1?' style="background:linear-gradient(180deg,'+esc(b.bg1)+','+esc(b.bg2||b.bg1)+')"':'');return '<div class="bcard" data-move="bcard.'+i+'"'+(EDIT?' data-blk="bonus.'+i+'"':'')+cSt+'><div><div class="bt" data-edit="bonus.'+i+'.titulo">'+esc(b.titulo)+'</div><p data-edit="bonus.'+i+'.texto">'+esc(b.texto)+'</p></div>'+(b.img?'<img loading="lazy" src="'+esc(b.img)+'"'+' data-img="bonus.'+i+'.img"'+styAttr('bonus.'+i+'.img','')+' alt="">':'<div class="ph">'+esc(b.titulo)+'</div>')+'</div>';}).join('')+'</div>';show('bonus',true);}
 
-  function bitem(b,sz,idx){var bcs='';return '<div class="bitem '+sz+'" data-move="bunditem.'+idx+'"'+(EDIT?' data-blk="bundle.'+idx+'"':'')+'>'+(b.img?'<img loading="lazy" src="'+esc(b.img)+'"'+' data-img="bundle.'+idx+'.img"'+styAttr('bundle.'+idx+'.img',bcs)+' alt="">':'<div class="ph" data-edit="bundle.'+idx+'.titulo">'+esc(b.titulo||'')+'</div>')+
+  function bitem(b,sz,idx){var bcs='';return '<div class="bitem '+sz+'"'+(EDIT?' data-blk="bundle.'+idx+'" data-move="bunditem.'+idx+'"':'')+'>'+(b.img?'<img loading="lazy" src="'+esc(b.img)+'"'+' data-img="bundle.'+idx+'.img"'+styAttr('bundle.'+idx+'.img',bcs)+' alt="">':'<div class="ph" data-edit="bundle.'+idx+'.titulo">'+esc(b.titulo||'')+'</div>')+
     '<div class="pb"><span class="de" data-edit="bundle.'+idx+'.precoDe">'+esc(b.precoDe||'')+'</span><span class="por" data-edit="bundle.'+idx+'.precoPor">'+esc(b.precoPor||'')+'</span></div></div>';}
   var bundle=t.bundle||[];
   if(bundle.length){var html='<div class="bwrap">'+bitem(bundle[0],'main',0);var rest=bundle.slice(1);
@@ -505,11 +505,8 @@
   if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
   /* _w = largura (expansão lateral) dos TEXTOS — aplica como width do inline-block (controla a quebra de linha). */
   if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-img]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-img');if(t._w[k]){var pp=String(t._w[k]).split(' ');e.style.width=pp[0];e.style.maxWidth='none';if(e.hasAttribute('data-img')&&pp[1]){e.style.height=pp[1];e.style.objectFit='cover';}}});}   /* texto: só largura. imagem: "Wpx Hpx" -> largura E altura travada + cover (mexe SÓ na largura, não distorce nem empurra o resto) */
-  /* _h DESATIVADO: aplicava minHeight + margem NEGATIVA = -(H - offsetHeight), com offsetHeight medido em runtime
-     (dependente do carregamento da fonte) -> a altura do card variava entre monitores/carregamentos (viola a regra 6
-     e quebrava editor=abrir entre telas). Agora os cards têm ALTURA DE CONTEÚDO, determinística e idêntica em
-     editor/abrir/qualquer monitor. O dado t._h continua salvo no ebooks.js, apenas não é mais aplicado no layout. */
-  /* (aplicação de t._h removida de propósito) */
+  /* _h = altura extra de CARDS (↕ expandir pra baixo) — a margem negativa compensa o fluxo: NÃO empurra o vizinho de baixo */
+  if(!MOBILE&&t._h){Array.prototype.forEach.call(document.querySelectorAll('[data-move]'),function(e){var k=e.getAttribute('data-move'),H=parseFloat(t._h[k]);if(!H)return;var h0=e.offsetHeight;if(H>h0+1){e.style.minHeight=H+'px';e.style.marginBottom=(-(H-h0))+'px';}});}
   /* fonte e cor POR TEXTO (barra de texto do editor) — vale também no celular */
   if(t._ff){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._ff[k])e.style.fontFamily=t._ff[k];});}
   if(t._color){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._color[k])e.style.color=t._color[k];});}
@@ -539,7 +536,6 @@
      continua em tamanho normal (não encolhe). Editor e publicado idênticos (roda nos dois). ===== */
   if(!MOBILE&&t._pos){(function(){
     function clampTitulosBonus(){
-      return;   /* DESATIVADO (determinismo/regra 6): media o topo da seção e reescrevia o transform após render — dependia de escala/fonte. Os títulos vêm 100% do _pos salvo (aplicado no bloco geral de _pos). */
       var sec=document.querySelector('[data-sec="bonus"]');if(!sec)return;
       var limTop=sec.getBoundingClientRect().top+4;   /* topo da seção de bônus (logo abaixo da faixa) */
       Array.prototype.forEach.call(document.querySelectorAll('.bcard [data-edit$=".titulo"]'),function(T){
@@ -613,7 +609,6 @@
   function _setScale(el,s){var tr=el.style.transform||'';el.style.transform=/scale\([-\d.]+\)/.test(tr)?tr.replace(/scale\([-\d.]+\)/,'scale('+s+')'):((tr+' scale('+s+')').trim());}
   function _resetScale(el){if(el.getAttribute('data-s0')==null)el.setAttribute('data-s0',String(_scaleOf(el)));_setScale(el,parseFloat(el.getAttribute('data-s0'))||1);}
   function fitText(){
-    return;   /* DESATIVADO (determinismo/regra 6): era auto-shrink por getBoundingClientRect — limiar dependia da escala (editor 1:1 vs abrir escalado) e do monitor. Overflow agora resolve por _fs/_w salvos no dado. */
     if(MOBILE)return;
     var vw=document.documentElement.clientWidth;
     /* 1) BONUS: o texto nao pode BATER NO ROTULO (BONUS x) nem vazar do card */
