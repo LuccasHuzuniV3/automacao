@@ -185,8 +185,8 @@
     .hero .pill{order:1}.hero h1{order:2}.hero .sub{order:3}.art{order:4;min-height:auto}.hero .cta{order:5}.hero .proof{order:6}   /* mobile: subtítulo -> imagem -> CTA logo ABAIXO da imagem */
     .art img{width:min(78vw,340px)!important}
     .blkrow.two{grid-template-columns:1fr}.vidcol{min-height:230px}.secimg{align-self:stretch}
-    .bgrid{grid-template-columns:1fr}.bcard{grid-template-columns:1fr;justify-items:center;text-align:center}
-    .bcard>div{width:100%}.bcard img{width:min(78vw,300px)!important;display:block;margin:6px auto 0;position:relative;left:5px}
+    .bgrid{grid-template-columns:1fr}.bcard{grid-template-columns:1fr;justify-items:center;text-align:center;padding-left:8px;padding-right:8px}
+    .bcard>div{width:100%}.bcard img{width:min(96vw,420px)!important;display:block;margin:6px auto 0;position:relative;left:5px}
     .guarantee{grid-template-columns:1fr;justify-items:center}.gtxt{text-align:center}.ftrow{justify-content:center;text-align:center}.ftleft{display:flex;flex-direction:column;align-items:center}.social{justify-content:center}.contact{justify-content:center}
     .offer{grid-template-columns:1fr}.offerBook{order:-1}
     .bwrap{gap:16px}
@@ -198,15 +198,16 @@
     .cta{width:100%;padding:16px 22px;font-size:clamp(18px,5vw,22px)}
     .trustbar{padding:16px 0}.titem .tic{width:48px;height:48px}.titem .tic svg{width:22px;height:22px}.titem .tl{font-size:12px}.titem{margin:0 20px}
     .giftbar{height:118px;margin:8px 0}.ribbon{font-size:clamp(13px,4vw,18px);padding:10px 0}
-    .bonus{padding:30px 0}.bcard .bt{font-size:23px}.bcard p{font-size:13px}
+    .bonus{padding:30px 0}.bcard .bt{font-size:25px}.bcard p{font-size:15px;line-height:1.5}
     .bwrap{flex-direction:column;gap:8px;max-width:100%}
-    .bitem.main img{width:min(80vw,360px)}.bitem.sm img{width:min(52vw,210px)}
+    .bitem.main img{width:min(92vw,400px)}.bitem.sm img{width:min(58vw,240px)}
     .bplus{font-size:38px}
     .bbonuses{flex-direction:column;gap:20px;align-items:center}
     .scarcity{font-size:clamp(24px,7vw,40px);padding:22px 0 8px}
     .offer{gap:18px;padding:14px 0 24px}.offer::before{display:none}.offer::after{left:0;right:0}
-    .offerInfo .line{font-size:clamp(26px,7vw,34px);display:flex;flex-direction:column;align-items:center;gap:2px;line-height:1.12}.validade{font-size:clamp(17px,4.5vw,22px)}.pb .de{font-size:clamp(20px,5vw,26px)}.pb .por{font-size:clamp(22px,5.5vw,30px)}.price{font-size:clamp(40px,12vw,56px)}
-    .block{padding:16px}.block h3{font-size:18px}.block p{font-size:14px}
+    .offerInfo .line{font-size:clamp(27px,7.2vw,34px);display:flex;flex-direction:column;align-items:center;gap:5px;line-height:1.08}.offerInfo .line .de{font-size:.72em;opacity:.85;margin-right:0}.offerInfo .line #ofertaTit{font-size:.64em;letter-spacing:.04em;opacity:.95}.offerInfo .line .por{font-size:1.36em}.validade{font-size:clamp(20px,5.6vw,27px);margin-top:2px}.pb .de{font-size:clamp(20px,5vw,26px)}.pb .por{font-size:clamp(22px,5.5vw,30px)}.price{font-size:clamp(40px,12vw,56px)}
+    .sub{font-size:clamp(16px,4.4vw,19px);line-height:1.5}
+    .block{padding:16px}.block h3{font-size:19px}.block p{font-size:15px;line-height:1.55}
     .guarantee{padding:10px 4px;margin:24px auto}.badge{transform:scale(.92)}
     footer{padding:34px 16px 44px}.social a{width:42px;height:42px}
   }
@@ -364,9 +365,9 @@
   set('h1a',t.h1a);set('h1b',t.h1b);set('sub',t.sub);set('precoDe',t.precoDe);set('precoLbl',t.precoLbl);set('preco',t.preco);
   (function(){var isLivre=(t.hlMode==='livre'),livre=isLivre&&!MOBILE,hp=t.hlPart||'h1b',ea=document.getElementById('h1a'),eb=document.getElementById('h1b');
     var aT=ea&&ea.textContent.trim(),bT=eb&&eb.textContent.trim(),hlA=false,hlB=false;
-    if(!livre){   /* destaque INLINE (desktop modo "texto", OU qualquer mobile) */
-      if(isLivre&&MOBILE){hlA=!!aT;hlB=!!bT;}   /* modo "livre" no CELULAR: a caixa absoluta não cabe -> destaca o TÍTULO TODO (igual o desktop cobre tudo) */
-      else{hlA=(hp==='h1a'||hp==='both');hlB=(hp==='h1b'||hp==='both');if(hp==='h1b'&&!bT&&aT){hlA=true;hlB=false;}else if(hp==='h1a'&&!aT&&bT){hlB=true;hlA=false;}}
+    if(!livre){   /* destaque INLINE (mobile, ou desktop modo "texto"): aplica SÓ na PARTE escolhida (hp = "Título — parte destacada"). Fallback p/ a outra parte se a escolhida estiver vazia (pra nunca sumir). */
+      hlA=(hp==='h1a'||hp==='both');hlB=(hp==='h1b'||hp==='both');
+      if(hp==='h1b'&&!bT&&aT){hlA=true;hlB=false;}else if(hp==='h1a'&&!aT&&bT){hlB=true;hlA=false;}
     }
     if(ea)ea.className=hlA?'hl':'';
     if(eb)eb.className=hlB?'hl':'';
