@@ -210,6 +210,34 @@
     .guarantee{padding:10px 4px;margin:24px auto}.badge{transform:scale(.92)}
     footer{padding:34px 16px 44px}.social a{width:42px;height:42px}
   }
+  /* ===== PRANCHETA FIXA (desktop >=881): a #stage é SEMPRE 1280 interno e escala pra caber a tela.
+     Por isso aqui os tamanhos são FIXOS (sem vw): assim EDITOR, PUBLICADO e QUALQUER resolução
+     mostram exatamente a MESMA quebra de linha e layout — muda só a escala (igual Canva).
+     Os valores são o "cap" das clamps -> telas largas (que já estavam no cap) não mudam nada;
+     editor/telas estreitas passam a bater. O mobile (<=880) NÃO é tocado. ===== */
+  @media (min-width:881px){
+    .wrap{padding:0 48px}
+    h1{font-size:var(--szTitle,46px)}
+    .sub{font-size:18px}
+    .price{font-size:54px}
+    .cta{font-size:30px}
+    .titem{margin:0 80px}
+    .titem .tl{font-size:18px}
+    .block h3{font-size:23px}
+    .block p{font-size:16px}
+    .giftbar{height:205px}
+    .bwrap{gap:46px}
+    .bitem.main img{width:460px}
+    .bitem.sm img{width:240px}
+    .pb .de{font-size:26px}
+    .pb .por{font-size:30px}
+    .bplus{font-size:56px}
+    .bbonuses{gap:28px}
+    .scarcity{font-size:58px}
+    .offerInfo .line{font-size:44px}
+    .validade{font-size:24px}
+    .gtxt h3{font-size:28px}
+  }
   /* marcações de edição: SÓ no editor (html.edit) — a página publicada fica 100% limpa */
   html.edit [contenteditable="true"]{outline:1px dashed rgba(255,255,255,.3);outline-offset:3px;cursor:text;border-radius:3px;transition:outline-color .1s}
   html.edit [contenteditable="true"]:hover{outline-color:var(--accent)}
@@ -476,7 +504,7 @@
   if(!MOBILE&&t._fs){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fs[k])e.style.fontSize=t._fs[k];});}
   if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
   /* _w = largura (expansão lateral) dos TEXTOS — aplica como width do inline-block (controla a quebra de linha). */
-  if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._w[k]){e.style.width=t._w[k];e.style.maxWidth='none';}});}
+  if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-img]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-img');if(t._w[k]){var pp=String(t._w[k]).split(' ');e.style.width=pp[0];e.style.maxWidth='none';if(e.hasAttribute('data-img')&&pp[1]){e.style.height=pp[1];e.style.objectFit='cover';}}});}   /* texto: só largura. imagem: "Wpx Hpx" -> largura E altura travada + cover (mexe SÓ na largura, não distorce nem empurra o resto) */
   /* _h = altura extra de CARDS (↕ expandir pra baixo) — a margem negativa compensa o fluxo: NÃO empurra o vizinho de baixo */
   if(!MOBILE&&t._h){Array.prototype.forEach.call(document.querySelectorAll('[data-move]'),function(e){var k=e.getAttribute('data-move'),H=parseFloat(t._h[k]);if(!H)return;var h0=e.offsetHeight;if(H>h0+1){e.style.minHeight=H+'px';e.style.marginBottom=(-(H-h0))+'px';}});}
   /* fonte e cor POR TEXTO (barra de texto do editor) — vale também no celular */
@@ -630,9 +658,12 @@
   var ticking=false;
   function fit(){
     var vw=document.documentElement.clientWidth||window.innerWidth||REF;
-    if(EDIT||vw<=880){ stage.style.width='';stage.style.transform='';stage.style.transformOrigin='';wrap.style.height='';return; }  /* editor (1:1) ou mobile = fluido, sem escala */
+    if(vw<=880){ stage.style.width='';stage.style.transform='';stage.style.transformOrigin='';wrap.style.height='';return; }  /* mobile = fluido, sem prancheta nem escala */
+    /* DESKTOP (editor E publicado): a prancheta é SEMPRE 1280 interno -> layout/quebra de linha IDÊNTICOS nos dois.
+       Só muda a apresentação: editor 1:1 (sem escala, pra as alças baterem) e publicado escala 1280->tela. */
     stage.style.width=REF+'px';
     stage.style.transformOrigin='top left';
+    if(EDIT){ stage.style.transform='';wrap.style.height=''; return; }   /* editor: 1280 em 1:1; se a janela for menor, o frameWrap rola */
     var scale=vw/REF;
     stage.style.transform='scale('+scale+')';
     wrap.style.height=Math.ceil(stage.offsetHeight*scale)+'px';   /* sincroniza altura: sem gap nem scroll sobrando */

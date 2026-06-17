@@ -912,8 +912,10 @@ function wireInlineEdit(){
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);tdrag=false;cgHide();save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
       function tstart(e){e.preventDefault();e.stopPropagation();tdrag=true;
-        var p0=getTP(),sx0=e.clientX,sy0=e.clientY,r0=el.getBoundingClientRect(),sw0=(r0.width||40),baseW=sw0/(p0.s||1);
-        function mm(ev){var d=((ev.clientX-sx0)+(ev.clientY-sy0))/2;var ns=Math.max(0.2,Math.round((sw0+d)/baseW*100)/100);var p={x:p0.x,y:p0.y,s:ns};applyTP(p);saveTP(p);tlayout();}
+        var p0=getTP(),sx0=e.clientX,sy0=e.clientY,r0=el.getBoundingClientRect(),s0=(p0.s||1),sw0=(r0.width||40),baseW=sw0/s0,baseH=(r0.height||40)/s0;
+        /* ANCORA o canto superior-esquerdo ao escalar: o transform-origin é o centro, entao compensamos x/y pra
+           o elemento NAO "fugir" crescendo pros dois lados. Mantem o modelo (centro) -> editor=publicado e nao desloca os outros. */
+        function mm(ev){var d=((ev.clientX-sx0)+(ev.clientY-sy0))/2;var ns=Math.max(0.2,Math.round((sw0+d)/baseW*100)/100);var p={x:Math.round(p0.x+baseW*(ns-s0)/2),y:Math.round(p0.y+baseH*(ns-s0)/2),s:ns};applyTP(p);saveTP(p);tlayout();}
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);tdrag=false;save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
       function twStart(e){e.preventDefault();e.stopPropagation();tdrag=true;
@@ -1050,7 +1052,7 @@ function wireInlineEdit(){
     });
     Array.prototype.forEach.call(doc.querySelectorAll('[data-img]'),function(el){
       var imgPath=el.getAttribute('data-img');
-      var box=null,handle=null,bar=null,ilabel=null,dragging=false;
+      var box=null,handle=null,bar=null,ilabel=null,whdl=null,dragging=false;
       function setSz(val){var P=model[curEbook].paises[curPais];
         if(imgPath.indexOf('img.')===0){var map={'img.hero':'szHero','img.blocos':'szBlocos','img.garantia':'szSeal','img.atendente':'szAtend'};var k=map[imgPath];if(k){if(!model[curEbook].tema)model[curEbook].tema={};model[curEbook].tema[k]=val;}}
         else{setByPath(P.t,imgPath.replace(/\.img$/,'.sz'),val);}}
@@ -1063,9 +1065,9 @@ function wireInlineEdit(){
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);dragging=false;cgHide();save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
       function ri(){var r=el.getBoundingClientRect();var sx=doc.documentElement.scrollLeft||doc.body.scrollLeft||0,sy=doc.documentElement.scrollTop||doc.body.scrollTop||0;return {l:r.left+sx,t:r.top+sy,w:r.width,h:r.height};}
-      function layout(){if(!box)return;var r=ri();box.style.left=r.l+'px';box.style.top=r.t+'px';box.style.width=r.w+'px';box.style.height=r.h+'px';handle.style.left=(r.l+r.w-9)+'px';handle.style.top=(r.t+r.h-9)+'px';bar.style.left=r.l+'px';bar.style.top=(r.t-32)+'px';if(ilabel){ilabel.style.left=r.l+'px';ilabel.style.top=(r.t+r.h+5)+'px';}}
-      function hide(){[box,handle,bar,ilabel].forEach(function(x){if(x&&x.parentNode)x.parentNode.removeChild(x);});box=handle=bar=ilabel=null;}
-      function maybeHide(){setTimeout(function(){if(!dragging&&box&&!el.matches(':hover')&&!handle.matches(':hover')&&!bar.matches(':hover'))hide();},180);}
+      function layout(){if(!box)return;var r=ri();box.style.left=r.l+'px';box.style.top=r.t+'px';box.style.width=r.w+'px';box.style.height=r.h+'px';handle.style.left=(r.l+r.w-9)+'px';handle.style.top=(r.t+r.h-9)+'px';bar.style.left=r.l+'px';bar.style.top=(r.t-32)+'px';if(ilabel){ilabel.style.left=r.l+'px';ilabel.style.top=(r.t+r.h+5)+'px';}if(whdl){whdl.style.left=(r.l+r.w-7)+'px';whdl.style.top=(r.t+r.h/2-14)+'px';}}
+      function hide(){[box,handle,bar,ilabel,whdl].forEach(function(x){if(x&&x.parentNode)x.parentNode.removeChild(x);});box=handle=bar=ilabel=whdl=null;}
+      function maybeHide(){setTimeout(function(){if(!dragging&&box&&!el.matches(':hover')&&!handle.matches(':hover')&&!bar.matches(':hover')&&(!whdl||!whdl.matches(':hover')))hide();},180);}
       function startDrag(e){e.preventDefault();e.stopPropagation();dragging=true;
         /* TODAS as imagens (inclusive img.blocos) AUMENTAM por ESCALA (transform), igual à hero —
            não mexe no layout, então nunca empurra nada embaixo e não cria espaço sobrando. */
@@ -1073,9 +1075,18 @@ function wireInlineEdit(){
         function mm(ev){var d=((ev.clientX-sx0)+(ev.clientY-sy0))/2;var ns=Math.max(0.2,Math.round((sw0+d)/baseW*100)/100);var p={x:p0.x,y:p0.y,s:ns};applyT(p);savePos(p);layout();var hsx=doc.documentElement.scrollLeft||0,hsy=doc.documentElement.scrollTop||0;handle.style.left=(ev.clientX+hsx-9)+'px';handle.style.top=(ev.clientY+hsy-9)+'px';}
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);dragging=false;save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
+      /* BARRA LATERAL (largura) da imagem — estreita/alarga pela direita, salvo em _w[imgPath].
+         Mesma mecânica do texto e da caixa de fundo; height:auto mantém proporção (sem distorcer). */
+      function iwStart(e){e.preventDefault();e.stopPropagation();dragging=true;
+        var p0=getP(),s=p0.s||1,r0=el.getBoundingClientRect(),w0=r0.width/s,h0=Math.round(r0.height/s),sx0=e.clientX;
+        el.style.height=h0+'px';el.style.objectFit='cover';   /* TRAVA a altura: o ↔ mexe SÓ na largura (recorta, não distorce, não empurra o resto) */
+        function mm(ev){var nw=Math.max(40,Math.round(w0+(ev.clientX-sx0)/s));el.style.width=nw+'px';el.style.maxWidth='none';var P=model[curEbook].paises[curPais];if(!P.t._w)P.t._w={};P.t._w[imgPath]=nw+'px '+h0+'px';layout();}
+        function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);dragging=false;save();}
+        doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
       function show(){if(box)return;
         box=doc.createElement('div');box.style.cssText='position:absolute;z-index:9990;border:2px solid #2dd4bf;border-radius:5px;pointer-events:none';
         handle=mkHandle(doc,'⤢','#2dd4bf','#06251f','nwse-resize','aumentar/diminuir');
+        whdl=mkHandle(doc,'↔','#ff9f1c','#5a3500','ew-resize','arraste para ESTREITAR/ALARGAR a imagem (largura)');
         bar=doc.createElement('div');bar.style.cssText='position:absolute;z-index:9992;pointer-events:auto';
         var sw=doc.createElement('button');sw.textContent='↻ trocar imagem';sw.style.cssText='cursor:pointer;border:1px solid rgba(45,212,191,.6);background:rgba(8,12,20,.92);color:#e8eef9;font-weight:700;font-size:12px;height:26px;padding:0 10px;border-radius:7px';
         sw.onmousedown=function(e){e.preventDefault();e.stopPropagation();};sw.onclick=function(e){e.preventDefault();e.stopPropagation();pickImageFor(imgPath);};
@@ -1087,8 +1098,9 @@ function wireInlineEdit(){
         hb2.onclick=function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());var T=model[curEbook].paises[curPais].t;if(!T._hide)T._hide={};T._hide[imgPath]=1;save();updatePreview();};
         bar.appendChild(hb2);
         ilabel=mkTag(doc,'🖼️ '+niceName(imgPath),'#f5c518');
-        doc.body.appendChild(box);doc.body.appendChild(handle);doc.body.appendChild(bar);doc.body.appendChild(ilabel);layout();
+        doc.body.appendChild(box);doc.body.appendChild(handle);doc.body.appendChild(whdl);doc.body.appendChild(bar);doc.body.appendChild(ilabel);layout();
         handle.addEventListener('mousedown',startDrag);
+        whdl.addEventListener('mousedown',iwStart);whdl.addEventListener('mouseleave',maybeHide);
         handle.addEventListener('mouseleave',maybeHide);bar.addEventListener('mouseleave',maybeHide);}
       el.style.cursor='move';
       el.addEventListener('mousedown',startMove);
