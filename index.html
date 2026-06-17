@@ -48,6 +48,8 @@
   .xtra{position:absolute;z-index:0;box-shadow:0 10px 32px -8px rgba(120,40,220,.5)}
   h1,.scarcity,.giftbar,.bonus h2,.bcard .bt,.offerInfo .line,.validade{font-family:var(--titleFont)}
   h1 .hl{background:linear-gradient(90deg,var(--hl1,#7c2fe0),var(--hl2,#c98bff));color:var(--hlTxt,#fff);padding:2px 12px;border-radius:4px;text-shadow:0 1px 4px rgba(0,0,0,.5);box-decoration-break:clone;-webkit-box-decoration-break:clone}
+  /* modo "livre"/Degradè no MOBILE: UMA caixa só de degradê atrás do título inteiro (espelha o .hlbox do desktop), em vez do marca-texto raguado por linha */
+  .hero h1.hlblock{background:linear-gradient(90deg,var(--hl1,#7c2fe0),var(--hl2,#c98bff));color:var(--hlTxt,#fff);border-radius:10px;padding:6px 16px;text-shadow:0 1px 4px rgba(0,0,0,.5);box-shadow:0 10px 32px -8px var(--hl1,#7c2fe0);width:fit-content;max-width:100%;margin-left:auto;margin-right:auto}
   .sub{margin-top:22px;font-size:clamp(15px,1.5vw,18px);color:var(--muted);max-width:560px;line-height:1.6}
   .priceRow{display:flex;align-items:baseline;gap:13px;flex-wrap:wrap;margin-top:30px}
   .priceDe{color:#9a9383;text-decoration:line-through;font-size:18px}
@@ -365,12 +367,15 @@
   set('h1a',t.h1a);set('h1b',t.h1b);set('sub',t.sub);set('precoDe',t.precoDe);set('precoLbl',t.precoLbl);set('preco',t.preco);
   (function(){var isLivre=(t.hlMode==='livre'),livre=isLivre&&!MOBILE,hp=t.hlPart||'h1b',ea=document.getElementById('h1a'),eb=document.getElementById('h1b');
     var aT=ea&&ea.textContent.trim(),bT=eb&&eb.textContent.trim(),hlA=false,hlB=false;
-    if(!livre){   /* destaque INLINE (mobile, ou desktop modo "texto"): aplica SÓ na PARTE escolhida (hp = "Título — parte destacada"). Fallback p/ a outra parte se a escolhida estiver vazia (pra nunca sumir). */
+    var mobLivre=isLivre&&MOBILE;   /* modo "livre"/Degradè no CELULAR: vira UMA caixa só atrás do título inteiro (igual o desktop), não o marca-texto por linha */
+    if(!livre&&!mobLivre){   /* destaque INLINE (mobile modo "texto", ou desktop modo "texto"): aplica SÓ na PARTE escolhida (hp = "Título — parte destacada"). Fallback p/ a outra parte se a escolhida estiver vazia (pra nunca sumir). */
       hlA=(hp==='h1a'||hp==='both');hlB=(hp==='h1b'||hp==='both');
       if(hp==='h1b'&&!bT&&aT){hlA=true;hlB=false;}else if(hp==='h1a'&&!aT&&bT){hlB=true;hlA=false;}
     }
     if(ea)ea.className=hlA?'hl':'';
     if(eb)eb.className=hlB?'hl':'';
+    var h1el=ea?ea.parentElement:(eb?eb.parentElement:document.querySelector('.hero h1'));
+    if(h1el){if(mobLivre&&(aT||bT)){h1el.classList.add('hlblock');}else{h1el.classList.remove('hlblock');}}
     var hbox=document.getElementById('hlbox');
     if(hbox){var b=t.hlBox||{};
       if(livre){hbox.style.display='block';hbox.style.left=(b.x||0)+'px';hbox.style.top=(b.y||0)+'px';hbox.style.width=(b.w||360)+'px';hbox.style.height=(b.h||64)+'px';hbox.style.pointerEvents=EDIT?'auto':'none';if(EDIT)hbox.setAttribute('data-hlbox','1');}
