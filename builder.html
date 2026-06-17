@@ -977,6 +977,7 @@ function wireInlineEdit(){
         thandle=mkHandle(doc,'⤢','#2dd4bf','#06251f','nwse-resize','aumentar/diminuir tudo junto');
         twidth=mkHandle(doc,'↔','#ff9f1c','#5a3500','ew-resize','arraste para a LARGURA (expandir lateral)');
         tmove=mkHandle(doc,'✛','#f5c518','#3a2a02','move','arraste para mover');
+        if(fpath==='giftBar'){thandle.style.display='none';twidth.style.display='none';tmove.style.display='none';}   /* fitinha é full-width/fixa: mover/escalar/largura livre a quebram (vira filete). Edita o TEXTO clicando; altura pelo ↕ da barra de SEÇÃO. */
         tlabel=mkTag(doc,'✏️ '+niceName(fpath));
         doc.body.appendChild(tbox);doc.body.appendChild(thandle);doc.body.appendChild(twidth);doc.body.appendChild(tmove);
         if(isList){tdup=mkHandle(doc,'⧉','#b56bff','#1b0b34','pointer','duplicar SÓ este texto (cópia livre) — o bloco inteiro tem a barra na LATERAL','#fff');doc.body.appendChild(tdup);
@@ -992,8 +993,9 @@ function wireInlineEdit(){
         twidth.addEventListener('mousedown',twStart);twidth.addEventListener('mouseleave',tmaybe);
         tmove.addEventListener('mousedown',tmoveStart);tmove.addEventListener('mouseleave',tmaybe);}
       /* arrastar CLICANDO no texto (igual imagem): clique simples = editar · arrastar = mover */
-      el.style.cursor='move';
+      el.style.cursor=(fpath==='giftBar')?'text':'move';
       el.addEventListener('mousedown',function(e){
+        if(fpath==='giftBar')return;                 /* fitinha: clicar só EDITA o texto (sem arrastar/mover -> não colapsa num filete); altura pelo ↕ da SEÇÃO */
         if(doc.activeElement===el)return;            /* já editando: deixa selecionar o texto normal */
         if(e.button!==0)return;
         e.preventDefault();
@@ -1008,7 +1010,7 @@ function wireInlineEdit(){
         }
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);
       });
-      el.__edNudge=function(dx,dy){var p=getTP();p.x=Math.round((p.x||0)+dx);p.y=Math.round((p.y||0)+dy);applyTP(p);saveTP(p);tlayout();};
+      if(fpath!=='giftBar')el.__edNudge=function(dx,dy){var p=getTP();p.x=Math.round((p.x||0)+dx);p.y=Math.round((p.y||0)+dy);applyTP(p);saveTP(p);tlayout();};   /* fitinha não é movível (full-width): sem nudge por seta */
       el.addEventListener('mouseenter',tshow);
       el.addEventListener('mouseleave',tmaybe);
     });
@@ -1419,6 +1421,12 @@ function wireInlineEdit(){
         sbar.appendChild(pc);
         if(hidden){var sh=sbtn('👁','#22a060','MOSTRAR esta seção de novo');sh.onclick=function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());if(t._hide)delete t._hide['sec.'+sk];save();updatePreview();};sbar.appendChild(sh);}
         else{var hd=sbtn('🗑','#ff6b6b','OCULTAR a seção inteira (some da página publicada; dá pra mostrar de novo)');hd.onclick=function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());if(!t._hide)t._hide={};t._hide['sec.'+sk]=1;save();updatePreview();};sbar.appendChild(hd);}
+        if(sk==='gift'){var gh=sbtn('↕','#2dd4bf','ARRASTAR pra ajustar a ALTURA da fitinha (não reordena)');gh.style.cursor='ns-resize';
+          gh.addEventListener('mousedown',function(e){e.preventDefault();e.stopPropagation();undoPush(undoSnap());var sy0=e.clientY,h0=el.offsetHeight;
+            function mm(ev){var H=Math.max(40,Math.round(h0+(ev.clientY-sy0)));el.style.height=H+'px';if(!t._secH)t._secH={};t._secH[sk]=H;slay();}
+            function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);save();}
+            doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);});
+          gh.addEventListener('mouseleave',smaybe);sbar.appendChild(gh);}
         doc.body.appendChild(sbar);slay();
         sbar.addEventListener('mouseleave',smaybe);}
       el.addEventListener('mouseenter',sshow);el.addEventListener('mouseleave',smaybe);
@@ -1598,7 +1606,7 @@ function resetLayout(){
   /* fonte e cor POR TEXTO (barra de texto) */
   delete P.t._ff;delete P.t._color;
   /* seções: ordem, cores de fundo e ocultos */
-  delete P.t._secOrder;delete P.t._secBg;delete P.t._hide;
+  delete P.t._secOrder;delete P.t._secBg;delete P.t._hide;delete P.t._secH;
   /* elementos livres (degradês/caixas/textos soltos) e degradê do título */
   delete P.t.extras;delete P.t.hlBox;
   /* tamanhos por item e cores por card */

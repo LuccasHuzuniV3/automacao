@@ -182,12 +182,12 @@
     .giftbar,.bcard,.pb .de,.offerInfo .line .de{position:relative!important}
     .hero{display:flex!important;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px 0 18px}
     .herotext{display:contents}
-    .hero .pill{order:1}.hero h1{order:2}.art{order:3;min-height:auto}.hero .sub{order:4}.hero .cta{order:5}.hero .proof{order:6}
+    .hero .pill{order:1}.hero h1{order:2}.hero .sub{order:3}.hero .cta{order:4}.art{order:5;min-height:auto}.hero .proof{order:6}   /* mobile: CTA logo após o subtítulo (1ª tela), imagem depois */
     .art img{width:min(78vw,340px)!important}
     .blkrow.two{grid-template-columns:1fr}.vidcol{min-height:230px}.secimg{align-self:stretch}
     .bgrid{grid-template-columns:1fr}.bcard{grid-template-columns:1fr;justify-items:center;text-align:center}
-    .bcard>div{width:100%}.bcard img{width:min(60vw,220px)!important;display:block;margin:6px auto 0;position:relative;left:5px}
-    .guarantee{grid-template-columns:1fr;justify-items:center}.ftrow{justify-content:center;text-align:center}
+    .bcard>div{width:100%}.bcard img{width:min(78vw,300px)!important;display:block;margin:6px auto 0;position:relative;left:5px}
+    .guarantee{grid-template-columns:1fr;justify-items:center}.gtxt{text-align:center}.ftrow{justify-content:center;text-align:center}.ftleft{display:flex;flex-direction:column;align-items:center}.social{justify-content:center}.contact{justify-content:center}
     .offer{grid-template-columns:1fr}.offerBook{order:-1}
     .bwrap{gap:16px}
   }
@@ -205,7 +205,7 @@
     .bbonuses{flex-direction:column;gap:20px;align-items:center}
     .scarcity{font-size:clamp(24px,7vw,40px);padding:22px 0 8px}
     .offer{gap:18px;padding:14px 0 24px}.offer::before{display:none}.offer::after{left:0;right:0}
-    .offerInfo .line{font-size:clamp(22px,6.2vw,32px)}
+    .offerInfo .line{font-size:clamp(28px,8.5vw,40px)}.validade{font-size:clamp(17px,4.5vw,22px)}.pb .de{font-size:clamp(20px,5vw,26px)}.pb .por{font-size:clamp(22px,5.5vw,30px)}.price{font-size:clamp(40px,12vw,56px)}
     .block{padding:16px}.block h3{font-size:18px}.block p{font-size:14px}
     .guarantee{padding:10px 4px;margin:24px auto}.badge{transform:scale(.92)}
     footer{padding:34px 16px 44px}.social a{width:42px;height:42px}
@@ -238,6 +238,12 @@
     .validade{font-size:24px}
     .gtxt h3{font-size:28px}
   }
+  /* ===== ANIMAÇÃO DE ENTRADA (só na página publicada): zoom-in suave + fade na CAPA da hero.
+     Usa só transform+opacity (não mexe em layout, largura/altura nem posição salva). transform reverte
+     ao fim (sem fill-mode) -> não cria containing-block permanente. Desligada no editor (html.edit) e em prefers-reduced-motion. ===== */
+  @keyframes heroZoomIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+  html:not(.edit) .art{animation:heroZoomIn 1.15s cubic-bezier(.2,.7,.2,1)}
+  @media (prefers-reduced-motion:reduce){html .art{animation:none!important}}
   /* marcações de edição: SÓ no editor (html.edit) — a página publicada fica 100% limpa */
   html.edit [contenteditable="true"]{outline:1px dashed rgba(255,255,255,.3);outline-offset:3px;cursor:text;border-radius:3px;transition:outline-color .1s}
   html.edit [contenteditable="true"]:hover{outline-color:var(--accent)}
@@ -502,9 +508,11 @@
   var EDMAP={banner:'banner',eyebrow:'eyebrow',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato'};
   Object.keys(EDMAP).forEach(function(id){var e=document.getElementById(id);if(e)e.setAttribute('data-edit',EDMAP[id]);});
   if(!MOBILE&&t._fs){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fs[k])e.style.fontSize=t._fs[k];});}
-  if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
+  /* _secH = ALTURA custom de seção (ex.: fitinha/gift) — só desktop (mobile mantém a altura responsiva). Px fixo determinístico, sem medição -> editor=abrir. */
+  if(!MOBILE&&t._secH){Object.keys(t._secH).forEach(function(k){var s=document.querySelector('[data-sec="'+k+'"]');var H=parseInt(t._secH[k],10);if(s&&H)s.style.height=H+'px';});}
+  if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');if(k==='giftBar')return;var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
   /* _w = largura (expansão lateral) dos TEXTOS — aplica como width do inline-block (controla a quebra de linha). */
-  if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-img]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-img');if(t._w[k]){var pp=String(t._w[k]).split(' ');e.style.width=pp[0];e.style.maxWidth='none';if(e.hasAttribute('data-img')&&pp[1]){e.style.height=pp[1];e.style.objectFit='cover';}}});}   /* texto: só largura. imagem: "Wpx Hpx" -> largura E altura travada + cover (mexe SÓ na largura, não distorce nem empurra o resto) */
+  if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-img]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-img');if(k==='giftBar')return;if(t._w[k]){var pp=String(t._w[k]).split(' ');e.style.width=pp[0];e.style.maxWidth='none';if(e.hasAttribute('data-img')&&pp[1]){e.style.height=pp[1];e.style.objectFit='cover';}}});}   /* giftBar (fitinha) é full-width por design: largura livre a estoura num filete -> ignorada */   /* texto: só largura. imagem: "Wpx Hpx" -> largura E altura travada + cover (mexe SÓ na largura, não distorce nem empurra o resto) */
   /* _h DESATIVADO: aplicava minHeight + margem NEGATIVA = -(H - offsetHeight), com offsetHeight medido em runtime
      (dependente do carregamento da fonte) -> a altura do card variava entre monitores/carregamentos (viola a regra 6
      e quebrava editor=abrir entre telas). Agora os cards têm ALTURA DE CONTEÚDO, determinística e idêntica em
@@ -517,7 +525,7 @@
   if(!MOBILE&&t._pos){
     var _free=[];
     Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(E){
-      var k=E.getAttribute('data-edit');if(!_posReal(t._pos[k]))return;
+      var k=E.getAttribute('data-edit');if(k==='giftBar')return;if(!_posReal(t._pos[k]))return;   /* fitinha (full-width) nunca vira "texto livre" -> não encolhe num filete */
       if(!/^(DIV|P|H[1-6])$/.test(E.tagName))return;   /* só TEXTO de bloco (empilhado) — spans inline (preços) não empurram vertical e bagunçam baseline */
       var pe=E.parentNode;if(!pe||(pe.getAttribute&&pe.getAttribute('data-free')==='1'))return;
       var w=E.offsetWidth,h=E.offsetHeight;if(!w||!h)return;
