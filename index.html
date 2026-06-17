@@ -362,9 +362,12 @@
   try{document.title=[t.h1a,t.h1b].filter(Boolean).join(' ')||t.capaTit||'Pagina de venda';}catch(e){}
   set('banner',t.banner);show('banner',!!t.banner);set('eyebrow',t.eyebrow);show('eyebrow',!!t.eyebrow);
   set('h1a',t.h1a);set('h1b',t.h1b);set('sub',t.sub);set('precoDe',t.precoDe);set('precoLbl',t.precoLbl);set('preco',t.preco);
-  (function(){var livre=(t.hlMode==='livre')&&!MOBILE,hp=t.hlPart||'h1b',ea=document.getElementById('h1a'),eb=document.getElementById('h1b');
-    var aT=ea&&ea.textContent.trim(),bT=eb&&eb.textContent.trim(),hlA=(!livre&&(hp==='h1a'||hp==='both')),hlB=(!livre&&(hp==='h1b'||hp==='both'));
-    if(!livre){if(hp==='h1b'&&!bT&&aT){hlA=true;hlB=false;}else if(hp==='h1a'&&!aT&&bT){hlB=true;hlA=false;}}   /* se a parte escolhida do destaque estiver VAZIA (comum no mobile c/ modo "livre"), aplica na que TEM texto -> o degradê sempre aparece */
+  (function(){var isLivre=(t.hlMode==='livre'),livre=isLivre&&!MOBILE,hp=t.hlPart||'h1b',ea=document.getElementById('h1a'),eb=document.getElementById('h1b');
+    var aT=ea&&ea.textContent.trim(),bT=eb&&eb.textContent.trim(),hlA=false,hlB=false;
+    if(!livre){   /* destaque INLINE (desktop modo "texto", OU qualquer mobile) */
+      if(isLivre&&MOBILE){hlA=!!aT;hlB=!!bT;}   /* modo "livre" no CELULAR: a caixa absoluta não cabe -> destaca o TÍTULO TODO (igual o desktop cobre tudo) */
+      else{hlA=(hp==='h1a'||hp==='both');hlB=(hp==='h1b'||hp==='both');if(hp==='h1b'&&!bT&&aT){hlA=true;hlB=false;}else if(hp==='h1a'&&!aT&&bT){hlB=true;hlA=false;}}
+    }
     if(ea)ea.className=hlA?'hl':'';
     if(eb)eb.className=hlB?'hl':'';
     var hbox=document.getElementById('hlbox');
