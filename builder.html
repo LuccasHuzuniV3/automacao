@@ -533,8 +533,8 @@ function migrarLayoutTraducoes(){
   if(mudou){ try{localStorage.setItem(WS_STATEKEY,JSON.stringify(model));localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){} if(typeof APP!=='undefined'&&APP){try{apiSave();}catch(e){}} }
 }
 var diskT;
-function save(){try{localStorage.setItem(WS_STATEKEY,JSON.stringify(model));}catch(e){}localStorage.setItem('BUILDER_DOMINIO',$('dominio').value.trim());if($('viewToken'))localStorage.setItem('BUILDER_VIEWTOKEN',$('viewToken').value.trim());
-  if(APP){try{localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){}clearTimeout(diskT);diskT=setTimeout(function(){apiSave();},700);}}
+function save(skipDisk){try{localStorage.setItem(WS_STATEKEY,JSON.stringify(model));}catch(e){}localStorage.setItem('BUILDER_DOMINIO',$('dominio').value.trim());if($('viewToken'))localStorage.setItem('BUILDER_VIEWTOKEN',$('viewToken').value.trim());
+  if(APP){try{localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){}if(!skipDisk){clearTimeout(diskT);diskT=setTimeout(function(){apiSave();},700);}}}   /* skipDisk: no boot grava SÓ no navegador, NUNCA no disco — evita um rascunho velho sobrescrever dados bons (disco só grava em edição real) */
 
 /* campo de imagem com botao "escolher do PC" */
 function imgField(f,getv,setv){
@@ -1237,7 +1237,7 @@ function wireInlineEdit(){
       function ex(){return (model[curEbook].paises[curPais].t.extras||[])[idx]||{};}
       function eri(){var r=el.getBoundingClientRect();var sx=doc.documentElement.scrollLeft||0,sy=doc.documentElement.scrollTop||0;return {l:r.left+sx,t:r.top+sy,w:r.width,h:r.height};}
       function clampN(v,a,b){return Math.max(a,Math.min(b,v));}
-      el.__edNudge=function(dx,dy){var o=ex();if(!o.fw){o.x=Math.round((o.x||0)+dx);el.style.left=o.x+'px';}o.y=Math.round((o.y||0)+dy);el.style.top=o.y+'px';elay();save();};
+      el.__edNudge=function(dx,dy){var o=ex();if(isTx||!o.fw){o.x=Math.round((o.x||0)+dx);el.style.left=o.x+'px';}o.y=Math.round((o.y||0)+dy);el.style.top=o.y+'px';elay();save();};   /* isTx: em TEXTO o 'fw' é peso da fonte (não largura-total), então sempre move no X */
       function elay(){if(!box)return;var r=eri();
         /* controles SEMPRE visíveis na tela, mesmo com a caixa gigante ou meio fora da janela */
         var vx=doc.documentElement.scrollLeft||0,vy=doc.documentElement.scrollTop||0,vw=doc.defaultView.innerWidth||1200,vh=doc.defaultView.innerHeight||800;
@@ -1252,11 +1252,11 @@ function wireInlineEdit(){
       /* tooltip de medidas estilo Canva (l: largura · a: altura) enquanto arrasta */
       function tipShow(){if(tipSz)return;tipSz=doc.createElement('div');tipSz.style.cssText='position:absolute;z-index:99999;background:#111826;color:#fff;font:700 11px Inter,system-ui;padding:4px 8px;border-radius:6px;pointer-events:none;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.5)';doc.body.appendChild(tipSz);}
       function tipMove(ev){if(!tipSz)return;var o=ex(),sx=doc.documentElement.scrollLeft||0,sy=doc.documentElement.scrollTop||0;
-        var W=o.fw?Math.round(el.getBoundingClientRect().width):Math.round(o.w||el.getBoundingClientRect().width);
+        var W=(!isTx&&o.fw)?Math.round(el.getBoundingClientRect().width):Math.round(o.w||el.getBoundingClientRect().width);
         tipSz.textContent='l: '+W+'  a: '+Math.round(o.h||el.getBoundingClientRect().height);
         tipSz.style.left=(ev.clientX+sx+14)+'px';tipSz.style.top=(ev.clientY+sy+16)+'px';}
       function tipHide(){if(tipSz&&tipSz.parentNode)tipSz.parentNode.removeChild(tipSz);tipSz=null;}
-      function emove(e){e.preventDefault();e.stopPropagation();xdrag=true;undoPush(undoSnap());var o=ex(),x0=o.x||0,y0=o.y||0,sx0=e.clientX,sy0=e.clientY,fwm=!!o.fw;
+      function emove(e){e.preventDefault();e.stopPropagation();xdrag=true;undoPush(undoSnap());var o=ex(),x0=o.x||0,y0=o.y||0,sx0=e.clientX,sy0=e.clientY,fwm=(!isTx&&!!o.fw);   /* TEXTO nunca é largura-total (fw=peso da fonte) -> libera o arraste horizontal */
         function mm(ev){if(!fwm){o.x=Math.round(x0+(ev.clientX-sx0));el.style.left=o.x+'px';}o.y=Math.round(y0+(ev.clientY-sy0));el.style.top=o.y+'px';elay();var sn=cgSnap(el.getBoundingClientRect());var ch=false;if(!fwm&&sn.dx){o.x+=sn.dx;el.style.left=o.x+'px';ch=true;}if(sn.dy){o.y+=sn.dy;el.style.top=o.y+'px';ch=true;}if(ch)elay();}
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);xdrag=false;cgHide();save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
@@ -2350,11 +2350,11 @@ function shareModal(eb,ps,paisNome,base){
   function gen(){
     var scope=$('shareTrad').checked?'ebook':'pais';
     $('shareGen').disabled=true;$('shareGen').textContent='Gerando...';
-    fetch('/api/share/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({perm:'edit',ebook:eb,pais:ps,scope:scope})}).then(function(r){return r.json();}).then(function(d){
+    fetch('/api/share/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({perm:'edit',ebook:eb,pais:ps,scope:scope,ws:WS})}).then(function(r){return r.json();}).then(function(d){
       $('shareGen').disabled=false;$('shareGen').textContent='Gerar link';
       if(!d||!d.ok){toast('Erro ao gerar link');return;}
       curToken=d.token;
-      $('shareLink').value=(base?base:'SUA-URL-DO-TUNEL')+'/builder.html?share='+d.token;
+      $('shareLink').value=(base?base:'SUA-URL-DO-TUNEL')+'/builder.html?share='+d.token+(WS!=='principal'?('&ws='+WS):'');
       $('shareCopy').style.display='';$('shareRevoke').style.display='';$('shareCopy').textContent='Copiar';
     }).catch(function(){$('shareGen').disabled=false;$('shareGen').textContent='Gerar link';toast('Sem conexão com o app (start.bat aberto?)');});
   }
@@ -2376,7 +2376,8 @@ function applyGuestUI(scope){
     var pt2=$('paisTabs');if(pt2)pt2.style.display='none';
     var bm=$('btnMulti');if(bm)bm.style.display='none';  // so este pais: sem multi-idioma
   }
-  var txt=(scope==='ebook')?('✏️ Convidado — ebook «'+SHARE.ebook+'» (todos os idiomas — pode traduzir)'):('✏️ Convidado — editando SÓ: '+SHARE.ebook+' / '+SHARE.pais);
+  var wsl=(SHARE.ws&&SHARE.ws!=='principal'&&WS_DEFS[SHARE.ws])?(WS_DEFS[SHARE.ws].icon+' '+WS_DEFS[SHARE.ws].label+' · '):'';
+  var txt=wsl+((scope==='ebook')?('✏️ Convidado — ebook «'+SHARE.ebook+'» (todos os idiomas — pode traduzir)'):('✏️ Convidado — editando SÓ: '+SHARE.ebook+' / '+SHARE.pais));
   var tag=document.createElement('div');
   tag.textContent=txt;
   tag.style.cssText='position:fixed;left:10px;bottom:10px;z-index:9999;background:#1b6b3a;color:#fff;font:700 12px Inter;padding:7px 13px;border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.45)';
@@ -2387,7 +2388,9 @@ function bootGuest(){
     if(!d||!d.ok){document.body.innerHTML='<div style="padding:48px;font:700 16px Inter;color:#fff">Link inválido ou expirado.</div>';return;}
     if(d.perm!=='edit'){location.replace('index.html?ebook='+encodeURIComponent(d.ebook||'')+'&p='+encodeURIComponent(d.pais||''));return;}
     SHARE.ebook=d.ebook;SHARE.pais=d.pais;SHARE.scope=(d.scope==='ebook')?'ebook':'pais';
-    model=(window.EBOOKS&&Object.keys(window.EBOOKS).length)?JSON.parse(JSON.stringify(window.EBOOKS)):JSON.parse(JSON.stringify(DEFAULT));
+    SHARE.ws=(d.ws&&WS_DEFS[d.ws])?d.ws:'principal';   // workspace do token (autoridade) — carrega os dados certos (Principal/UPSELL/DOWNSELL)
+    var _gsrc=WS_DEFS[SHARE.ws].src();   // window.EBOOKS / EBOOKS_UPSELL / EBOOKS_DOWNSELL (todos já carregados no builder)
+    model=(_gsrc&&Object.keys(_gsrc).length)?JSON.parse(JSON.stringify(_gsrc)):JSON.parse(JSON.stringify(DEFAULT));
     try{migrarLayoutTraducoes();}catch(e){}
     if(!model[SHARE.ebook]){document.body.innerHTML='<div style="padding:48px;color:#fff;font:700 16px Inter">O ebook deste link não existe mais.</div>';return;}
     curEbook=SHARE.ebook;
@@ -2400,7 +2403,7 @@ function bootGuest(){
 }
 
 if(SHARE){ bootGuest(); }
-else { load();save();render();renderEbooksHome(); try{ if(new URLSearchParams(location.search).get('go')==='editor') showView('editor'); }catch(e){} }   /* trocar de workspace (Principal/UPSELL/DOWNSELL) abre direto no editor, sem cair na lista Ebooks */
+else { load();save(true);render();renderEbooksHome(); try{ if(new URLSearchParams(location.search).get('go')==='editor') showView('editor'); }catch(e){} }   /* save(true): boot NÃO grava disco (anti-clobber). trocar de workspace (Principal/UPSELL/DOWNSELL) abre direto no editor, sem cair na lista Ebooks */
 </script>
 </body>
 </html>
