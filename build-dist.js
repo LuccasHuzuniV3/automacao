@@ -81,3 +81,32 @@ if (fs.existsSync(apiSrc)) {
 
 console.log('OK -> dist/  | ebooks: ' + keys.join(', ') + ' | imagens: ' + copied + '/' + imgs.length + (apiList.length ? ' | api: ' + apiList.join(', ') : ''));
 if (missing.length) console.log('AVISO imagens nao encontradas: ' + missing.join(', '));
+
+// ===== Workspaces extras: build separado em dist/<sub>/  (publica em /<sub>). Mesmo template do Principal. =====
+//   UPSELL   -> ebooks-upsell.js   (window.EBOOKS_UPSELL)   -> dist/upsell/
+//   DOWNSELL -> ebooks-downsell.js (window.EBOOKS_DOWNSELL) -> dist/downsell/
+function buildWorkspace(sub, file, globalName) {
+  const wPath = path.join(ROOT, file);
+  if (!fs.existsSync(wPath)) return;
+  try { require(wPath); } catch (e) { console.log('AVISO ' + sub + ' (nao carregou): ' + e.message); return; }
+  const wAll = (global.window && global.window[globalName]) || {};
+  const wKeys = Object.keys(wAll);
+  if (!wKeys.length) { console.log(sub.toUpperCase() + ' vazio -> /' + sub + ' nao publicado'); return; }
+  const wOut = {}; wKeys.forEach(function (k) { wOut[k] = wAll[k]; });
+  const WDIST = path.join(DIST, sub);
+  fs.mkdirSync(path.join(WDIST, 'img'), { recursive: true });
+  fs.copyFileSync(path.join(ROOT, 'index.html'), path.join(WDIST, 'index.html'));   // mesmo template do Principal
+  fs.writeFileSync(path.join(WDIST, 'ebooks.js'),
+    '/* ' + sub.toUpperCase() + ' publicado em /' + sub + '. Gerado por build-dist.js. */\n' +
+    'window.EBOOKS = ' + JSON.stringify(wOut, null, 2) + ';\n');
+  const idxW = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const sW = JSON.stringify(wOut) + '\n' + idxW;
+  const imgsW = [...new Set((sW.match(/img\/[^"')\s]+?\.(?:png|jpe?g|webp|gif|svg|mp4|webm)/gi) || []))];
+  let cpW = 0;
+  imgsW.forEach(function (rel) { const s = path.join(ROOT, rel.replace(/\//g, path.sep)); if (fs.existsSync(s)) { const d = path.join(WDIST, rel.replace(/\//g, path.sep)); fs.mkdirSync(path.dirname(d), { recursive: true }); fs.copyFileSync(s, d); cpW++; } });
+  const apiW = path.join(ROOT, 'api');
+  if (fs.existsSync(apiW)) { const ad = path.join(WDIST, 'api'); fs.mkdirSync(ad, { recursive: true }); fs.readdirSync(apiW).forEach(function (n) { if (/\.js$/.test(n)) fs.copyFileSync(path.join(apiW, n), path.join(ad, n)); }); }
+  console.log('OK -> dist/' + sub + '/  | ebooks: ' + wKeys.join(', ') + ' | imagens: ' + cpW);
+}
+buildWorkspace('upsell', 'ebooks-upsell.js', 'EBOOKS_UPSELL');
+buildWorkspace('downsell', 'ebooks-downsell.js', 'EBOOKS_DOWNSELL');

@@ -201,13 +201,16 @@
   <button class="btn" id="btnMulti" style="display:none">🌍 Multi-idioma</button>
   <button class="btn" id="btnSysUpdate" title="Baixa a última versão do sistema (seus ebooks não são apagados)">🔄 Atualizar sistema</button>
   <button class="btn" id="btnLinks">🔗 Links</button>
+  <button class="btn" id="btnShare" style="display:none" title="Gera um link pra outra pessoa editar SÓ o ebook/país atual">🤝 Compartilhar</button>
   <button class="btn pri" id="btnDeploy" style="display:none">🚀 Deploy</button>
 </div>
 <div id="trProgress" style="display:none;position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:99999;background:linear-gradient(180deg,#1aa83f,#127a2c);color:#fff;font-weight:800;font-size:15px;padding:12px 26px;border-radius:12px;box-shadow:0 10px 36px rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.25)">Traduzindo...</div>
 <div id="shellbody">
   <nav id="rail">
     <button class="railb on" data-view="ebooks"><i>📚</i><span>Ebooks</span></button>
-    <button class="railb" data-view="editor"><i>✏️</i><span>Editor</span></button>
+    <button class="railb" id="navPrincipal" data-view="editor"><i>✏️</i><span>Principal</span></button>
+    <button class="railb" id="navUpsell"><i>⬆️</i><span>UPSELL</span></button>
+    <button class="railb" id="navDownsell"><i>⬇️</i><span>DOWNSELL</span></button>
     <button class="railb" data-view="analytics"><i>📊</i><span>Analytics</span></button>
     <button class="railb" data-view="vendas"><i>💰</i><span>Vendas</span></button>
     <button class="railb" data-view="config"><i>⚙️</i><span>Config</span></button>
@@ -334,6 +337,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="ebooks.js"></script>
+<script src="ebooks-upsell.js"></script>
+<script src="ebooks-downsell.js"></script>
 <script>
 /* ---------- IndexedDB p/ guardar as imagens escolhidas do PC ---------- */
 function idbOpen(){return new Promise(function(res,rej){var r=indexedDB.open('salomon-builder',1);
@@ -377,9 +382,37 @@ function trimImage(file){
 
 /* ---------- App local (server.js): detecta http://localhost e endpoints ---------- */
 var APP = /^https?:$/.test(location.protocol);
-function apiSave(){ return fetch('/api/save',{method:'POST',headers:{'Content-Type':'text/javascript'},body:exportText()}).then(function(r){return r.json();}).catch(function(){return{ok:false};}); }
-function apiImage(name,dataB64){ return fetch('/api/image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:name,dataB64:dataB64})}).then(function(r){return r.json();}).catch(function(){return{ok:false};}); }
-function apiDeploy(){ return fetch('/api/deploy',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ebooks:Object.keys(model||{})})}).then(function(r){return r.json();}).catch(function(e){return{ok:false,error:String(e)};}); }
+// WORKSPACE: 'principal' (ebooks.js -> /), 'upsell' (ebooks-upsell.js -> /upsell) ou 'downsell' (ebooks-downsell.js -> /downsell). Vem da URL ?ws=.
+var WS_DEFS={
+  principal:{global:'EBOOKS',          src:function(){return window.EBOOKS||{};},           qs:'',             key:'',          label:'Principal',icon:'✏️'},
+  upsell:   {global:'EBOOKS_UPSELL',   src:function(){return window.EBOOKS_UPSELL||{};},    qs:'?ws=upsell',   key:'_upsell',   label:'UPSELL',   icon:'⬆️'},
+  downsell: {global:'EBOOKS_DOWNSELL', src:function(){return window.EBOOKS_DOWNSELL||{};},  qs:'?ws=downsell', key:'_downsell', label:'DOWNSELL', icon:'⬇️'}
+};
+var WS=(function(){try{var w=new URLSearchParams(location.search).get('ws');return WS_DEFS[w]?w:'principal';}catch(e){return 'principal';}})();
+var WS_DEF=WS_DEFS[WS]||WS_DEFS.principal;
+var WS_SRC=WS_DEF.src();
+var WS_GLOBAL=WS_DEF.global;
+var WS_STATEKEY='BUILDER_STATE'+WS_DEF.key;
+var WS_SAVEQS=WS_DEF.qs;
+// ---- COMPARTILHAR: se aberto via link (?share=TOKEN), vira sessao de CONVIDADO (edita SO o escopo do link) ----
+var SHARE=null;
+try{ var _sp=new URLSearchParams(location.search); var _tk=_sp.get('share'); if(_tk)SHARE={token:_tk,ebook:'',pais:''}; }catch(e){}
+function shareHeaders(h){ h=h||{}; if(SHARE&&SHARE.token)h['x-edit-token']=SHARE.token; return h; }
+function apiSave(){
+  if(SHARE){
+    var eb=curEbook;
+    if(SHARE.scope==='ebook'){   // convidado COM permissao de traduzir: grava o EBOOK inteiro (todos os idiomas); outros ebooks intactos
+      if(!model[eb])return Promise.resolve({ok:false});
+      return fetch('/api/save-ebook',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({ebook:eb,ebook_data:model[eb]})}).then(function(r){return r.json();}).catch(function(){return{ok:false};});
+    }
+    var ps=curPais;   // convidado de PAIS: grava SO a fatia daquele pais
+    if(!model[eb]||!model[eb].paises||!model[eb].paises[ps])return Promise.resolve({ok:false});
+    return fetch('/api/save-scope',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({ebook:eb,pais:ps,pais_data:model[eb].paises[ps]})}).then(function(r){return r.json();}).catch(function(){return{ok:false};});
+  }
+  return fetch('/api/save'+WS_SAVEQS,{method:'POST',headers:{'Content-Type':'text/javascript'},body:exportText()}).then(function(r){return r.json();}).catch(function(){return{ok:false};});
+}
+function apiImage(name,dataB64){ return fetch('/api/image',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({name:name,dataB64:dataB64})}).then(function(r){return r.json();}).catch(function(){return{ok:false};}); }
+function apiDeploy(){ var ebs=(WS==='principal')?Object.keys(model||{}):[]; return fetch('/api/deploy',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({ebooks:ebs})}).then(function(r){return r.json();}).catch(function(e){return{ok:false,error:String(e)};}); }   /* no UPSELL/DOWNSELL manda [] -> build publica TODOS os ebooks do Principal + UPSELL + DOWNSELL (build-dist faz os tres) */
 function mlOf(idioma){ var s=(idioma||'').trim(); if(/^fil/i.test(s))return 'tl'; return s; } /* mantem o locale completo (pt-BR, en-US): MyMemory traduz MUITO melhor que pt|en */
 function trShow(msg){var b=$('trProgress');if(b){b.style.display='block';b.style.background='linear-gradient(180deg,#1aa83f,#127a2c)';b.textContent=msg;}}
 function trDone(msg){var b=$('trProgress');if(b){b.textContent=msg;b.style.background='linear-gradient(180deg,#2bb14e,#1a8f3a)';setTimeout(function(){if(b)b.style.display='none';},3500);}}
@@ -439,12 +472,12 @@ var TXT=[
 ];
 /* listas (blocos/bonus/bundle/trust) agora sao montadas no renderForm */
 
-var DEFAULT=(window.EBOOKS&&Object.keys(window.EBOOKS).length)?JSON.parse(JSON.stringify(window.EBOOKS)):{salomao:{tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}}};
+var DEFAULT=(WS_SRC&&Object.keys(WS_SRC).length)?JSON.parse(JSON.stringify(WS_SRC)):{salomao:{tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}}};
 
 var model,curEbook,curPais,nonce=0,imgCounter=0,$=function(id){return document.getElementById(id)};
 var BUILDER_VER='9';
 function load(){
-  try{ if(localStorage.getItem('BUILDER_VER')===BUILDER_VER) model=JSON.parse(localStorage.getItem('BUILDER_STATE')); }catch(e){}
+  try{ if(localStorage.getItem('BUILDER_VER')===BUILDER_VER) model=JSON.parse(localStorage.getItem(WS_STATEKEY)); }catch(e){}
   if(!model||!Object.keys(model).length)model=JSON.parse(JSON.stringify(DEFAULT));
   localStorage.setItem('BUILDER_VER',BUILDER_VER);
   migrarLayoutTraducoes();
@@ -497,10 +530,10 @@ function migrarLayoutTraducoes(){
     });
   });
   try{ localStorage.setItem('FIX_LAYOUT_TRAD_V6','1'); }catch(e){}
-  if(mudou){ try{localStorage.setItem('BUILDER_STATE',JSON.stringify(model));localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){} if(typeof APP!=='undefined'&&APP){try{apiSave();}catch(e){}} }
+  if(mudou){ try{localStorage.setItem(WS_STATEKEY,JSON.stringify(model));localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){} if(typeof APP!=='undefined'&&APP){try{apiSave();}catch(e){}} }
 }
 var diskT;
-function save(){try{localStorage.setItem('BUILDER_STATE',JSON.stringify(model));}catch(e){}localStorage.setItem('BUILDER_DOMINIO',$('dominio').value.trim());if($('viewToken'))localStorage.setItem('BUILDER_VIEWTOKEN',$('viewToken').value.trim());
+function save(){try{localStorage.setItem(WS_STATEKEY,JSON.stringify(model));}catch(e){}localStorage.setItem('BUILDER_DOMINIO',$('dominio').value.trim());if($('viewToken'))localStorage.setItem('BUILDER_VIEWTOKEN',$('viewToken').value.trim());
   if(APP){try{localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){}clearTimeout(diskT);diskT=setTimeout(function(){apiSave();},700);}}
 
 /* campo de imagem com botao "escolher do PC" */
@@ -538,7 +571,7 @@ function videoField(getv,setv){
   file.onchange=function(){var fl=file.files[0];if(!fl)return;
     var ext=(fl.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');
     var nm=slugify(curEbook)+'-'+slugify(curPais)+'-video-'+(++imgCounter)+'.'+ext;
-    if(APP){toast('Enviando vídeo...');fetch('/api/file?name='+encodeURIComponent(nm),{method:'POST',body:fl}).then(function(r){return r.json();}).then(function(r){if(r&&r.ok){setv(r.path);i.value=r.path;save();updatePreview();toast('Vídeo salvo em img/');}else{toast('Erro ao enviar vídeo');}}).catch(function(){toast('Erro ao enviar vídeo');});}
+    if(APP){toast('Enviando vídeo...');fetch('/api/file?name='+encodeURIComponent(nm),{method:'POST',headers:shareHeaders({}),body:fl}).then(function(r){return r.json();}).then(function(r){if(r&&r.ok){setv(r.path);i.value=r.path;save();updatePreview();toast('Vídeo salvo em img/');}else{toast('Erro ao enviar vídeo');}}).catch(function(){toast('Erro ao enviar vídeo');});}
     else{toDataURL(fl).then(function(d){setv(d);i.value='(vídeo embutido)';save();updatePreview();toast('Vídeo embutido');});}
   };
   var rm=document.createElement('button');rm.type='button';rm.className='btn xs';rm.textContent='✕';rm.title='remover vídeo';rm.style.marginLeft='4px';
@@ -679,8 +712,11 @@ function looksUntranslated(v,orig){if(v==null)return true;if(/<\/?g[\s>]|&lt;\/?
 function trReq(text,s,t){
   var de='';try{var e=($('mmEmail')&&$('mmEmail').value||localStorage.getItem('MM_EMAIL')||'').trim();if(e&&e.indexOf('@')>0)de='&de='+encodeURIComponent(e);}catch(_){}
   var url='https://api.mymemory.translated.net/get?q='+encodeURIComponent(text)+'&langpair='+s+'|'+t+de;
-  function go(){return fetch(url).then(function(r){return r.json();}).then(function(j){var v=(j.responseData&&j.responseData.translatedText)||'';
-    if(!v||/MYMEMORY WARNING|QUOTA|YOU USED ALL|INVALID|PLEASE SELECT|REQUEST NOT VALID/i.test(v)||(j.responseStatus&&+j.responseStatus>=400))return null;return decodeEnt(v);}).catch(function(){return null;});}
+  function go(){
+    var ctrl=null,to=null;
+    try{ ctrl=new AbortController(); to=setTimeout(function(){try{ctrl.abort();}catch(_){}}, 8000); }catch(_){}   /* TIMEOUT 8s: MyMemory engasga/pendura -> aborta em vez de travar pra sempre */
+    return fetch(url, ctrl?{signal:ctrl.signal}:undefined).then(function(r){if(to)clearTimeout(to);return r.json();}).then(function(j){var v=(j.responseData&&j.responseData.translatedText)||'';
+      if(!v||/MYMEMORY WARNING|QUOTA|YOU USED ALL|INVALID|PLEASE SELECT|REQUEST NOT VALID/i.test(v)||(j.responseStatus&&+j.responseStatus>=400))return null;return decodeEnt(v);}).catch(function(){if(to)clearTimeout(to);return null;});}
   return go().then(function(v){if(v!=null)return v;
     return new Promise(function(r){setTimeout(r,1500);}).then(go).then(function(v2){if(v2!=null)return v2;
       return new Promise(function(r){setTimeout(r,2800);}).then(go).then(function(v3){return v3;});});});
@@ -718,18 +754,48 @@ function tr(text,s,t){
 }
 function geminiModel(){return (($('geminiModel')&&$('geminiModel').value)||localStorage.getItem('GEMINI_MODEL')||'gemini-2.5-flash');}
 function usaGemini(){return APP && /^gemini/.test(geminiModel());}
-function geminiTranslateBatch(texts,srcLang,tgtLang){
-  if(!APP)return Promise.reject(new Error('precisa do app local (start.bat)'));
-  var instruction='O texto acima e um array JSON. Traduza cada item de '+srcLang+' para '+tgtLang+'. Responda APENAS com um array JSON de strings traduzidas, na MESMA ordem e quantidade. NAO traduza URLs, e-mails nem valores/precos (ex.: R$ 19,90). Preserve emojis. Sem markdown nem explicacao, so o array.';
-  return fetch('/api/gemini',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:geminiModel(),prompt:instruction,input:JSON.stringify(texts)})})
+function geminiOneBatch(texts,srcLang,tgtLang){
+  /* Objeto com chaves numeradas (0..n-1) em vez de array solto. O modelo NAO perde/junta itens
+     (era a causa do "itens nao batem" -> caia no MyMemory lento). Remonta pela chave; se faltar
+     alguma, mantem o original — entao NUNCA desalinha nem da count errado. */
+  var obj={}; texts.forEach(function(t,i){ obj[String(i)]=String(t==null?'':t); });
+  var instruction='Traduza os VALORES deste objeto JSON de '+srcLang+' para '+tgtLang+'. Responda APENAS com um objeto JSON com as MESMAS chaves (os mesmos numeros) e os valores traduzidos, sem mudar nem remover nenhuma chave. NAO traduza URLs, e-mails, precos/valores (ex.: R$ 19,90) nem numeros. Preserve emojis. Sem markdown nem explicacao, so o objeto JSON.';
+  return fetch('/api/gemini',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({model:geminiModel(),prompt:instruction,input:JSON.stringify(obj)})})
     .then(function(r){return r.json();}).then(function(j){
       if(!j.ok)throw new Error(j.error||'erro Gemini CLI');
-      var txt=String(j.text||''),mm=txt.match(/\[[\s\S]*\]/);
+      var txt=String(j.text||'').replace(/```json|```/gi,''),mm=txt.match(/\{[\s\S]*\}/);
       if(!mm)throw new Error('Gemini sem JSON na resposta: '+txt.slice(0,140));
-      var arr=JSON.parse(mm[0]);
-      if(!Array.isArray(arr)||arr.length!==texts.length)throw new Error('Gemini: itens nao batem ('+(arr&&arr.length)+' vs '+texts.length+')');
-      return arr;
+      var map=JSON.parse(mm[0]);
+      return texts.map(function(t,i){ var v=map[String(i)]; return (v!=null&&String(v).trim())?String(v):String(t==null?'':t); });
     });
+}
+/* Lotes PEQUENOS (não truncam) chaveados (não erram contagem) rodados EM PARALELO (o CLI aguenta:
+   3 simultâneos = ~10s no teste). Total ≈ o lote mais lento, não a soma. Lote que falhar mantém o
+   original (nunca trava, nunca desalinha). É assim que fica rápido E confiável. */
+function geminiTranslateBatch(texts,srcLang,tgtLang){
+  if(!APP)return Promise.reject(new Error('precisa do app local (start.bat)'));
+  var MAXCHARS=1200, MAXITENS=8, groups=[], gidx=[], cur=[], curIdx=[], curLen=0, i;
+  for(i=0;i<texts.length;i++){
+    var len=String(texts[i]||'').length;
+    if(cur.length && (curLen+len>MAXCHARS || cur.length>=MAXITENS)){ groups.push(cur); gidx.push(curIdx); cur=[]; curIdx=[]; curLen=0; }
+    cur.push(texts[i]); curIdx.push(i); curLen+=len;
+  }
+  if(cur.length){ groups.push(cur); gidx.push(curIdx); }
+  function oneTry(g){ return geminiOneBatch(g,srcLang,tgtLang).catch(function(){ return geminiOneBatch(g,srcLang,tgtLang); }); }   /* 1 retry por lote: falha passageira não deixa um pedaço (ex.: a faixa vermelha) sem traduzir */
+  if(groups.length<=1) return oneTry(texts);
+  var out=new Array(texts.length), LIMIT=5;
+  function doChunk(gi){
+    return oneTry(groups[gi]).then(
+      function(arr){ arr.forEach(function(v,k){ out[gidx[gi][k]]=v; }); },
+      function(){ groups[gi].forEach(function(v,k){ out[gidx[gi][k]]=v; }); }   /* ainda falhou após o retry: mantém original */
+    );
+  }
+  return new Promise(function(resolve){
+    var gi=0, active=0, fin=0, n=groups.length;
+    (function pump(){
+      while(active<LIMIT && gi<n){ active++; doChunk(gi++).then(function(){ active--; fin++; if(fin===n){resolve();}else{pump();} }); }
+    })();
+  }).then(function(){ return out.map(function(v,i){ return v!=null?v:String(texts[i]==null?'':texts[i]); }); });
 }
 function translatePais(srcCode,tgtCode,onStep){
   return new Promise(function(resolve){
@@ -742,7 +808,7 @@ function translatePais(srcCode,tgtCode,onStep){
     if(!T.t)T.t={};
     var skip={precoDe:1,preco:1,garantiaDias:1,videoUrl:1};
     var tasks=[];
-    TXT.forEach(function(f){ if(!skip[f.k]&&S.t[f.k]) tasks.push({set:function(v){T.t[f.k]=v;},val:S.t[f.k]}); });
+    TXT.forEach(function(f){ if(!skip[f.k]&&S.t[f.k]){ var _v=String(S.t[f.k]); if(f.k==='giftBar')_v=(_v.split(String.fromCodePoint(0x1F381))[0]||'').trim()||_v; tasks.push({set:function(v){T.t[f.k]=v;},val:_v}); } });   /* giftBar pode estar inchado (texto repetido c/ 🎁 salvo de volta) — manda só a 1a unidade pra traduzir */
     /* rotulos do selo de garantia (NAO estao no TXT, mas APARECEM pro cliente: "dias"/"Garantia") */
     ['garantiaDiasLbl','garantiaSelo'].forEach(function(k){ if(S.t[k]) tasks.push({set:function(v){T.t[k]=v;},val:S.t[k]}); });
     ['blocos','bonus'].forEach(function(list){
@@ -760,14 +826,14 @@ function translatePais(srcCode,tgtCode,onStep){
     if(!total){resolve();return;}
     function myMemoryLoop(){ (function next(i){
       if(i>=tasks.length){ resolve(); return; }
-      tr(tasks[i].val,sl,tl).then(function(v){ tasks[i].set(v); done++; if(onStep)onStep(done,total); setTimeout(function(){next(i+1);},350); });
+      tr(tasks[i].val,sl,tl).then(function(v){ tasks[i].set(v); }, function(){}).then(function(){ done++; if(onStep)onStep(done,total); setTimeout(function(){next(i+1);},350); });   /* SEMPRE avança: se um item falhar/expirar, mantém o original e segue (nunca trava a fila) */
     })(0); }
     if(usaGemini()){
       if(onStep)onStep(0,total);
       geminiTranslateBatch(tasks.map(function(t){return t.val;}), S.idioma||'pt-BR', T.idioma||tgtCode).then(function(arr){
         tasks.forEach(function(t,i){ if(arr[i]!=null&&String(arr[i]).trim())t.set(arr[i]); });
         if(onStep)onStep(total,total); resolve();
-      }).catch(function(err){ try{console.warn('Gemini falhou, voltando pro MyMemory:',err&&err.message);}catch(e){} myMemoryLoop(); });
+      }).catch(function(err){ try{console.warn('Gemini falhou, voltando pro MyMemory:',err&&err.message);}catch(e){} try{toast('Gemini: '+((err&&err.message)||'falhou')+' — usando tradução grátis (mais lenta)');}catch(e){} myMemoryLoop(); });
     } else { myMemoryLoop(); }
   });
 }
@@ -1713,7 +1779,7 @@ function addPais(){
 }
 function delPais(){var P=model[curEbook].paises;if(Object.keys(P).length<=1){toast('Precisa ter ao menos 1 país');return;}if(!confirm('Excluir o país "'+curPais+'"?'))return;delete P[curPais];curPais=Object.keys(P)[0];save();render();}
 
-function exportText(){return '/* Gerado pelo Painel. Suba junto do index.html. */\nwindow.EBOOKS = '+JSON.stringify(model,null,2)+';\n';}
+function exportText(){return '/* Gerado pelo Painel. Suba junto do index.html. */\nwindow.'+WS_GLOBAL+' = '+JSON.stringify(model,null,2)+';\n';}
 $('btnExport').onclick=function(){var b=new Blob([exportText()],{type:'text/javascript'});var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='ebooks.js';a.click();URL.revokeObjectURL(a.href);toast('ebooks.js baixado');};
 $('btnReset').onclick=resetLayout;
 
@@ -2231,6 +2297,18 @@ function renderEbooksHome(){
   Array.prototype.forEach.call(box.querySelectorAll('[data-setdono]'),function(el){el.onclick=function(ev){ev.stopPropagation();var k=el.getAttribute('data-setdono');var nd=prompt('Dono / pessoa do ebook "'+k+'":',(model[k].dono||''));if(nd===null)return;model[k].dono=nd.trim();var nr=prompt('Rede / canal (opcional):',(model[k].rede||''));if(nr!==null)model[k].rede=nr.trim();save();ebNav.dono='';renderEbooksHome();toast('Atualizado!');};});
 }
 Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.onclick=function(){showView(b.getAttribute('data-view'));};});
+// ---- WORKSPACE: Principal (ebooks.js -> /), UPSELL (ebooks-upsell.js -> /upsell), DOWNSELL (ebooks-downsell.js -> /downsell). Trocar = recarregar com ?ws. ----
+(function(){
+  var btns={principal:document.getElementById('navPrincipal'),upsell:document.getElementById('navUpsell'),downsell:document.getElementById('navDownsell')};
+  Object.keys(WS_DEFS).forEach(function(ws){
+    var b=btns[ws]; if(!b)return;
+    b.onclick=function(){ if(WS!==ws){location.href='builder.html'+(ws==='principal'?'?go=editor':WS_DEFS[ws].qs+'&go=editor');}else{showView('editor');} };
+    if(ws!==WS&&b)b.removeAttribute('data-view');   // só o workspace ATIVO leva data-view=editor (showView destaca 'on')
+  });
+  var act=btns[WS];
+  if(act){act.setAttribute('data-view','editor');act.style.borderColor='var(--teal)';act.style.color='var(--txt)';}   // destaque persistente do workspace ativo (borda teal)
+  if(WS!=='principal'){try{document.title=WS_DEF.icon+' '+WS_DEF.label+' — '+document.title;}catch(e){}}
+})();
 (function(){var n=$('ehNew');if(n)n.onclick=function(){showView('editor');addEbook();};})();
 (function(){var r=$('anRefresh');if(r)r.onclick=renderAnalytics;['anEbook','anVersao','anRede','anPeriodo','anVerPor'].forEach(function(id){var e=$(id);if(e)e.onchange=renderAnalytics;});})();
 (function(){var b=$('anReset');if(!b)return;b.onclick=function(){
@@ -2245,7 +2323,84 @@ Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.o
   }).catch(function(){toast('Falha ao limpar — fez o Deploy?');}).then(function(){b.disabled=false;b.textContent='🧹 Limpar dados';});
 };})();
 
-load();save();render();renderEbooksHome();
+// ===================== COMPARTILHAR (botao do dono + modo convidado) =====================
+function showShare(){
+  var eb=curEbook,ps=curPais;
+  var paisNome=(model[eb]&&model[eb].paises[ps]&&model[eb].paises[ps].nome)||ps;
+  fetch('/api/tunnel').then(function(r){return r.json();}).catch(function(){return{};}).then(function(t){
+    var base=(t&&t.url)?String(t.url).replace(/\/+$/,''):'';
+    shareModal(eb,ps,paisNome,base);
+  });
+}
+function shareModal(eb,ps,paisNome,base){
+  var old=$('shareOv');if(old)old.remove();
+  var ov=document.createElement('div');ov.id='shareOv';
+  ov.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center';
+  var warn=base?'':'<div style="font-size:12px;color:#f5d77a;background:rgba(245,197,24,.1);border:1px solid rgba(245,197,24,.3);border-radius:8px;padding:8px 10px;margin:8px 0">⚠️ O túnel ainda não subiu. Abra o <b>start.bat</b> e espere a mensagem "COMPARTILHAR pronto" — depois gere o link de novo.</div>';
+  ov.innerHTML='<div style="background:#151823;border:1px solid #2a2f45;border-radius:14px;padding:20px;max-width:560px;width:92%;color:#e8ecf5;font-family:Inter,system-ui">'
+    +'<div style="font:800 17px Inter;margin-bottom:4px">🤝 Compartilhar pra editar'+(WS!=='principal'?(' — '+WS_DEF.icon+' '+WS_DEF.label):'')+'</div>'
+    +'<div style="font-size:13px;color:#9fb0d0;margin-bottom:10px">Gera um link pra outra pessoa editar. Seus <b>outros ebooks</b> ficam sempre protegidos.</div>'
+    +'<label style="display:flex;gap:9px;align-items:flex-start;background:#0e1118;border:1px solid #2a2f45;border-radius:9px;padding:10px 12px;cursor:pointer;margin-bottom:8px"><input type="checkbox" id="shareTrad" checked style="margin-top:2px;width:16px;height:16px"><span style="font-size:13px"><b>🌍 Deixar traduzir</b> — compartilha o <b>ebook «'+eb+'» inteiro</b> (todos os idiomas); a pessoa pode traduzir e mexer em qualquer idioma dele.<br><span style="color:#9fb0d0">Desmarcado: ela edita <b>só «'+paisNome+'»</b>.</span></span></label>'
+    +warn
+    +'<div style="display:flex;gap:8px;margin:10px 0"><input id="shareLink" readonly placeholder="clique em Gerar link →" style="flex:1;background:#0e1118;border:1px solid #2a2f45;border-radius:8px;color:#cfe;padding:9px 11px;font:600 12px monospace"><button class="btn pri" id="shareGen">Gerar link</button><button class="btn" id="shareCopy" style="display:none">Copiar</button></div>'
+    +'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px"><button class="btn" id="shareRevoke" style="color:#ff8f8f;display:none">🚫 Revogar</button><button class="btn" id="shareClose">Fechar</button></div>'
+    +'</div>';
+  document.body.appendChild(ov);
+  var curToken='';
+  function gen(){
+    var scope=$('shareTrad').checked?'ebook':'pais';
+    $('shareGen').disabled=true;$('shareGen').textContent='Gerando...';
+    fetch('/api/share/create',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({perm:'edit',ebook:eb,pais:ps,scope:scope})}).then(function(r){return r.json();}).then(function(d){
+      $('shareGen').disabled=false;$('shareGen').textContent='Gerar link';
+      if(!d||!d.ok){toast('Erro ao gerar link');return;}
+      curToken=d.token;
+      $('shareLink').value=(base?base:'SUA-URL-DO-TUNEL')+'/builder.html?share='+d.token;
+      $('shareCopy').style.display='';$('shareRevoke').style.display='';$('shareCopy').textContent='Copiar';
+    }).catch(function(){$('shareGen').disabled=false;$('shareGen').textContent='Gerar link';toast('Sem conexão com o app (start.bat aberto?)');});
+  }
+  $('shareGen').onclick=gen;
+  $('shareTrad').onchange=function(){ if(curToken){$('shareLink').value='';$('shareCopy').style.display='none';$('shareRevoke').style.display='none';curToken='';} };
+  $('shareCopy').onclick=function(){var i=$('shareLink');if(!i.value)return;i.select();try{navigator.clipboard.writeText(i.value);}catch(e){try{document.execCommand('copy');}catch(_){}}this.textContent='Copiado ✓';};
+  $('shareClose').onclick=function(){ov.remove();};
+  $('shareRevoke').onclick=function(){if(!curToken){ov.remove();return;}fetch('/api/share/revoke',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({token:curToken})}).then(function(){toast('Link revogado');ov.remove();});};
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+}
+(function(){var b=$('btnShare');if(b){if(APP)b.style.display='';b.onclick=showShare;}})();
+
+function applyGuestUI(scope){
+  ['btnShare','btnSysUpdate','btnLinks'].forEach(function(id){var b=$(id);if(b)b.style.display='none';});
+  var et=$('ebookTabs');if(et)et.style.display='none';   // convidado nunca troca de EBOOK
+  if(scope==='ebook'){
+    var pt=$('paisTabs');if(pt)pt.style.display='';      // pode traduzir: troca de idioma liberada
+  } else {
+    var pt2=$('paisTabs');if(pt2)pt2.style.display='none';
+    var bm=$('btnMulti');if(bm)bm.style.display='none';  // so este pais: sem multi-idioma
+  }
+  var txt=(scope==='ebook')?('✏️ Convidado — ebook «'+SHARE.ebook+'» (todos os idiomas — pode traduzir)'):('✏️ Convidado — editando SÓ: '+SHARE.ebook+' / '+SHARE.pais);
+  var tag=document.createElement('div');
+  tag.textContent=txt;
+  tag.style.cssText='position:fixed;left:10px;bottom:10px;z-index:9999;background:#1b6b3a;color:#fff;font:700 12px Inter;padding:7px 13px;border-radius:9px;box-shadow:0 6px 18px rgba(0,0,0,.45)';
+  document.body.appendChild(tag);
+}
+function bootGuest(){
+  fetch('/api/share/check?token='+encodeURIComponent(SHARE.token)).then(function(r){return r.json();}).then(function(d){
+    if(!d||!d.ok){document.body.innerHTML='<div style="padding:48px;font:700 16px Inter;color:#fff">Link inválido ou expirado.</div>';return;}
+    if(d.perm!=='edit'){location.replace('index.html?ebook='+encodeURIComponent(d.ebook||'')+'&p='+encodeURIComponent(d.pais||''));return;}
+    SHARE.ebook=d.ebook;SHARE.pais=d.pais;SHARE.scope=(d.scope==='ebook')?'ebook':'pais';
+    model=(window.EBOOKS&&Object.keys(window.EBOOKS).length)?JSON.parse(JSON.stringify(window.EBOOKS)):JSON.parse(JSON.stringify(DEFAULT));
+    try{migrarLayoutTraducoes();}catch(e){}
+    if(!model[SHARE.ebook]){document.body.innerHTML='<div style="padding:48px;color:#fff;font:700 16px Inter">O ebook deste link não existe mais.</div>';return;}
+    curEbook=SHARE.ebook;
+    curPais=(model[curEbook].paises&&model[curEbook].paises[SHARE.pais])?SHARE.pais:Object.keys(model[curEbook].paises)[0];
+    try{localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){}
+    applyGuestUI(SHARE.scope);
+    render();
+    try{showView('editor');}catch(e){}
+  }).catch(function(){document.body.innerHTML='<div style="padding:48px;color:#fff;font:700 16px Inter">Erro ao validar o link. O app está rodando?</div>';});
+}
+
+if(SHARE){ bootGuest(); }
+else { load();save();render();renderEbooksHome(); try{ if(new URLSearchParams(location.search).get('go')==='editor') showView('editor'); }catch(e){} }   /* trocar de workspace (Principal/UPSELL/DOWNSELL) abre direto no editor, sem cair na lista Ebooks */
 </script>
 </body>
 </html>

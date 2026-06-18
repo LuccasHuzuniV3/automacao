@@ -3,8 +3,15 @@ dist/
 node_modules/
 *.zip
 ebooks.js
+ebooks-upsell.js
+ebooks-downsell.js
 ebooks.bak.js
 _chk.js
 *.log
 .DS_Store
 Thumbs.db
+# compartilhamento (tokens) e backups automaticos — NUNCA versionar/publicar
+share-config.json
+tunnel-url.txt
+backups/
+cloudflared.exe

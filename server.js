@@ -8,7 +8,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { exec, execFile } = require('child_process');
+const { exec, execFile, spawn } = require('child_process');
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT, 10) || 4321;
@@ -37,22 +37,223 @@ function json(res, code, obj) {
   res.end(JSON.stringify(obj));
 }
 
+/* ===== COMPARTILHAR (link de visualizacao/edicao por token) =====================
+   - share-config.json guarda os tokens (gitignored, NUNCA vai pro dist/Vercel).
+   - O DONO (conexao local direta) escreve sem token: fluxo local intacto.
+   - CONVIDADO (via tunel Cloudflare/ngrok) so escreve com token de 'edit' valido.
+   - Antes de cada save, backup rotativo do ebooks.js em backups/.
+   ============================================================================ */
+const CFG_FILE = path.join(ROOT, 'share-config.json');
+const BACKUP_DIR = path.join(ROOT, 'backups');
+const MAX_BACKUPS = 50;
+function randToken(n) { return require('crypto').randomBytes(n || 18).toString('hex'); }
+function loadCfg() { try { return JSON.parse(fs.readFileSync(CFG_FILE, 'utf8')) || {}; } catch (e) { return {}; } }
+function saveCfg(c) { try { fs.writeFileSync(CFG_FILE, JSON.stringify(c, null, 2)); } catch (e) {} }
+function getCfg() { const c = loadCfg(); if (!Array.isArray(c.shares)) c.shares = []; return c; }
+function pruneShares(c) { const now = Date.now(); c.shares = (c.shares || []).filter(function (s) { return !s.exp || s.exp > now; }); return c; }
+function findShare(c, token) { if (!token) return null; pruneShares(c); return (c.shares || []).find(function (s) { return s.token === token; }) || null; }
+// Conexao local direta do dono? Tuneis injetam cabecalhos de encaminhamento que o acesso local NAO tem.
+function isLocalDirect(req) {
+  if (req.headers['x-forwarded-for'] || req.headers['cf-connecting-ip'] || req.headers['x-real-ip'] || req.headers['forwarded']) return false;
+  const ra = (req.socket && req.socket.remoteAddress) || '';
+  return ra === '127.0.0.1' || ra === '::1' || ra === '::ffff:127.0.0.1';
+}
+// Autoriza ESCRITA: dono local (ok) OU convidado com token 'edit' valido.
+function canWrite(req) {
+  if (isLocalDirect(req)) return true;
+  const tok = req.headers['x-edit-token'] || '';
+  const sh = findShare(getCfg(), tok);
+  return !!(sh && sh.perm === 'edit');
+}
+// Backup rotativo de um arquivo de dados (ebooks.js OU ebooks-upsell.js). Mantem os MAX_BACKUPS mais novos POR arquivo.
+function backupDataFile(fname, stampSeed) {
+  try {
+    const src = path.join(ROOT, fname);
+    if (!fs.existsSync(src)) return;
+    fs.mkdirSync(BACKUP_DIR, { recursive: true });
+    const base = String(fname).replace(/\.js$/, ''), pref = base + '-';
+    const stamp = new Date(typeof stampSeed === 'number' ? stampSeed : Date.now()).toISOString().replace(/[:.]/g, '-');
+    fs.copyFileSync(src, path.join(BACKUP_DIR, pref + stamp + '.js'));
+    const files = fs.readdirSync(BACKUP_DIR).filter(function (n) { return n.indexOf(pref) === 0 && /^\d/.test(n.slice(pref.length)); }).sort();
+    while (files.length > MAX_BACKUPS) { try { fs.unlinkSync(path.join(BACKUP_DIR, files.shift())); } catch (e) {} }
+  } catch (e) {}
+}
+function backupEbooks(stampSeed) { backupDataFile('ebooks.js', stampSeed); }   // compat (save-scope/save-ebook usam este)
+// Mapa workspace -> arquivo de dados + nome do global. FONTE UNICA (save, save-scope, save-ebook, share).
+const WS_FILE = { principal: 'ebooks.js', upsell: 'ebooks-upsell.js', downsell: 'ebooks-downsell.js' };
+const WS_GLOBAL = { principal: 'EBOOKS', upsell: 'EBOOKS_UPSELL', downsell: 'EBOOKS_DOWNSELL' };
+function normWs(ws) { return WS_FILE[ws] ? ws : 'principal'; }   // valida; desconhecido -> principal
+// Le o arquivo de dados de UM workspace como OBJETO (avalia num sandbox isolado, igual o build-dist).
+function readWsObj(ws) {
+  ws = normWs(ws);
+  try {
+    const code = fs.readFileSync(path.join(ROOT, WS_FILE[ws]), 'utf8');
+    const sandbox = { window: {} };
+    require('vm').runInNewContext(code, sandbox, { timeout: 3000 });
+    return sandbox.window[WS_GLOBAL[ws]] || null;
+  } catch (e) { return null; }
+}
+// Grava o objeto inteiro de volta no arquivo do workspace (com backup antes). Mesmo formato do exportText() do builder.
+function writeWsObj(ws, obj) {
+  ws = normWs(ws);
+  backupDataFile(WS_FILE[ws]);
+  fs.writeFileSync(path.join(ROOT, WS_FILE[ws]),
+    '/* Gerado pelo Painel. Suba junto do index.html. */\n' +
+    'window.' + WS_GLOBAL[ws] + ' = ' + JSON.stringify(obj, null, 2) + ';\n');
+}
+// compat: save-scope/save-ebook do Principal (apontam pro workspace principal)
+function readEbooksObj() { return readWsObj('principal'); }
+function writeEbooksObj(obj) { return writeWsObj('principal', obj); }
+
+/* ===== TUNEL AUTOMATICO (compartilhar com 1 clique no start.bat) ==================
+   Liga so quando a variavel de ambiente TUNNEL=1 (o start.bat seta). Sobe o cloudflared
+   apontando pro app local, grava a URL publica em tunnel-url.txt (lida pelo /api/tunnel),
+   e derruba tudo quando o app fecha. Sem TUNNEL=1, nada disso roda. ============== */
+let tunnelProc = null;
+function ensureCloudflared() {
+  const exe = path.join(ROOT, 'cloudflared.exe');
+  if (fs.existsSync(exe)) return Promise.resolve(exe);
+  const url = 'https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe';
+  console.log('  Baixando o cloudflared (programa da Cloudflare, ~50MB, so na 1a vez)...');
+  return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
+    .then(function (ab) { fs.writeFileSync(exe, Buffer.from(ab)); return exe; });
+}
+function stopTunnel() {
+  try { if (tunnelProc) tunnelProc.kill(); } catch (e) {}
+  tunnelProc = null;
+  try { fs.unlinkSync(path.join(ROOT, 'tunnel-url.txt')); } catch (e) {}
+}
+function startTunnel() {
+  try { fs.unlinkSync(path.join(ROOT, 'tunnel-url.txt')); } catch (e) {}   // limpa URL de sessao anterior
+  ensureCloudflared().then(function (exe) {
+    tunnelProc = spawn(exe, ['tunnel', '--url', 'http://localhost:' + PORT], { cwd: ROOT });
+    let found = false;
+    function scan(d) {
+      const m = /https:\/\/[a-z0-9-]+\.trycloudflare\.com/.exec(String(d));
+      if (m && !found) {
+        found = true;
+        try { fs.writeFileSync(path.join(ROOT, 'tunnel-url.txt'), m[0]); } catch (e) {}
+        console.log('\n  >> COMPARTILHAR pronto! No editor, clique em "Compartilhar".\n     (link publico ativo enquanto esta janela estiver aberta)\n');
+      }
+    }
+    tunnelProc.stdout.on('data', scan);
+    tunnelProc.stderr.on('data', scan);
+    tunnelProc.on('exit', function () { tunnelProc = null; try { fs.unlinkSync(path.join(ROOT, 'tunnel-url.txt')); } catch (e) {} });
+    tunnelProc.on('error', function (e) { console.log('  (tunel: ' + (e && e.message) + ')'); });
+  }).catch(function (e) { console.log('  (nao consegui iniciar o tunel de compartilhamento: ' + (e && e.message) + ')'); });
+}
+process.on('exit', stopTunnel);
+process.on('SIGINT', function () { stopTunnel(); process.exit(0); });
+process.on('SIGTERM', function () { stopTunnel(); process.exit(0); });
+
+/* ===== GEMINI CLI (traducao) =====================================================================
+   IMPORTANTE: mantem o comando EXATO do original que funcionava (-p instrucao + textos via STDIN +
+   "-o text"). O "-o text" entrega a resposta crua e aguenta lote grande; trocar pra "--output-format
+   json" ZERAVA a resposta grande no CLI antigravity (regressao que eu tinha introduzido). A UNICA
+   adicao vs o original: timeout proprio que faz taskkill /F /T (mata a ARVORE de node.exe do gemini-cli,
+   que o exec sozinho deixava ZUMBI) + mensagens de erro claras (cota/login). ====================== */
+function geminiInvoke(model, promptInstr, inputData, cb) {
+  let done = false, timer = null;
+  const finish = function (err, text) { if (done) return; done = true; if (timer) clearTimeout(timer); cb(err, text); };
+  const safeModel = String(model || 'gemini-2.5-flash').replace(/[^a-zA-Z0-9.\-]/g, '') || 'gemini-2.5-flash';
+  const safePrompt = String(promptInstr || '').replace(/[\r\n]+/g, ' ').replace(/["%&|<>^`]/g, ' ').trim();
+  const cmd = 'gemini --skip-trust -m ' + safeModel + ' -p "' + safePrompt + '" -o text';
+  let child;
+  try {
+    child = exec(cmd, { cwd: ROOT, maxBuffer: 1024 * 1024 * 30, env: Object.assign({}, process.env, { GEMINI_CLI_TRUST_WORKSPACE: 'true' }) },
+      function (err, stdout, stderr) {
+        if (done) return;
+        const out = String(stdout || '').trim();
+        const el = String(stderr || '').toLowerCase();
+        if (!out) {
+          let msg = 'Gemini sem resposta.';
+          if (/exhausted|resource_exhausted|rate.?limit|\b429\b|quota/.test(el)) { msg = 'Cota do Gemini esgotada — troque de conta (rode "gemini" no terminal: logout/login) ou espere o reset diario.'; }
+          else if (/emfile|too many open files/.test(el)) { msg = 'Muitos node.exe abertos (EMFILE). Feche o app, rode no PowerShell: taskkill /F /IM node.exe, e reabra o start.bat.'; }
+          else if (/\bauth\b|\blogin\b|not logged|credential/.test(el)) { msg = 'Gemini precisa logar — rode "gemini" no terminal uma vez (login com conta Google).'; }
+          else if (String(stderr || '').trim()) { msg = 'Gemini CLI: ' + String(stderr).trim().slice(-300); }
+          finish(new Error(msg)); return;
+        }
+        finish(null, out);
+      });
+  } catch (e) { finish(new Error('nao consegui iniciar o gemini: ' + (e && e.message))); return; }
+  // timeout proprio + mata a ARVORE (exec sozinho deixa os node.exe filhos do gemini-cli como zumbis)
+  timer = setTimeout(function () {
+    try {
+      if (process.platform === 'win32') { exec('taskkill /F /T /PID ' + child.pid, function () {}); }
+      else { try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { try { child.kill('SIGKILL'); } catch (e2) {} } }
+    } catch (e) {}
+    finish(new Error('A traducao demorou demais (>150s). Tente de novo, ou troque de conta no Gemini.'));
+  }, 150000);
+  try { if (inputData) child.stdin.write(inputData); child.stdin.end(); } catch (e) {}
+}
+
 const server = http.createServer(async function (req, res) {
   const u = new URL(req.url, 'http://localhost');
   const p = u.pathname;
 
-  // ---- grava o ebooks.js ----
+  // ---- grava os dados (ebooks.js = Principal | ebooks-upsell.js = UPSELL | ebooks-downsell.js = DOWNSELL via ?ws=) ----
   if (p === '/api/save' && req.method === 'POST') {
+    if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
+    const fname = WS_FILE[normWs(u.searchParams.get('ws'))];
     const body = await readBody(req);
     try {
-      fs.writeFileSync(path.join(ROOT, 'ebooks.js'), body);
+      backupDataFile(fname);          // backup rotativo ANTES de sobrescrever (por arquivo)
+      fs.writeFileSync(path.join(ROOT, fname), body);
       json(res, 200, { ok: true });
     } catch (e) { json(res, 500, { ok: false, error: String(e) }); }
     return;
   }
 
+  // ---- grava SO a fatia de um ebook+pais (merge) — usado pelo link compartilhado ----
+  if (p === '/api/save-scope' && req.method === 'POST') {
+    const local = isLocalDirect(req);
+    const tok = req.headers['x-edit-token'] || '';
+    const sh = findShare(getCfg(), tok);
+    if (!local && !(sh && sh.perm === 'edit')) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
+    const body = await readBody(req);
+    let j; try { j = JSON.parse(body.toString('utf8')); } catch (e) { json(res, 400, { ok: false, error: 'json invalido' }); return; }
+    const ebook = String(j.ebook || ''), pais = String(j.pais || '');
+    if (!ebook || !pais || !j.pais_data || typeof j.pais_data !== 'object') { json(res, 400, { ok: false, error: 'faltam ebook/pais/dados' }); return; }
+    // convidado SO grava no escopo do proprio link (anti-sobrescrever o resto)
+    if (!local) {
+      if (sh.ebook !== ebook) { json(res, 403, { ok: false, error: 'fora do escopo do link' }); return; }
+      if (sh.scope !== 'ebook' && sh.pais !== pais) { json(res, 403, { ok: false, error: 'fora do escopo do link' }); return; }
+    }
+    // workspace: convidado SEMPRE usa o do token (autoridade); dono local pode mandar ?ws/j.ws
+    const ws = normWs((!local && sh) ? sh.ws : (j.ws || u.searchParams.get('ws') || 'principal'));
+    const all = readWsObj(ws);
+    if (!all || !all[ebook]) { json(res, 409, { ok: false, error: 'ebook nao existe no servidor' }); return; }
+    if (!all[ebook].paises || typeof all[ebook].paises !== 'object') all[ebook].paises = {};
+    all[ebook].paises[pais] = j.pais_data;   // troca SO esta fatia; o resto do arquivo do workspace fica intacto
+    try { writeWsObj(ws, all); json(res, 200, { ok: true, ebook: ebook, pais: pais, ws: ws }); }
+    catch (e) { json(res, 500, { ok: false, error: String(e) }); }
+    return;
+  }
+
+  // ---- grava o EBOOK inteiro (todos os idiomas) — link compartilhado com permissao de traduzir ----
+  if (p === '/api/save-ebook' && req.method === 'POST') {
+    const local = isLocalDirect(req);
+    const tok = req.headers['x-edit-token'] || '';
+    const sh = findShare(getCfg(), tok);
+    if (!local && !(sh && sh.perm === 'edit' && sh.scope === 'ebook')) { json(res, 403, { ok: false, error: 'sem permissao (link nao permite traduzir)' }); return; }
+    const body = await readBody(req);
+    let j; try { j = JSON.parse(body.toString('utf8')); } catch (e) { json(res, 400, { ok: false, error: 'json invalido' }); return; }
+    const ebook = String(j.ebook || '');
+    if (!ebook || !j.ebook_data || typeof j.ebook_data !== 'object') { json(res, 400, { ok: false, error: 'faltam ebook/dados' }); return; }
+    if (!local && sh.ebook !== ebook) { json(res, 403, { ok: false, error: 'fora do escopo do link' }); return; }
+    // workspace: convidado SEMPRE usa o do token (autoridade); dono local pode mandar ?ws/j.ws
+    const ws = normWs((!local && sh) ? sh.ws : (j.ws || u.searchParams.get('ws') || 'principal'));
+    const all = readWsObj(ws);
+    if (!all) { json(res, 409, { ok: false, error: 'nao li o ' + WS_FILE[ws] }); return; }
+    all[ebook] = j.ebook_data;   // troca SO este ebook (todos os idiomas dele); os OUTROS ebooks ficam intactos
+    try { writeWsObj(ws, all); json(res, 200, { ok: true, ebook: ebook, ws: ws }); }
+    catch (e) { json(res, 500, { ok: false, error: String(e) }); }
+    return;
+  }
+
   // ---- grava uma imagem na pasta img/ ----
   if (p === '/api/image' && req.method === 'POST') {
+    if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
     const body = await readBody(req);
     try {
       const j = JSON.parse(body.toString('utf8'));
@@ -66,6 +267,7 @@ const server = http.createServer(async function (req, res) {
 
   // ---- grava um arquivo (video) na pasta img/ (upload bruto, sem base64) ----
   if (p === '/api/file' && req.method === 'POST') {
+    if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
     const body = await readBody(req);
     try {
       const name = String(u.searchParams.get('name') || 'file.bin').replace(/[^a-zA-Z0-9._-]/g, '');
@@ -76,30 +278,24 @@ const server = http.createServer(async function (req, res) {
     return;
   }
 
-  // ---- tradução via Gemini CLI (gemini -p ...) ----
+  // ---- tradução via Gemini CLI (stdin + saida JSON + mata a arvore; ver geminiInvoke) ----
   if (p === '/api/gemini' && req.method === 'POST') {
+    if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
     const body = await readBody(req);
     let model = 'gemini-2.5-flash', prompt = '', input = '';
     try { const j = JSON.parse(body.toString('utf8')); if (j.model) model = String(j.model); prompt = String(j.prompt || ''); input = String(j.input || ''); } catch (e) {}
     if (!prompt) { json(res, 200, { ok: false, error: 'sem prompt' }); return; }
-    // Monta o comando manualmente com a instrucao entre ASPAS (execFile+shell nao poe aspas no Windows).
-    // Os textos vao por STDIN (sem problema de aspas).
-    const safeModel = String(model).replace(/[^a-zA-Z0-9.\-]/g, '') || 'gemini-2.5-flash';
-    const safePrompt = String(prompt).replace(/[\r\n]+/g, ' ').replace(/["%&|<>^`]/g, ' ').trim();
-    const cmd = 'gemini --skip-trust -m ' + safeModel + ' -p "' + safePrompt + '" -o text';
-    const child = exec(cmd,
-      { cwd: ROOT, timeout: 180000, maxBuffer: 1024 * 1024 * 30, env: Object.assign({}, process.env, { GEMINI_CLI_TRUST_WORKSPACE: 'true' }) },
-      function (err, stdout, stderr) {
-        const out = String(stdout || '').trim();
-        if (!out) { json(res, 200, { ok: false, error: ('Gemini CLI: ' + String(stderr || (err && err.message) || 'sem resposta')).slice(-700) }); return; }
-        json(res, 200, { ok: true, text: out });
-      });
-    try { if (input) child.stdin.write(input); child.stdin.end(); } catch (e) {}
+    // instrucao no -p, textos no stdin, -o text — IGUAL ao original (so com tree-kill + erros claros)
+    geminiInvoke(model, prompt, input, function (gerr, text) {
+      if (gerr) { json(res, 200, { ok: false, error: String((gerr && gerr.message) || gerr).slice(0, 700) }); return; }
+      json(res, 200, { ok: true, text: text });
+    });
     return;
   }
 
   // ---- deploy na Vercel (monta dist/ LIMPA e sobe so ela; o admin nunca vai pro ar) ----
   if (p === '/api/deploy' && req.method === 'POST') {
+    if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
     const body = await readBody(req);
     let ebooks = [];
     try { const j = JSON.parse(body.toString('utf8') || '{}'); if (Array.isArray(j.ebooks)) ebooks = j.ebooks.filter(Boolean); else if (j.ebook) ebooks = [j.ebook]; } catch (e) {}
@@ -142,6 +338,7 @@ const server = http.createServer(async function (req, res) {
 
   // ---- atualizar o sistema: puxa a ultima versao do GitHub do criador ----
   if (p === '/api/update' && req.method === 'POST') {
+    if (!isLocalDirect(req)) { json(res, 403, { ok: false, error: 'so o dono atualiza o sistema' }); return; }
     try {
       let cfg = {};
       try { cfg = JSON.parse(fs.readFileSync(path.join(ROOT, 'sys-config.json'), 'utf8')) || {}; } catch (e) {}
@@ -149,7 +346,7 @@ const server = http.createServer(async function (req, res) {
       if (!/^https:\/\/raw\.githubusercontent\.com\/.+/i.test(rawBase)) {
         json(res, 200, { ok: false, error: 'Atualizacao ainda nao configurada. O criador precisa rodar o CONFIGURAR-SISTEMA-GIT.bat.' }); return;
       }
-      const NEVER = ['ebooks.js', 'sys-config.json', 'deploy-config.json', '.gitignore'];   // nunca sobrescreve dados/config
+      const NEVER = ['ebooks.js', 'ebooks-upsell.js', 'ebooks-downsell.js', 'sys-config.json', 'deploy-config.json', '.gitignore', 'share-config.json', 'tunnel-url.txt', 'start.bat'];   // nunca sobrescreve dados/config/launcher
       const bust = '?t=' + Date.now();
       let man = null;
       try { man = await fetch(rawBase + '/manifest.json' + bust, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }); } catch (e) {}
@@ -188,6 +385,56 @@ const server = http.createServer(async function (req, res) {
       }
     } catch (e) {}
     json(res, 200, { ok: true, local: local, latest: latest });
+    return;
+  }
+
+  // ---- COMPARTILHAR: criar link (dono local only) ----
+  if (p === '/api/share/create' && req.method === 'POST') {
+    if (!isLocalDirect(req)) { json(res, 403, { ok: false, error: 'so o dono cria links' }); return; }
+    const body = await readBody(req);
+    let perm = 'view', ttlH = 0, ebook = '', pais = '', scope = 'pais', ws = 'principal';
+    try { const j = JSON.parse(body.toString('utf8') || '{}'); if (j.perm === 'edit') perm = 'edit'; ttlH = parseInt(j.ttlHours, 10) || 0; ebook = String(j.ebook || ''); pais = String(j.pais || ''); if (j.scope === 'ebook') scope = 'ebook'; ws = normWs(j.ws); } catch (e) {}
+    const c = getCfg();
+    const tok = randToken(18);
+    const exp = ttlH > 0 ? (Date.now() + ttlH * 3600 * 1000) : 0;   // 0 = nao expira
+    c.shares.push({ token: tok, perm: perm, ebook: ebook, pais: pais, scope: scope, ws: ws, exp: exp, created: Date.now() });   // ws: qual workspace (principal/upsell/downsell); escopo: 'pais' (so este pais) ou 'ebook' (todos os idiomas, p/ traduzir)
+    pruneShares(c); saveCfg(c);
+    json(res, 200, { ok: true, token: tok, perm: perm, ebook: ebook, pais: pais, scope: scope, ws: ws, exp: exp });
+    return;
+  }
+  // ---- COMPARTILHAR: revogar (dono local only) ----
+  if (p === '/api/share/revoke' && req.method === 'POST') {
+    if (!isLocalDirect(req)) { json(res, 403, { ok: false }); return; }
+    const body = await readBody(req);
+    let tok = ''; try { tok = String(JSON.parse(body.toString('utf8') || '{}').token || ''); } catch (e) {}
+    const c = getCfg();
+    c.shares = (c.shares || []).filter(function (s) { return s.token !== tok; });
+    saveCfg(c);
+    json(res, 200, { ok: true });
+    return;
+  }
+  // ---- COMPARTILHAR: listar links ativos (dono local only) ----
+  if (p === '/api/share/list' && req.method === 'GET') {
+    if (!isLocalDirect(req)) { json(res, 403, { ok: false }); return; }
+    const c = pruneShares(getCfg()); saveCfg(c);
+    json(res, 200, { ok: true, shares: c.shares });
+    return;
+  }
+  // ---- COMPARTILHAR: checar um token (publico — builder/index descobrem a permissao) ----
+  if (p === '/api/share/check' && req.method === 'GET') {
+    const sh = findShare(getCfg(), u.searchParams.get('token') || '');
+    json(res, 200, { ok: !!sh, perm: sh ? sh.perm : null, ebook: sh ? (sh.ebook || '') : '', pais: sh ? (sh.pais || '') : '', scope: sh ? (sh.scope || 'pais') : 'pais', ws: sh ? normWs(sh.ws) : 'principal', exp: sh ? sh.exp : null });
+    return;
+  }
+  // ---- quem sou eu: dono local ou convidado? (builder ajusta a UI) ----
+  if (p === '/api/whoami' && req.method === 'GET') {
+    json(res, 200, { ok: true, local: isLocalDirect(req) });
+    return;
+  }
+  // ---- URL publica do tunel (o COMPARTILHAR.bat grava em tunnel-url.txt) ----
+  if (p === '/api/tunnel' && req.method === 'GET') {
+    let url = ''; try { url = String(fs.readFileSync(path.join(ROOT, 'tunnel-url.txt'), 'utf8') || '').trim(); } catch (e) {}
+    json(res, 200, { ok: !!url, url: url });
     return;
   }
 
@@ -232,4 +479,6 @@ server.listen(PORT, function () {
   const url = 'http://localhost:' + PORT + '/builder.html';
   console.log('\n  App rodando em: ' + url + '\n  (feche esta janela para parar)\n');
   if (!process.env.NO_OPEN) { try { exec('start "" "' + url + '"', function () {}); } catch (e) {} }
+  try { fs.unlinkSync(path.join(ROOT, 'tunnel-url.txt')); } catch (e) {}   // zera URL de compartilhamento de sessao anterior
+  if (process.env.TUNNEL === '1') { startTunnel(); }                       // start.bat liga o compartilhamento automatico
 });

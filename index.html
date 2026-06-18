@@ -239,12 +239,20 @@
     .validade{font-size:24px}
     .gtxt h3{font-size:28px}
   }
-  /* ===== ANIMAÇÃO DE ENTRADA (só na página publicada): zoom-in suave + fade na CAPA da hero.
-     Usa só transform+opacity (não mexe em layout, largura/altura nem posição salva). transform reverte
-     ao fim (sem fill-mode) -> não cria containing-block permanente. Desligada no editor (html.edit) e em prefers-reduced-motion. ===== */
-  @keyframes heroZoomIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
-  html:not(.edit) .art{animation:heroZoomIn 1.15s cubic-bezier(.2,.7,.2,1)}
-  @media (prefers-reduced-motion:reduce){html .art{animation:none!important}}
+  /* ===== ANIMAÇÃO DE ENTRADA "SOPRO" (estilo Canva, só na página publicada): entra com blur+zoom,
+     expande de leve e "respira" de volta ao normal. Só opacity/transform/filter — não mexe em layout,
+     largura/altura nem posição salva. `both` evita flash no 1º paint; o estado final é EXATAMENTE
+     scale(1) (identidade). A .art NÃO é data-move (não tem transform salvo) e os filhos com transform
+     próprio (capa) compõem, não são sobrescritos. NÃO anima #stage (que é escalado pelo fitStage).
+     Desligada no editor (html.edit) e em prefers-reduced-motion. ===== */
+  @keyframes canvaSopro{0%{opacity:0;transform:scale(.88);filter:blur(2px)}45%{opacity:1;transform:scale(1.045);filter:blur(0)}70%{transform:scale(.985)}100%{opacity:1;transform:scale(1);filter:blur(0)}}
+  html:not(.edit) .art{animation:canvaSopro 1.25s cubic-bezier(.18,.85,.25,1) both;transform-origin:center center}
+  /* CTA "EU QUERO" flutuando (sobe/desce). Usa a propriedade INDIVIDUAL `translate` (NÃO `transform`),
+     então NÃO sobrescreve a posição salva do editor — que é aplicada via transform (_pos -> posCss). Só no publicado; parado no hover. */
+  @keyframes ctaFloat{0%,100%{translate:0 0}50%{translate:0 -8px}}
+  html:not(.edit) .cta.ctaLink{animation:ctaFloat 2.15s ease-in-out infinite;will-change:translate}
+  html:not(.edit) .cta.ctaLink:hover{animation-play-state:paused}
+  @media (prefers-reduced-motion:reduce){html .art,html .hero,html .cta.ctaLink{animation:none!important;translate:none!important;filter:none!important}}
   /* marcações de edição: SÓ no editor (html.edit) — a página publicada fica 100% limpa */
   html.edit [contenteditable="true"]{outline:1px dashed rgba(255,255,255,.3);outline-offset:3px;cursor:text;border-radius:3px;transition:outline-color .1s}
   html.edit [contenteditable="true"]:hover{outline-color:var(--accent)}
@@ -464,7 +472,7 @@
   var trust=t.trust||[];
   if(trust.length){var tone=trust.map(function(x,i){return '<span class="titem"><span class="tic">'+(ICONS[x.icon]||ICONS.check)+'</span><span class="tl" data-edit="trust.'+i+'.label">'+esc(x.label)+'</span></span>';}).join('');var tseg='';for(var tk=0;tk<3;tk++)tseg+=tone;document.getElementById('trustbar').innerHTML='<span class="mq">'+tseg+tseg+'</span>';show('trustbar',true);}
 
-  if(t.giftBar){var one=esc(t.giftBar)+'   🎁   ';var _greps=Math.max(1,Math.min(5,Math.ceil(2600/((String(t.giftBar).length||1)*11))));var seg='';for(var gk=0;gk<_greps;gk++)seg+='<span class="gi2">'+one+'</span>';var inner='<span class="mq2">'+seg+seg+'</span>';document.getElementById('giftbar').innerHTML='<div class="ribbon r1">'+inner+'</div><div class="ribbon r2">'+inner+'</div>';show('giftbar',true);}else{show('giftbar',false);}
+  if(t.giftBar){var GIFTSEP=String.fromCodePoint(0x1F381);var gclean=(String(t.giftBar).split(GIFTSEP)[0]||'').trim()||String(t.giftBar);var one=esc(gclean)+'   🎁   ';var _greps=Math.max(1,Math.min(5,Math.ceil(2600/((gclean.length||1)*11))));var seg='';for(var gk=0;gk<_greps;gk++)seg+='<span class="gi2">'+one+'</span>';var inner='<span class="mq2">'+seg+seg+'</span>';document.getElementById('giftbar').innerHTML='<div class="ribbon r1">'+inner+'</div><div class="ribbon r2">'+inner+'</div>';show('giftbar',true);}else{show('giftbar',false);}
 
   /* FAIXAS: velocidade CONSTANTE (px/s) em qualquer PC. A animação anda translateX(-50%) (= metade da largura).
      Com duração fixa, a velocidade dependia da largura (que muda com fonte/zoom/PC). Aqui a duração é calculada pela largura real. */
