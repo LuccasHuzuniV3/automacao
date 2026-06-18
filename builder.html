@@ -763,7 +763,7 @@ function geminiOneBatch(texts,srcLang,tgtLang){
      (era a causa do "itens nao batem" -> caia no MyMemory lento). Remonta pela chave; se faltar
      alguma, mantem o original — entao NUNCA desalinha nem da count errado. */
   var obj={}; texts.forEach(function(t,i){ obj[String(i)]=String(t==null?'':t); });
-  var instruction='Traduza os VALORES deste objeto JSON de '+srcLang+' para '+tgtLang+'. Responda APENAS com um objeto JSON com as MESMAS chaves (os mesmos numeros) e os valores traduzidos, sem mudar nem remover nenhuma chave. NAO traduza URLs, e-mails, precos/valores (ex.: R$ 19,90) nem numeros. Preserve emojis. Sem markdown nem explicacao, so o objeto JSON.';
+  var instruction='Traduza os VALORES deste objeto JSON de '+srcLang+' para '+tgtLang+'. Traduza TODAS as palavras usando o termo NATIVO do idioma destino (NAO deixe palavras na lingua de origem nem use estrangeirismo quando existir o termo nativo — ex.: "Bonus" deve virar o termo nativo do idioma destino) e de forma CONSISTENTE: a MESMA palavra recebe SEMPRE a MESMA traducao em todos os itens (ex.: "Bonus 1" e "Bonus 2" usam a mesma traducao de "Bonus"). Responda APENAS com um objeto JSON com as MESMAS chaves (os mesmos numeros) e os valores traduzidos, sem mudar nem remover nenhuma chave. NAO traduza URLs, e-mails, precos/valores (ex.: R$ 19,90) nem numeros. Preserve emojis. Sem markdown nem explicacao, so o objeto JSON.';
   return fetch('/api/gemini',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({model:geminiModel(),prompt:instruction,input:JSON.stringify(obj)})})
     .then(function(r){return r.json();}).then(function(j){
       if(!j.ok)throw new Error(j.error||'erro Gemini CLI');
