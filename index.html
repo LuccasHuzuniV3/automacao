@@ -391,7 +391,7 @@
     (t.extras||[]).forEach(function(x,i){
       if(MOBILE){   /* extras (cópias livres) NO MOBILE: render em FLUXO empilhado/centralizado (posição absoluta de desktop não cabe). Antes sumiam no celular/deploy. */
         var mh='';
-        if(x.type==='text'){var ffM=String(x.ff||'').replace(/["<>]/g,"'");mh='<div class="xtxt-m" style="position:relative;width:auto;max-width:100%;margin:16px auto;text-align:center;white-space:pre-wrap;font-size:'+Math.min(nv(x.fs,18),26)+'px;color:'+hx(x.color,'#ffffff')+';font-weight:'+(x.fw||700)+';line-height:'+nv(x.lh,1.3)+';'+(ffM?'font-family:'+ffM+';':'')+(x.tt&&x.tt!=='none'?'text-transform:'+esc(x.tt)+';':'')+'">'+esc(x.txt||'')+'</div>';}
+        if(x.type==='text'){var ffM=String(x.ff||'').replace(/["<>]/g,"'");mh='<div class="xtxt-m" style="position:relative;width:auto;max-width:100%;margin:16px auto;text-align:center;white-space:pre-wrap;font-size:'+Math.min(nv(x.fs,18),26)+'px;color:'+hx(x.color,'#ffffff')+';font-weight:'+(x.fw||700)+';line-height:'+nv(x.lh,1.3)+';'+(ffM?'font-family:'+ffM+';':'')+(x.tt&&x.tt!=='none'?'text-transform:'+esc(x.tt)+';':'')+'">'+esc(x.txt||'')+(x.xmark?'<span style="position:absolute;left:78%;top:54%;transform:translate(-50%,-50%);width:1.5em;height:1.8em;pointer-events:none;background:url(\'img/x-mark.png\') center/contain no-repeat"></span>':'')+'</div>';}
         else if(x.type==='cta'){mh='<div style="text-align:center;margin:18px 0"><a class="cta ctaLink" href="#" target="_blank" rel="noopener"><span>'+esc(t.cta||'')+'</span><span class="arw">&#8594;</span></a></div>';}
         htmlMobile+=mh;return;   /* caixas/degradê (decorativas) ficam de fora no mobile */
       }
@@ -409,7 +409,7 @@
           (x.sc&&x.sc!==1?'transform:scale('+nv(x.sc,1)+');transform-origin:top left;':'')+
           ((EDIT&&!lockedT)?'outline:1.5px dashed rgba(181,107,255,.6);outline-offset:2px;':'')+
           'white-space:pre-wrap;'+peT;
-        return '<div class="xtxt"'+((EDIT&&!lockedT)?' data-extra="'+i+'" data-extype="text"':'')+(lockedT?' data-locked="'+i+'"':'')+' style="'+stT+'">'+esc(x.txt||'')+'</div>';
+        return '<div class="xtxt"'+((EDIT&&!lockedT)?' data-extra="'+i+'" data-extype="text"':'')+(lockedT?' data-locked="'+i+'"':'')+' style="'+stT+'">'+esc(x.txt||'')+(x.xmark?'<span style="position:absolute;left:78%;top:54%;transform:translate(-50%,-50%);width:1.5em;height:1.8em;pointer-events:none;background:url(\'img/x-mark.png\') center/contain no-repeat"></span>':'')+'</div>';
       }
       if(x.type==='cta'){   /* BOTÃO duplicado: cópia viva do CTA (mesmo texto e mesmo link), solta na página */
         var lockedC=(EDIT&&x.lock);
