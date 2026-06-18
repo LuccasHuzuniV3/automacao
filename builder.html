@@ -1334,7 +1334,7 @@ function wireInlineEdit(){
           if(!isTx)hB=mkBar(doc,false,'arraste: ALTURA','ns-resize');   /* TEXTO também redimensiona LARGURA (a altura é automática pela fonte) */
         }
         /* barra FIXA no topo (nunca foge, mesmo se a caixa for gigante) — estilo Canva */
-        bar=doc.createElement('div');bar.style.cssText='position:fixed;z-index:99999;top:8px;left:50%;transform:translateX(-50%);pointer-events:auto;display:flex;gap:6px;align-items:center;background:#10182a;border:1px solid rgba(150,170,205,.45);border-radius:12px;padding:7px 11px;box-shadow:0 14px 44px rgba(0,0,0,.6);font-family:Inter,system-ui';
+        bar=doc.createElement('div');bar.style.cssText='position:fixed;z-index:99999;top:8px;left:50%;transform:translateX(-50%);pointer-events:auto;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;align-items:center;max-width:calc(100vw - 16px);background:#10182a;border:1px solid rgba(150,170,205,.45);border-radius:12px;padding:7px 11px;box-shadow:0 14px 44px rgba(0,0,0,.6);font-family:Inter,system-ui';   /* flex-wrap+max-width: cabe na tela do editor mobile -> o 🗑 excluir nunca fica cortado fora da tela */
         var lbl=doc.createElement('span');lbl.textContent=isTx?'Texto':(isCta?'Botão (cópia)':(o.bg?'Caixa de fundo':'Degradê'));lbl.style.cssText='color:#9fb0d0;font:700 12px Inter;white-space:nowrap';bar.appendChild(lbl);
         function swatch(get,set,ti){var s=doc.createElement('button');s.title=ti;s.style.cssText='cursor:pointer;width:34px;height:30px;border:1px solid rgba(150,170,205,.45);border-radius:8px;background:'+get();s.onmousedown=function(e){e.preventDefault();e.stopPropagation();};s.onclick=function(e){e.preventDefault();e.stopPropagation();colorPop(doc,s,get(),function(v){set(v);s.style.background=v;});};return s;}
         var mv=exBtn('✛','arraste pra mover (ou clique no meio da caixa)');mv.style.cursor='move';mv.addEventListener('mousedown',function(e){emove(e);});bar.appendChild(mv);
@@ -1404,7 +1404,7 @@ function wireInlineEdit(){
       }else{el.addEventListener('mouseenter',eshow);el.addEventListener('mouseleave',emaybe);}
       doc.addEventListener('scroll',function(){if(box)elay();},true);   /* rolou a página: controles re-grudam na tela */
     }
-    Array.prototype.forEach.call(doc.querySelectorAll('[data-extra]'),wireExtraEl);
+    Array.prototype.forEach.call(doc.querySelectorAll('[data-extra]'),function(el){try{wireExtraEl(el);}catch(e){try{console.warn('extra wire falhou',e);}catch(_){}}});   /* isola: se UM extra falhar ao reconectar, os outros continuam editáveis (não derruba o re-wire) */
     /* ===== Elementos TRAVADOS (🔒): mostram só um chip 🔓 destravar ao passar o mouse ===== */
     Array.prototype.forEach.call(doc.querySelectorAll('[data-locked]'),function(el){
       var idx=+el.getAttribute('data-locked');var chip=null;
@@ -1519,7 +1519,7 @@ function wireInlineEdit(){
     var TT=null,TTel=null,TTkey=null;
     function ttEnsure(){if(TT)return TT;
       TT=doc.createElement('div');
-      TT.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99998;background:#10182a;border:1px solid rgba(150,170,205,.35);border-radius:12px;padding:7px 10px;display:none;gap:8px;align-items:center;box-shadow:0 12px 40px rgba(0,0,0,.6);font-family:Inter,system-ui';
+      TT.style.cssText='position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:99998;background:#10182a;border:1px solid rgba(150,170,205,.35);border-radius:12px;padding:7px 10px;display:none;flex-wrap:wrap;justify-content:center;gap:8px;align-items:center;max-width:calc(100vw - 16px);box-shadow:0 12px 40px rgba(0,0,0,.6);font-family:Inter,system-ui';   /* flex-wrap+max-width: cabe no editor mobile (todos os botões acessíveis) */
       var sel=doc.createElement('select');sel.title='fonte deste texto';sel.style.cssText='background:#0a1322;border:1px solid rgba(150,170,205,.4);color:#e8eef9;border-radius:8px;padding:7px;font-size:12.5px;max-width:150px';
       [["","(fonte do tema)"],["'Anton',Inter,sans-serif","Anton"],["'Bebas Neue',Inter,sans-serif","Bebas Neue"],["'Hanken Grotesk',Inter,sans-serif","HK Grotesk"],["'Oswald',Inter,sans-serif","Oswald"],["'Playfair Display',serif","Playfair"],["Inter,system-ui,sans-serif","Inter"]].forEach(function(o){var op=doc.createElement('option');op.value=o[0];op.textContent=o[1];sel.appendChild(op);});
       function bt(x,ti){var b=doc.createElement('button');b.textContent=x;b.title=ti;b.style.cssText='cursor:pointer;border:1px solid rgba(150,170,205,.4);background:#16233a;color:#fff;font-weight:800;font-size:14px;width:32px;height:32px;border-radius:8px';b.onmousedown=function(e){e.preventDefault();e.stopPropagation();};return b;}
