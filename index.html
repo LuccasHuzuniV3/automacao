@@ -198,9 +198,9 @@
     .cta{width:100%;padding:16px 22px;font-size:clamp(18px,5vw,22px)}
     .trustbar{padding:16px 0}.titem .tic{width:48px;height:48px}.titem .tic svg{width:22px;height:22px}.titem .tl{font-size:12px}.titem{margin:0 20px}
     .giftbar{height:118px;margin:8px 0}.ribbon{font-size:clamp(13px,4vw,18px);padding:10px 0}
-    .bonus{padding:30px 0}.bcard .bt{font-size:25px}.bcard p{font-size:15px;line-height:1.5}
+    .bonus{padding:30px 0}.bgrid{grid-template-columns:1fr;gap:18px}.bcard{grid-template-columns:1fr;gap:12px;text-align:center}.bcard img{max-height:340px}.bcard .bt{font-size:25px}.bcard p{font-size:15px;line-height:1.5}
     .bwrap{flex-direction:column;gap:8px;max-width:100%}
-    .bitem.main img{width:min(92vw,400px)}.bitem.sm img{width:min(58vw,240px)}
+    .bitem.main img{width:min(94vw,460px)}.bitem.sm img{width:min(84vw,400px)}
     .bplus{font-size:38px}
     .bbonuses{flex-direction:column;gap:20px;align-items:center}
     .scarcity{font-size:clamp(24px,7vw,40px);padding:22px 0 8px}
@@ -391,7 +391,12 @@
     (t.extras||[]).forEach(function(x,i){
       if(MOBILE){   /* extras (cópias livres) NO MOBILE: render em FLUXO empilhado/centralizado (posição absoluta de desktop não cabe). Antes sumiam no celular/deploy. */
         var mh='';
-        if(x.type==='text'){var ffM=String(x.ff||'').replace(/["<>]/g,"'");mh='<div class="xtxt-m" style="position:relative;width:auto;max-width:100%;margin:16px auto;text-align:center;white-space:pre-wrap;font-size:'+Math.min(nv(x.fs,18),26)+'px;color:'+hx(x.color,'#ffffff')+';font-weight:'+(x.fw||700)+';line-height:'+nv(x.lh,1.3)+';'+(ffM?'font-family:'+ffM+';':'')+(x.tt&&x.tt!=='none'?'text-transform:'+esc(x.tt)+';':'')+'">'+esc(x.txt||'')+(x.xmark?'<span style="position:absolute;left:78%;top:54%;transform:translate(-50%,-50%);width:1.5em;height:1.8em;pointer-events:none;background:url(\'img/x-mark.png\') center/contain no-repeat"></span>':'')+'</div>';}
+        if(x.type==='text'){var ffM=String(x.ff||'').replace(/["<>]/g,"'");
+          var mfsM=x.mfs?parseFloat(x.mfs):Math.min(nv(x.fs,18),26);
+          var mtaM=x.mta||'center';
+          var marM=(mtaM==='left')?'16px auto 16px 0':(mtaM==='right')?'16px 0 16px auto':'16px auto';
+          var posM=(x.mx||x.my)?'left:'+nv(x.mx,0)+'px;top:'+nv(x.my,0)+'px;':'';   /* posição relativa SÓ no mobile (Modo celular) */
+          mh='<div class="xtxt-m"'+(EDIT?' data-extra="'+i+'" data-extype="text"':'')+' style="position:relative;width:auto;max-width:100%;margin:'+marM+';text-align:'+mtaM+';white-space:pre-wrap;'+posM+'font-size:'+mfsM+'px;color:'+hx(x.color,'#ffffff')+';font-weight:'+(x.fw||700)+';line-height:'+nv(x.lh,1.3)+';'+(ffM?'font-family:'+ffM+';':'')+(x.tt&&x.tt!=='none'?'text-transform:'+esc(x.tt)+';':'')+'">'+esc(x.txt||'')+(x.xmark?'<span style="position:absolute;left:78%;top:54%;transform:translate(-50%,-50%);width:1.5em;height:1.8em;pointer-events:none;background:url(\'img/x-mark.png\') center/contain no-repeat"></span>':'')+'</div>';}
         else if(x.type==='cta'){mh='<div style="text-align:center;margin:18px 0"><a class="cta ctaLink" href="#" target="_blank" rel="noopener"><span>'+esc(t.cta||'')+'</span><span class="arw">&#8594;</span></a></div>';}
         htmlMobile+=mh;return;   /* caixas/degradê (decorativas) ficam de fora no mobile */
       }
@@ -534,6 +539,13 @@
   if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');if(k==='giftBar')return;var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
   /* _w = largura (expansão lateral) dos TEXTOS — aplica como width do inline-block (controla a quebra de linha). */
   if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-img]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-img');if(k==='giftBar')return;if(t._w[k]){var pp=String(t._w[k]).split(' ');e.style.width=pp[0];e.style.maxWidth='none';if(e.hasAttribute('data-img')&&pp[1]){e.style.height=pp[1];e.style.objectFit='cover';}}});}   /* giftBar (fitinha) é full-width por design: largura livre a estoura num filete -> ignorada */   /* texto: só largura. imagem: "Wpx Hpx" -> largura E altura travada + cover (mexe SÓ na largura, não distorce nem empurra o resto) */
+  /* ===== MOBILE: overrides ajustados no "Modo celular" (separados do desktop). Por enquanto só IMAGENS (tamanho/posição). ===== */
+  if(MOBILE&&t._posM){Array.prototype.forEach.call(document.querySelectorAll('[data-img],[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-img')||e.getAttribute('data-edit')||e.getAttribute('data-move');if(k==='giftBar')return;var p=t._posM[k];if(!_posReal(p))return;
+    if(e.hasAttribute('data-move')&&!e.hasAttribute('data-edit')&&!e.hasAttribute('data-img')){e.style.setProperty('position','relative','important');e.style.setProperty('left',(p.x||0)+'px','important');e.style.setProperty('top',(p.y||0)+'px','important');if(p.s&&p.s!=1){e.style.setProperty('transform','scale('+p.s+')','important');e.style.transformOrigin='top left';}}   /* CTA/cards: posição relativa (igual desktop) */
+    else{if(e.hasAttribute('data-edit'))e.style.setProperty('display','inline-block','important');e.style.setProperty('transform','translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')','important');e.style.transformOrigin='top left';}});}   /* !important: vence as regras mobile .art img/.bitem img que forçam transform:none/width */
+  if(MOBILE&&t._wM){Array.prototype.forEach.call(document.querySelectorAll('[data-img],[data-edit]'),function(e){var k=e.getAttribute('data-img')||e.getAttribute('data-edit');if(k==='giftBar')return;if(t._wM[k]){e.style.setProperty('width',String(t._wM[k]).split(' ')[0],'important');e.style.setProperty('max-width','100%','important');if(e.hasAttribute('data-img'))e.style.setProperty('height','auto','important');}});}
+  if(MOBILE&&t._fsM){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fsM[k])e.style.setProperty('font-size',t._fsM[k],'important');});}   /* tamanho da fonte só no mobile */
+  if(MOBILE&&t._taM){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._taM[k]){e.style.setProperty('display','block','important');e.style.setProperty('text-align',t._taM[k],'important');}});}   /* alinhar só no mobile (display block p/ o text-align pegar) */
   /* _h DESATIVADO: aplicava minHeight + margem NEGATIVA = -(H - offsetHeight), com offsetHeight medido em runtime
      (dependente do carregamento da fonte) -> a altura do card variava entre monitores/carregamentos (viola a regra 6
      e quebrava editor=abrir entre telas). Agora os cards têm ALTURA DE CONTEÚDO, determinística e idêntica em
@@ -603,7 +615,7 @@
       fin.forEach(function(n){parent.insertBefore(n,ref);});
     }
     /* cor de fundo POR SEÇÃO numa SUBCAMADA (z0): fica embaixo das decorações (z1) e do conteúdo (z2) */
-    (function(){var keys=Object.keys(t._secBg||{});if(!keys.length)return;
+    (function(){var SBG=(MOBILE&&t._secBgM)?Object.assign({},t._secBg,t._secBgM):(t._secBg||{});var keys=Object.keys(SBG);if(!keys.length)return;   /* mobile: mescla _secBgM (cor de seção SÓ do mobile) sobre o desktop */
       var host=document.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:0;pointer-events:none';
       document.body.insertBefore(host,document.body.firstChild);
       function place(){host.innerHTML='';
@@ -612,14 +624,14 @@
         keys.forEach(function(k){if(k==='gift')return;   /* a FAIXA (gift) tem o design próprio das fitas — fundo de seção atrás dela vira aquele "band cinza" feio; ignora de propósito */
         var n=document.querySelector('[data-sec="'+k+'"]');if(!n)return;
         var dv=n.querySelector('.divider');
-        if(dv){dv.style.background=t._secBg[k];return;}
-        n.style.background=t._secBg[k];   /* pinta o PRÓPRIO elemento: cobre fundos nativos (ex.: gradiente da trustbar) */
+        if(dv){dv.style.background=SBG[k];return;}
+        n.style.background=SBG[k];   /* pinta o PRÓPRIO elemento: cobre fundos nativos (ex.: gradiente da trustbar) */
         var r=n.getBoundingClientRect();var top=r.top+sy;
         var idx=-1;for(var j=0;j<all.length;j++){if(all[j].n===n){idx=j;break;}}
         var bottom=(idx>=0&&idx<all.length-1)?all[idx+1].top:(r.bottom+sy);   /* estende até a PRÓXIMA seção: preenche o vão/margem, sem buraco */
         var h=Math.max(Math.round(r.height),Math.round(bottom-top));
         var u=document.createElement('div');u.setAttribute('data-secbg',k);
-        u.style.cssText='position:absolute;left:0;width:100%;top:'+Math.round(top)+'px;height:'+h+'px;background:'+t._secBg[k];
+        u.style.cssText='position:absolute;left:0;width:100%;top:'+Math.round(top)+'px;height:'+h+'px;background:'+SBG[k];
         host.appendChild(u);});}
       place();window.addEventListener('load',place);window.addEventListener('resize',place);
     })();
