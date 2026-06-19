@@ -843,7 +843,10 @@ function translatePais(srcCode,tgtCode,onStep){
     aplicarLayoutMolde(S.t,T.t);   /* copia TAMANHO+POSICAO do molde (imagens, combo, botoes, decor); texto traduzido flui */
     /* MOEDA: ao traduzir pra FORA do Brasil, troca R$ -> US$ no preço (Brasil mantém R$). Só o SÍMBOLO; o valor numérico você ajusta. */
     var ehBR=/pt-?br/i.test(String(T.idioma||tgtCode||''));
-    function aplicarMoeda(){ if(ehBR)return; ['precoDe','preco'].forEach(function(k){ if(T.t[k]) T.t[k]=String(T.t[k]).split('R$').join('US$'); }); }
+    function aplicarMoeda(){ if(ehBR)return; var sw=function(v){return String(v).split('R$').join('US$');};
+      ['precoDe','preco'].forEach(function(k){ if(T.t[k]) T.t[k]=sw(T.t[k]); });   /* preço da OFERTA (antigo/novo) */
+      if(T.t.bundle&&T.t.bundle.length) T.t.bundle.forEach(function(b){ if(b&&b.precoDe)b.precoDe=sw(b.precoDe); if(b&&b.precoPor)b.precoPor=sw(b.precoPor); });   /* preços dos COMBOS: precoDe (antigo) + precoPor (novo) de CADA combo */
+    }
     var total=tasks.length, done=0;
     if(!total){aplicarMoeda();resolve();return;}
     function myMemoryLoop(){ (function next(i){
