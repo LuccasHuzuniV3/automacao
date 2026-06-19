@@ -18,6 +18,11 @@ echo     "login-vercel.bat" UMA vez - depois nao precisa mais.)
 echo.
 echo  -----------------------------------------------
 echo.
+rem  Traducao via agy (Antigravity): no Windows o agy roda via WSL (o agy.exe nativo NAO
+rem  redireciona stdout - retornaria vazio). Precisa de WSL + Ubuntu + agy instalado e logado
+rem  DENTRO do WSL (curl -fsSL https://antigravity.google/cli/install.sh | bash). Se voce NAO
+rem  usa WSL, apague a linha "set USE_WSL_FOR_AGY=1" abaixo (ai o agy roda nativo).
+set USE_WSL_FOR_AGY=1
 set TUNNEL=1
 node server.js
 echo.

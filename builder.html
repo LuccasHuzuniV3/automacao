@@ -292,14 +292,18 @@
       <div class="cfgsec">
         <div class="side-h">Tradução</div>
         <label class="cfgrow" title="Opcional: seu e-mail aumenta o limite GRÁTIS de tradução de 5.000 para 50.000 palavras/dia"><span>E-mail (aumenta o limite grátis de tradução)</span><input class="dom" id="mmEmail" placeholder="opcional"></label>
-        <label class="cfgrow" title="Motor de tradução. Gemini (via CLI local — gemini logado) é o melhor. MyMemory é o grátis sem CLI."><span>🤖 Motor de tradução</span><select class="dom" id="geminiModel">
-          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite</option>
-          <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-          <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite</option>
+        <label class="cfgrow" title="Motor de tradução. agy (Antigravity CLI local — agy logado, conta Google AI Ultra) é o melhor. MyMemory é o grátis sem CLI."><span>🤖 Motor de tradução</span><select class="dom" id="geminiModel">
+          <option value="Gemini 3.5 Flash (Medium)">Gemini 3.5 Flash — equilibrado (padrão)</option>
+          <option value="Gemini 3.5 Flash (High)">Gemini 3.5 Flash — mais inteligente</option>
+          <option value="Gemini 3.5 Flash (Low)">Gemini 3.5 Flash — mais rápido</option>
+          <option value="Gemini 3.1 Pro (High)">Gemini 3.1 Pro — inteligente</option>
+          <option value="Gemini 3.1 Pro (Low)">Gemini 3.1 Pro — rápido</option>
+          <option value="Claude Sonnet 4.6 (Thinking)">Claude Sonnet 4.6 (Thinking)</option>
+          <option value="Claude Opus 4.6 (Thinking)">Claude Opus 4.6 (Thinking)</option>
+          <option value="GPT-OSS 120B (Medium)">GPT-OSS 120B</option>
           <option value="mymemory">MyMemory (grátis, sem CLI)</option>
         </select></label>
-        <button class="btn" id="btnTestGemini" title="Testa o Gemini CLI fazendo uma tradução de teste">🔌 Testar Gemini</button>
+        <button class="btn" id="btnTestGemini" title="Testa o agy (Antigravity CLI) fazendo uma tradução de teste">🔌 Testar agy</button>
       </div>
       <div class="cfgsec">
         <div class="side-h">Importar / Exportar</div>
@@ -412,7 +416,7 @@ function apiSave(){
   return fetch('/api/save'+WS_SAVEQS,{method:'POST',headers:{'Content-Type':'text/javascript'},body:exportText()}).then(function(r){return r.json();}).catch(function(){return{ok:false};});
 }
 function apiImage(name,dataB64){ return fetch('/api/image',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({name:name,dataB64:dataB64})}).then(function(r){return r.json();}).catch(function(){return{ok:false};}); }
-function apiDeploy(){ var ebs=(WS==='principal')?Object.keys(model||{}):[]; return fetch('/api/deploy',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({ebooks:ebs})}).then(function(r){return r.json();}).catch(function(e){return{ok:false,error:String(e)};}); }   /* no UPSELL/DOWNSELL manda [] -> build publica TODOS os ebooks do Principal + UPSELL + DOWNSELL (build-dist faz os tres) */
+function apiDeploy(){ var ebs=(WS==='principal')?[curEbook]:[]; return fetch('/api/deploy',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({ebooks:ebs})}).then(function(r){return r.json();}).catch(function(e){return{ok:false,error:String(e)};}); }   /* Principal: publica SÓ o ebook selecionado (build-dist faz MERGE no que já está publicado, mantém os outros intactos). UPSELL/DOWNSELL: [] -> build completo do workspace */
 function mlOf(idioma){ var s=(idioma||'').trim(); if(/^fil/i.test(s))return 'tl'; return s; } /* mantem o locale completo (pt-BR, en-US): MyMemory traduz MUITO melhor que pt|en */
 function trShow(msg){var b=$('trProgress');if(b){b.style.display='block';b.style.background='linear-gradient(180deg,#1aa83f,#127a2c)';b.textContent=msg;}}
 function trDone(msg){var b=$('trProgress');if(b){b.textContent=msg;b.style.background='linear-gradient(180deg,#2bb14e,#1a8f3a)';setTimeout(function(){if(b)b.style.display='none';},3500);}}
@@ -475,9 +479,15 @@ var TXT=[
 var DEFAULT=(WS_SRC&&Object.keys(WS_SRC).length)?JSON.parse(JSON.stringify(WS_SRC)):{salomao:{tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}}};
 
 var model,curEbook,curPais,nonce=0,imgCounter=0,$=function(id){return document.getElementById(id)};
-var BUILDER_VER='9';
+var BUILDER_VER='13';
 function load(){
   try{ if(localStorage.getItem('BUILDER_VER')===BUILDER_VER) model=JSON.parse(localStorage.getItem(WS_STATEKEY)); }catch(e){}
+  /* ANTI-CLOBBER: se o rascunho do navegador (localStorage) for de ebook(s) DIFERENTE(S) do que está salvo no disco
+     (ex.: stub "salomao" velho enquanto o disco tem "syriusza"), ele é VELHO -> descarta e usa o disco. Sem isso, o
+     rascunho vazio sobrescreve os dados bons ao editar (o bug recorrente do upsell). Rascunho do MESMO ebook (edições
+     não salvas) é mantido normalmente, pois há sobreposição de chave. */
+  try{ if(model && typeof WS_SRC!=='undefined' && WS_SRC && Object.keys(WS_SRC).length
+        && !Object.keys(model).some(function(k){return WS_SRC[k];})) model=null; }catch(e){}
   if(!model||!Object.keys(model).length)model=JSON.parse(JSON.stringify(DEFAULT));
   localStorage.setItem('BUILDER_VER',BUILDER_VER);
   migrarLayoutTraducoes();
@@ -485,8 +495,8 @@ function load(){
   var vt=localStorage.getItem('BUILDER_VIEWTOKEN');if(vt&&$('viewToken'))$('viewToken').value=vt;
   var em=localStorage.getItem('MM_EMAIL');if(em&&$('mmEmail'))$('mmEmail').value=em;
   if($('mmEmail'))$('mmEmail').oninput=function(){try{localStorage.setItem('MM_EMAIL',$('mmEmail').value.trim());}catch(e){}};
-  var gm=localStorage.getItem('GEMINI_MODEL');if(gm&&$('geminiModel'))$('geminiModel').value=gm;
-  if($('geminiModel'))$('geminiModel').onchange=function(){try{localStorage.setItem('GEMINI_MODEL',$('geminiModel').value);}catch(e){}};
+  var gm=localStorage.getItem('AGY_MODEL');if(gm&&$('geminiModel'))$('geminiModel').value=gm;
+  if($('geminiModel'))$('geminiModel').onchange=function(){try{localStorage.setItem('AGY_MODEL',$('geminiModel').value);}catch(e){}};
   curEbook=Object.keys(model)[0];curPais=Object.keys(model[curEbook].paises)[0];
 }
 /* ---- Helper: COPIA O ESQUELETO DO MOLDE (br) num idioma traduzido, preservando so o TEXTO ----
@@ -756,8 +766,8 @@ function tr(text,s,t){
   return (function nx(i){if(i>=pieces.length)return Promise.resolve(res.join(''));
     return trOne(pieces[i],s,t).then(function(v){res.push(v);return new Promise(function(r){setTimeout(r,300);}).then(function(){return nx(i+1);});});})(0);
 }
-function geminiModel(){return (($('geminiModel')&&$('geminiModel').value)||localStorage.getItem('GEMINI_MODEL')||'gemini-2.5-flash');}
-function usaGemini(){return APP && /^gemini/.test(geminiModel());}
+function geminiModel(){return (($('geminiModel')&&$('geminiModel').value)||localStorage.getItem('AGY_MODEL')||'Gemini 3.5 Flash (Medium)');}
+function usaGemini(){return APP && geminiModel() && geminiModel()!=='mymemory';}   /* CLI (agy) = qualquer modelo que NÃO seja mymemory */
 function geminiOneBatch(texts,srcLang,tgtLang){
   /* Objeto com chaves numeradas (0..n-1) em vez de array solto. O modelo NAO perde/junta itens
      (era a causa do "itens nao batem" -> caia no MyMemory lento). Remonta pela chave; se faltar
@@ -766,9 +776,9 @@ function geminiOneBatch(texts,srcLang,tgtLang){
   var instruction='Traduza os VALORES deste objeto JSON de '+srcLang+' para '+tgtLang+'. Traduza TODAS as palavras usando o termo NATIVO do idioma destino (NAO deixe palavras na lingua de origem nem use estrangeirismo quando existir o termo nativo — ex.: "Bonus" deve virar o termo nativo do idioma destino) e de forma CONSISTENTE: a MESMA palavra recebe SEMPRE a MESMA traducao em todos os itens (ex.: "Bonus 1" e "Bonus 2" usam a mesma traducao de "Bonus"). Responda APENAS com um objeto JSON com as MESMAS chaves (os mesmos numeros) e os valores traduzidos, sem mudar nem remover nenhuma chave. NAO traduza URLs, e-mails, precos/valores (ex.: R$ 19,90) nem numeros. Preserve emojis. Sem markdown nem explicacao, so o objeto JSON.';
   return fetch('/api/gemini',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({model:geminiModel(),prompt:instruction,input:JSON.stringify(obj)})})
     .then(function(r){return r.json();}).then(function(j){
-      if(!j.ok)throw new Error(j.error||'erro Gemini CLI');
+      if(!j.ok)throw new Error(j.error||'erro agy');
       var txt=String(j.text||'').replace(/```json|```/gi,''),mm=txt.match(/\{[\s\S]*\}/);
-      if(!mm)throw new Error('Gemini sem JSON na resposta: '+txt.slice(0,140));
+      if(!mm)throw new Error('agy sem JSON na resposta: '+txt.slice(0,140));
       var map=JSON.parse(mm[0]);
       return texts.map(function(t,i){ var v=map[String(i)]; return (v!=null&&String(v).trim())?String(v):String(t==null?'':t); });
     });
@@ -837,7 +847,7 @@ function translatePais(srcCode,tgtCode,onStep){
       geminiTranslateBatch(tasks.map(function(t){return t.val;}), S.idioma||'pt-BR', T.idioma||tgtCode).then(function(arr){
         tasks.forEach(function(t,i){ if(arr[i]!=null&&String(arr[i]).trim())t.set(arr[i]); });
         if(onStep)onStep(total,total); resolve();
-      }).catch(function(err){ try{console.warn('Gemini falhou, voltando pro MyMemory:',err&&err.message);}catch(e){} try{toast('Gemini: '+((err&&err.message)||'falhou')+' — usando tradução grátis (mais lenta)');}catch(e){} myMemoryLoop(); });
+      }).catch(function(err){ try{console.warn('agy falhou, voltando pro MyMemory:',err&&err.message);}catch(e){} try{toast('agy: '+((err&&err.message)||'falhou')+' — usando tradução grátis (mais lenta)');}catch(e){} myMemoryLoop(); });
     } else { myMemoryLoop(); }
   });
 }
@@ -1774,7 +1784,7 @@ function addPais(){
   function close(){if(ov.parentNode)ov.parentNode.removeChild(ov);}
   var card=document.createElement('div');card.style.cssText='background:#0e1422;border:1px solid var(--line,#22304a);border-radius:14px;padding:18px;width:600px;max-width:94vw;max-height:84vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.6)';
   var h=document.createElement('div');h.textContent='🌍 Traduzir para outros idiomas — marque os países';h.style.cssText='font-weight:800;color:#e8eef9;margin-bottom:4px;font-size:15px';card.appendChild(h);
-  var motor=/^gemini/.test(geminiModel())?('Gemini ('+geminiModel()+')'):'MyMemory';
+  var motor=geminiModel()!=='mymemory'?('agy: '+geminiModel()):'MyMemory';
   var sub=document.createElement('div');sub.textContent='Copia o layout do '+curPais.toUpperCase()+' e traduz os textos via '+motor+'. Depois você troca só as imagens.';sub.style.cssText='font-size:12px;color:var(--muted,#8a93a6);margin:0 0 12px';card.appendChild(sub);
   var grid=document.createElement('div');grid.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:7px';card.appendChild(grid);
   var cbs=[], n=0;
@@ -1912,15 +1922,15 @@ function refreshVercelPill(){ if(!APP)return; fetch('/deploy-config.json?'+Date.
 refreshVercelPill();
 /* botao Testar Gemini */
 $('btnTestGemini').onclick=function(){
-  if(!APP){toast('Abra pelo start.bat pra usar o Gemini');return;}
-  if(!/^gemini/.test(geminiModel())){alert('Você selecionou MyMemory (grátis, sem CLI). Pra usar o Gemini, escolha um modelo Gemini no seletor "🤖 Tradução".');return;}
+  if(!APP){toast('Abra pelo start.bat pra usar o agy');return;}
+  if(geminiModel()==='mymemory'){alert('Você selecionou MyMemory (grátis, sem CLI). Pra usar o agy (Antigravity), escolha um modelo no seletor "🤖 Tradução".');return;}
   $('btnTestGemini').textContent='⏳ testando...';
   geminiTranslateBatch(['Entre em contato conosco'],'pt-BR','fr-FR').then(function(arr){
-    $('btnTestGemini').textContent='🔌 Testar Gemini';
-    alert('✅ Gemini CLI conectado ('+geminiModel()+')!\n\n"Entre em contato conosco" → "'+arr[0]+'"\n\nPode traduzir os idiomas agora.');
+    $('btnTestGemini').textContent='🔌 Testar agy';
+    alert('✅ agy (Antigravity) conectado ('+geminiModel()+')!\n\n"Entre em contato conosco" → "'+arr[0]+'"\n\nPode traduzir os idiomas agora.');
   }).catch(function(e){
-    $('btnTestGemini').textContent='🔌 Testar Gemini';
-    alert('❌ Falhou: '+((e&&e.message)||e)+'\n\nConfira:\n1) Reiniciou o servidor? (fechar a janela preta e abrir o start.bat de novo)\n2) O gemini CLI está logado? Rode "gemini" no terminal e faça login.\n3) Se citar o modelo, escolha outro no seletor.');
+    $('btnTestGemini').textContent='🔌 Testar agy';
+    alert('❌ Falhou: '+((e&&e.message)||e)+'\n\nConfira:\n1) Reiniciou o servidor? (FECHE a janela preta do start.bat e abra de NOVO — o Node não recarrega o server.js sozinho)\n2) O agy está logado no WSL? Rode "agy" no terminal do Ubuntu (WSL) e faça login (conta Google AI Ultra).\n3) Se a mensagem citar o modelo, escolha outro no seletor.');
   });
 };
 if(APP){ $('btnDeploy').style.display=''; $('btnMulti').style.display=''; $('btnZip').style.display='none'; }
@@ -1928,7 +1938,7 @@ $('btnDeploy').onclick=function(){
   if(!APP){toast('Abra pelo start.bat pra usar o Deploy');return;}
   toast('Publicando na Vercel... pode levar ~1 min');
   apiSave().then(function(){return apiDeploy();}).then(function(r){
-    if(r&&r.ok&&r.url){try{localStorage.setItem('LAST_DEPLOY',JSON.stringify({ebooks:Object.keys(model),url:r.url,at:Date.now()}));}catch(e){}toast('✓ Publicado na Vercel!');renderEbooksHome();showDeployResult(r.url);}
+    if(r&&r.ok&&r.url){try{localStorage.setItem('LAST_DEPLOY',JSON.stringify({ebooks:[curEbook],url:r.url,at:Date.now()}));}catch(e){}toast('✓ Publicado na Vercel!');renderEbooksHome();showDeployResult(r.url,curEbook);}   /* tela de links mostra SÓ o ebook que foi publicado */
     else if(r&&r.hint){alert(r.hint);toast(r.hint);}
     else{toast('Deploy falhou — veja a janela preta do app');if(r&&r.log)console.log(r.log);}
   });

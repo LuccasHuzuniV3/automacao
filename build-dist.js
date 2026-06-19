@@ -18,18 +18,38 @@ require(path.join(ROOT, 'ebooks.js'));      // popula window.EBOOKS
 const all = window.EBOOKS || {};
 
 const only = process.argv.slice(2).filter(Boolean);
-const keys = only.length ? only.filter(k => all[k]) : Object.keys(all);
-if (!keys.length) { console.error('Nenhum ebook valido. Disponiveis: ' + Object.keys(all).join(', ')); process.exit(1); }
+const MERGE = only.length > 0;   // ebook(s) especifico(s) -> MESCLA no que ja esta publicado (NAO derruba os outros); sem args = rebuild completo
+
+// no MERGE, le o que JA esta publicado (ultimo deploy) pra preservar os demais ebooks como estavam
+let published = {};
+if (MERGE) {
+  try {
+    const code = fs.readFileSync(path.join(DIST, 'ebooks.js'), 'utf8');
+    const sandbox = { window: {} };
+    require('vm').runInNewContext(code, sandbox, { timeout: 3000 });
+    published = sandbox.window.EBOOKS || {};
+  } catch (e) { published = {}; }
+}
 
 const out = {};
-keys.forEach(k => { out[k] = all[k]; });
+if (MERGE) {
+  Object.keys(published).forEach(k => { out[k] = published[k]; });   // mantem os ja publicados (estado do ultimo deploy)
+  only.filter(k => all[k]).forEach(k => { out[k] = all[k]; });        // atualiza/adiciona SO o(s) selecionado(s), com o estado atual
+} else {
+  Object.keys(all).forEach(k => { out[k] = all[k]; });               // rebuild completo = todos do ebooks.js
+}
+const keys = Object.keys(out);
+const updated = MERGE ? only.filter(k => all[k]) : keys;
+if (!keys.length) { console.error('Nenhum ebook valido. Disponiveis: ' + Object.keys(all).join(', ')); process.exit(1); }
 
-// limpa o conteudo de dist/ MAS preserva o vinculo .vercel (deploy repetivel)
+// limpa a dist SO no rebuild completo; no MERGE preserva arquivos/imagens dos OUTROS ebooks ja publicados
 if (fs.existsSync(DIST)) {
-  fs.readdirSync(DIST).forEach(function (name) {
-    if (name === '.vercel') return;   // mantem o link do projeto Vercel
-    fs.rmSync(path.join(DIST, name), { recursive: true, force: true });
-  });
+  if (!MERGE) {
+    fs.readdirSync(DIST).forEach(function (name) {
+      if (name === '.vercel') return;   // mantem o link do projeto Vercel
+      fs.rmSync(path.join(DIST, name), { recursive: true, force: true });
+    });
+  }
 } else {
   fs.mkdirSync(DIST, { recursive: true });
 }
@@ -79,7 +99,7 @@ if (fs.existsSync(apiSrc)) {
   });
 }
 
-console.log('OK -> dist/  | ebooks: ' + keys.join(', ') + ' | imagens: ' + copied + '/' + imgs.length + (apiList.length ? ' | api: ' + apiList.join(', ') : ''));
+console.log('OK -> dist/  | ' + (MERGE ? 'MERGE (atualizou: ' + updated.join(', ') + ') | no ar: ' : 'ebooks: ') + keys.join(', ') + ' | imagens: ' + copied + '/' + imgs.length + (apiList.length ? ' | api: ' + apiList.join(', ') : ''));
 if (missing.length) console.log('AVISO imagens nao encontradas: ' + missing.join(', '));
 
 // ===== Workspaces extras: build separado em dist/<sub>/  (publica em /<sub>). Mesmo template do Principal. =====

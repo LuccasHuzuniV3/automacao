@@ -146,45 +146,97 @@ process.on('exit', stopTunnel);
 process.on('SIGINT', function () { stopTunnel(); process.exit(0); });
 process.on('SIGTERM', function () { stopTunnel(); process.exit(0); });
 
-/* ===== GEMINI CLI (traducao) =====================================================================
-   IMPORTANTE: mantem o comando EXATO do original que funcionava (-p instrucao + textos via STDIN +
-   "-o text"). O "-o text" entrega a resposta crua e aguenta lote grande; trocar pra "--output-format
-   json" ZERAVA a resposta grande no CLI antigravity (regressao que eu tinha introduzido). A UNICA
-   adicao vs o original: timeout proprio que faz taskkill /F /T (mata a ARVORE de node.exe do gemini-cli,
-   que o exec sozinho deixava ZUMBI) + mensagens de erro claras (cota/login). ====================== */
-function geminiInvoke(model, promptInstr, inputData, cb) {
-  let done = false, timer = null;
-  const finish = function (err, text) { if (done) return; done = true; if (timer) clearTimeout(timer); cb(err, text); };
-  const safeModel = String(model || 'gemini-2.5-flash').replace(/[^a-zA-Z0-9.\-]/g, '') || 'gemini-2.5-flash';
-  const safePrompt = String(promptInstr || '').replace(/[\r\n]+/g, ' ').replace(/["%&|<>^`]/g, ' ').trim();
-  const cmd = 'gemini --skip-trust -m ' + safeModel + ' -p "' + safePrompt + '" -o text';
-  let child;
+/* ===== ANTIGRAVITY CLI (agy) — motor de traducao ==================================================
+   MIGRADO do gemini-cli (Google descontinuou o @google/gemini-cli em ~jun/2026 -> "Antigravity"/agy).
+   Diferencas vs gemini-cli: binario `agy`; flag --dangerously-skip-permissions (era --skip-trust);
+   saida em TEXTO PURO no stdout (nao mais JSON {"response":...}); prompt vai TODO via STDIN (nao usa -p);
+   nomes de modelo novos (ex.: "Gemini 3.5 Flash (Medium)"). Modelo INVALIDO -> agy devolve stdout VAZIO
+   em silencio (exit 0) -> por isso NAO mandamos --model quando vazio (deixa o default do proprio agy).
+   BUG WINDOWS: agy.exe escreve direto no Console (WriteConsole) ignorando redirect -> stdout vem VAZIO.
+   SOLUCAO: rodar agy via WSL Linux (set USE_WSL_FOR_AGY=1 no start.bat; precisa WSL+Ubuntu+agy logado).
+   Mantido do original: timeout proprio + taskkill /F /T (mata a ARVORE de node.exe que o agy faz spawn). */
+let _agyWslPath = null;   // cache do path absoluto do agy dentro do WSL (.bashrc NAO carrega via "wsl --")
+function _usarWslAgy() {
+  if (process.platform !== 'win32') return false;
+  return ['1', 'true', 'yes'].indexOf(String(process.env.USE_WSL_FOR_AGY || '').trim().toLowerCase()) >= 0;
+}
+function _acharAgyNoWsl() {
+  if (_agyWslPath) return _agyWslPath;
+  const sp = require('child_process').spawnSync;
   try {
-    child = exec(cmd, { cwd: ROOT, maxBuffer: 1024 * 1024 * 30, env: Object.assign({}, process.env, { GEMINI_CLI_TRUST_WORKSPACE: 'true' }) },
-      function (err, stdout, stderr) {
-        if (done) return;
-        const out = String(stdout || '').trim();
-        const el = String(stderr || '').toLowerCase();
-        if (!out) {
-          let msg = 'Gemini sem resposta.';
-          if (/exhausted|resource_exhausted|rate.?limit|\b429\b|quota/.test(el)) { msg = 'Cota do Gemini esgotada — troque de conta (rode "gemini" no terminal: logout/login) ou espere o reset diario.'; }
-          else if (/emfile|too many open files/.test(el)) { msg = 'Muitos node.exe abertos (EMFILE). Feche o app, rode no PowerShell: taskkill /F /IM node.exe, e reabra o start.bat.'; }
-          else if (/\bauth\b|\blogin\b|not logged|credential/.test(el)) { msg = 'Gemini precisa logar — rode "gemini" no terminal uma vez (login com conta Google).'; }
-          else if (String(stderr || '').trim()) { msg = 'Gemini CLI: ' + String(stderr).trim().slice(-300); }
-          finish(new Error(msg)); return;
-        }
-        finish(null, out);
-      });
-  } catch (e) { finish(new Error('nao consegui iniciar o gemini: ' + (e && e.message))); return; }
-  // timeout proprio + mata a ARVORE (exec sozinho deixa os node.exe filhos do gemini-cli como zumbis)
+    const r = sp('wsl.exe', ['--', 'bash', '-lc', 'which agy'], { encoding: 'utf8', timeout: 15000 });
+    const hit = String((r && r.stdout) || '').split(/\r?\n/).map(function (s) { return s.trim(); })
+      .filter(function (s) { return s.indexOf('/') === 0 && s.indexOf('agy') >= 0; })[0];
+    if (hit) { _agyWslPath = hit; return hit; }
+  } catch (e) {}
+  const cands = ['$HOME/.local/bin/agy', '/usr/local/bin/agy', '/usr/bin/agy', '/opt/agy/bin/agy'];
+  for (let i = 0; i < cands.length; i++) {
+    try {
+      const r = sp('wsl.exe', ['--', 'bash', '-lc', 'test -x ' + cands[i] + ' && echo ' + cands[i]], { encoding: 'utf8', timeout: 10000 });
+      let s = String((r && r.stdout) || '').trim();
+      if (s) {
+        if (s.indexOf('$HOME') >= 0) { const h = sp('wsl.exe', ['--', 'bash', '-lc', 'echo $HOME'], { encoding: 'utf8', timeout: 5000 }); const home = String((h && h.stdout) || '').trim(); if (home) s = s.replace('$HOME', home); }
+        _agyWslPath = s; return s;
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+function geminiInvoke(model, promptInstr, inputData, cb) {
+  let done = false, timer = null, child = null;
+  const finish = function (err, text) { if (done) return; done = true; if (timer) clearTimeout(timer); cb(err, text); };
+  // modelo: SEM fallback hardcoded (nomes antigos nao existem no agy). Vazio => agy usa o default dele.
+  // mantem espacos/parenteses dos nomes novos ("Gemini 3.5 Flash (Medium)"); tira so caractere perigoso.
+  const mdl = String(model || '').replace(/[^a-zA-Z0-9 .()\-]/g, '').trim();
+  // agy NAO usa -p: instrucao + textos vao TODOS via stdin, com \n final (CLI as vezes espera end-of-line).
+  let stdinData = String(promptInstr || '');
+  if (inputData) stdinData += (stdinData.endsWith('\n') ? '' : '\n') + String(inputData);
+  if (!stdinData.endsWith('\n')) stdinData += '\n';
+
+  const usarWsl = _usarWslAgy();
+  let exe, args;
+  if (usarWsl) {
+    const agyAbs = _acharAgyNoWsl();
+    if (!agyAbs) { finish(new Error('agy nao encontrado no WSL. Confirme no PowerShell: wsl -- bash -lc "which agy". Se vier vazio, instale dentro do Ubuntu: curl -fsSL https://antigravity.google/cli/install.sh | bash')); return; }
+    exe = 'wsl.exe'; args = ['--', agyAbs, '--dangerously-skip-permissions'];
+  } else {
+    exe = 'agy'; args = ['--dangerously-skip-permissions'];
+  }
+  if (mdl) args.push('--model', mdl);   // so passa --model quando NAO vazio (nome invalido zera a saida)
+
+  const spawnOpts = { cwd: ROOT, env: Object.assign({}, process.env, { GEMINI_CLI_TRUST_WORKSPACE: 'true' }), windowsHide: true };
+  let outBuf = '', errBuf = '';
+  try {
+    child = spawn(exe, args, spawnOpts);   // spawn com args em ARRAY: nome de modelo com espaco/parentese passa intacto (sem shell)
+  } catch (e) { finish(new Error('nao consegui iniciar o agy: ' + (e && e.message) + '. Instale: curl -fsSL https://antigravity.google/cli/install.sh | bash')); return; }
+  child.on('error', function (e) { finish(new Error('agy nao encontrado/falhou (' + (e && e.message) + '). Instale: curl -fsSL https://antigravity.google/cli/install.sh | bash' + (process.platform === 'win32' && !usarWsl ? ' — no Windows use WSL: set USE_WSL_FOR_AGY=1 no start.bat' : ''))); });
+  if (child.stdout) child.stdout.on('data', function (d) { outBuf += d; });
+  if (child.stderr) child.stderr.on('data', function (d) { errBuf += d; });
+  child.on('close', function () {
+    if (done) return;
+    const out = String(outBuf || '').trim();
+    const el = String(errBuf || '').toLowerCase();
+    if (!out) {
+      let msg = 'agy sem resposta.';
+      if (/exhausted|resource_exhausted|rate.?limit|\b429\b|quota/.test(el)) { msg = 'Cota esgotada (agy / Google AI Ultra) — espere o reset ou troque de conta. Rode "agy" no terminal pra checar.'; }
+      else if (/emfile|too many open files/.test(el)) { msg = 'Muitos node.exe abertos (EMFILE). Feche o app, rode no PowerShell: taskkill /F /IM node.exe, e reabra o start.bat.'; }
+      else if (/\bauth\b|\blogin\b|not logged|credential|unauthorized/.test(el)) { msg = 'agy precisa logar — rode "agy" no terminal uma vez (login com conta Google AI Ultra).'; }
+      else if (process.platform === 'win32' && !usarWsl) { msg = 'agy no Windows nativo devolve vazio (escreve direto no console, ignora redirect). Ative o WSL: "set USE_WSL_FOR_AGY=1" no start.bat (precisa WSL+Ubuntu+agy instalado e logado la).'; }
+      else if (String(errBuf || '').trim()) { msg = 'agy: ' + String(errBuf).trim().slice(-300); }
+      else { msg = 'agy devolveu resposta vazia. Se passou um modelo, confirme o nome EXATO (ex.: "Gemini 3.5 Flash (Medium)") — nome invalido zera a saida.'; }
+      finish(new Error(msg)); return;
+    }
+    finish(null, out);
+  });
+  // timeout proprio + mata a ARVORE (agy faz spawn de varios node.exe; so matar o pai deixa zumbi)
   timer = setTimeout(function () {
     try {
       if (process.platform === 'win32') { exec('taskkill /F /T /PID ' + child.pid, function () {}); }
       else { try { process.kill(-child.pid, 'SIGKILL'); } catch (e) { try { child.kill('SIGKILL'); } catch (e2) {} } }
     } catch (e) {}
-    finish(new Error('A traducao demorou demais (>150s). Tente de novo, ou troque de conta no Gemini.'));
+    finish(new Error('A traducao demorou demais (>150s). Tente de novo, ou verifique cota/login do agy.'));
   }, 150000);
-  try { if (inputData) child.stdin.write(inputData); child.stdin.end(); } catch (e) {}
+  try { if (child.stdin) { child.stdin.write(stdinData); child.stdin.end(); } } catch (e) {}
 }
 
 const server = http.createServer(async function (req, res) {
@@ -278,14 +330,13 @@ const server = http.createServer(async function (req, res) {
     return;
   }
 
-  // ---- tradução via Gemini CLI (stdin + saida JSON + mata a arvore; ver geminiInvoke) ----
+  // ---- tradução via Antigravity CLI (agy) — instrução + textos via STDIN, saída texto puro, mata a árvore; ver geminiInvoke ----
   if (p === '/api/gemini' && req.method === 'POST') {
     if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
     const body = await readBody(req);
-    let model = 'gemini-2.5-flash', prompt = '', input = '';
+    let model = '', prompt = '', input = '';   // model vazio => agy usa o default dele (sem nome de modelo antigo hardcoded)
     try { const j = JSON.parse(body.toString('utf8')); if (j.model) model = String(j.model); prompt = String(j.prompt || ''); input = String(j.input || ''); } catch (e) {}
     if (!prompt) { json(res, 200, { ok: false, error: 'sem prompt' }); return; }
-    // instrucao no -p, textos no stdin, -o text — IGUAL ao original (so com tree-kill + erros claros)
     geminiInvoke(model, prompt, input, function (gerr, text) {
       if (gerr) { json(res, 200, { ok: false, error: String((gerr && gerr.message) || gerr).slice(0, 700) }); return; }
       json(res, 200, { ok: true, text: text });

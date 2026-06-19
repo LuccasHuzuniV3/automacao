@@ -280,11 +280,13 @@
     <section class="hero">
       <div class="herotext">
         <div id="hlbox" class="hlbox"></div>
+        <span class="gbadge" id="garantBadge" style="display:none"></span>
         <span class="pill" id="eyebrow"></span>
         <h1><span id="h1a"></span> <span class="hl" id="h1b"></span></h1>
         <p class="sub" id="sub"></p>
+        <div class="heroprice" id="heroPrice" style="display:none"><span class="hpDe" id="precoDe"></span> <span class="hpLbl" id="precoLbl"></span> <span class="hpVal" id="preco"></span></div>
         <a class="cta ctaLink" data-move="cta1" href="#" target="_blank" rel="noopener"><span id="ctaTxt"></span><span class="arw">&#8594;</span></a>
-        <div class="proof"><span id="prova"></span></div>
+        <div class="proof" id="proofRow" style="display:none"><span class="pavs"><span class="pav"></span><span class="pav"></span><span class="pav"></span></span><span class="pstars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span id="prova"></span></div>
       </div>
       <div class="art" id="art"></div>
     </section>
@@ -323,6 +325,68 @@
     <div class="gtxt"><h3 id="garantiaTit"></h3><p id="garantiaTexto"></p></div>
   </section>
   <div class="wrap" id="div2" style="display:none"><div class="divider"></div></div>
+
+  <!-- ===== Selos de pagamento (aparece SÓ quando t.pagamentos=true; não afeta páginas sem o flag). Bandeiras+Hotmart+selo em SVG/CSS, sem imagem externa. ===== -->
+  <style>
+    .paysec{max-width:780px;margin:6px auto 0;padding:26px 14px 8px;text-align:center}
+    .paysec .pbrow{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;align-items:center}
+    .paysec .pc{display:inline-flex;align-items:center;justify-content:center;width:52px;height:33px;background:#fff;border-radius:5px;box-shadow:0 1px 4px rgba(0,0,0,.3);font-family:Arial,Helvetica,sans-serif;line-height:1;overflow:hidden}
+    .paysec .pc.blue{background:#2557d6}
+    .paysec .visa{color:#1a1f71;font:italic 900 15px/1 Arial}
+    .paysec .hiper{color:#ec6a26;font:900 12px/1 Arial}
+    .paysec .amex{color:#fff;font:900 10px/1 Arial;letter-spacing:.5px}
+    .paysec .diners{color:#0079be;font:700 8px/1.05 Arial;text-align:center}
+    .paysec .pp{font:italic 900 12px/1 Arial}.paysec .pp .a{color:#003087}.paysec .pp .b{color:#009cde}
+    .paysec .mc{position:relative;width:34px;height:22px}.paysec .mc i{position:absolute;top:0;width:22px;height:22px;border-radius:50%}.paysec .mc i:first-child{left:0;background:#eb001b}.paysec .mc i:last-child{right:0;background:#f79e1b;mix-blend-mode:multiply}
+    .paysec .bol{display:flex;flex-direction:column;align-items:center;gap:2px}.paysec .bol .bc{width:34px;height:12px;background:repeating-linear-gradient(90deg,#111 0,#111 1.4px,#fff 1.4px,#fff 3px)}.paysec .bol b{color:#111;font:700 7px/1 Arial}
+    .paysec .ptrust{display:flex;flex-wrap:wrap;gap:22px;justify-content:center;align-items:center;margin-top:20px}
+    .paysec .hot{display:inline-flex;align-items:center;gap:7px;color:#e9e0f5;font:800 21px/1 Arial}
+    .paysec .seal{display:inline-flex;align-items:center;gap:8px;background:rgba(26,143,60,.14);border:1px solid rgba(40,190,90,.5);border-radius:30px;padding:8px 16px;color:#7be39a;font:800 12px/1.1 Arial}
+    /* ===== MODO COLUNA (body.colcentral via t.colCentral): upsell vira COLUNA ESTREITA centralizada em QUALQUER tela (igual Canva). Sem prancheta 1280, sem arrastar. Fontes fixas (não vw) pra não estourar na coluna. ===== */
+    body.colcentral #stagewrap{max-width:460px;margin:0 auto}
+    body.colcentral .wrap{padding:0 16px}
+    body.colcentral .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:22px 0 12px}
+    body.colcentral .herotext{display:contents}   /* solta pill/h1/sub/cta como itens flex do .hero pra a 'order' (imagem ANTES do CTA) funcionar */
+    body.colcentral .gbadge{order:0}body.colcentral .hero .pill{order:1}body.colcentral .hero h1{order:2}body.colcentral .hero .sub{order:3}body.colcentral .art{order:4;min-height:auto}body.colcentral .heroprice{order:5;justify-content:center}body.colcentral .hero .cta{order:6}body.colcentral .hero .proof{order:7}
+    /* selo verde "pedido garantido" (topo) */
+    .gbadge{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(180deg,#2fd34a,#16a836);color:#053b16;font-weight:800;font-size:12px;padding:9px 18px;border-radius:999px;letter-spacing:.03em;box-shadow:0 8px 22px -8px rgba(40,200,90,.7)}
+    .gbadge::before{content:"\2713";font-weight:900;font-size:13px}
+    /* preço no herói: "De X" riscado + "por apenas" + valor grande dourado */
+    .heroprice{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-top:16px}
+    .hpDe{color:#9a9383;text-decoration:line-through;font-size:18px;font-weight:700}
+    .hpLbl{color:var(--muted);font-size:14px}
+    .hpVal{font-weight:900;font-size:clamp(34px,5vw,52px);color:#e8b84b;font-family:var(--titleFont);line-height:1}
+    /* prova social: avatares + estrelas + texto */
+    .proof .pavs{display:inline-flex}
+    .proof .pav{width:30px;height:30px;border-radius:50%;border:2px solid var(--bg2,#1a0b2e);margin-left:-9px;background:linear-gradient(135deg,#8a52e0,#c98bff)}
+    .proof .pav:first-child{margin-left:0}
+    .proof .pstars{color:#f5b50a;letter-spacing:2px;font-size:15px}
+    .proof #prova{color:var(--muted);font-size:13px;font-weight:600}
+    body.colcentral h1{font-size:26px;line-height:1.22}
+    body.colcentral .sub{max-width:100%;font-size:14px;margin-top:8px}
+    body.colcentral .art img{width:min(92%,340px);max-width:92%;height:auto}
+    body.colcentral .cta{font-size:20px;padding:15px 28px;margin-top:16px;width:100%;box-sizing:border-box}
+    body.colcentral .scarcity{font-size:19px;line-height:1.18;padding:16px 0 4px}
+    body.colcentral .giftbar{height:auto;margin:0}
+    body.colcentral .ribbon.r2{display:none}
+    body.colcentral .ribbon.r1{position:static;transform:none;left:auto;width:100%;font-size:12.5px;padding:10px 0;letter-spacing:.02em}
+    body.colcentral .paysec{padding:16px 10px 6px}
+  </style>
+  <section class="paysec" id="pagamentos" data-sec="pagamentos" style="display:none">
+    <div class="pbrow">
+      <span class="pc"><span class="mc"><i></i><i></i></span></span>
+      <span class="pc"><b class="visa">VISA</b></span>
+      <span class="pc"><b class="hiper">Hiper</b></span>
+      <span class="pc blue"><b class="amex">AMEX</b></span>
+      <span class="pc"><b class="diners">Diners<br>Club</b></span>
+      <span class="pc"><b class="pp"><span class="a">Pay</span><span class="b">Pal</span></b></span>
+      <span class="pc"><span class="bol"><i class="bc"></i><b>Boleto</b></span></span>
+    </div>
+    <div class="ptrust">
+      <span class="hot"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M13.5 2c1.2 3.2-1 4.4-2.1 6.4-.9 1.7-.2 3.4 1 3.4 1.7 0 2.6-1.7 2.6-3.4 1.8 1.9 3 4.7 3 7.1a8.1 8.1 0 11-13.2-6.3c.9 3.7 3 2.9 3 .9 0-2.8-1.2-4.9 2.7-8.1z" fill="#ff4d00"/></svg>hotmart</span>
+      <span class="seal"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.6 8.6-8 11-4.4-2.4-8-6-8-11V5z" fill="#1a8f3c"/><path d="M8 12l3 3 5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>COMPRA 100% SEGURA</span>
+    </div>
+  </section>
 
   <footer id="footer" data-sec="footer" style="display:none">
     <div class="ftrow">
@@ -369,8 +433,11 @@
 
   document.documentElement.lang=cfg.idioma||'pt-BR';
   try{document.title=[t.h1a,t.h1b].filter(Boolean).join(' ')||t.capaTit||'Pagina de venda';}catch(e){}
+  if(t.colCentral){document.body.classList.add('colcentral');}else{document.body.classList.remove('colcentral');}   /* MODO COLUNA: página vira coluna estreita centralizada (igual Canva) em qualquer tela */
   set('banner',t.banner);show('banner',!!t.banner);set('eyebrow',t.eyebrow);show('eyebrow',!!t.eyebrow);
+  set('garantBadge',t.garantBadge);show('garantBadge',!!t.garantBadge);   /* selo verde "pedido garantido" no topo */
   set('h1a',t.h1a);set('h1b',t.h1b);set('sub',t.sub);set('precoDe',t.precoDe);set('precoLbl',t.precoLbl);set('preco',t.preco);
+  show('heroPrice',!!(t.precoDe||t.preco));   /* bloco de preço no herói (de X / por apenas / X) */
   (function(){var isLivre=(t.hlMode==='livre'),livre=isLivre&&!MOBILE,hp=t.hlPart||'h1b',ea=document.getElementById('h1a'),eb=document.getElementById('h1b');
     var aT=ea&&ea.textContent.trim(),bT=eb&&eb.textContent.trim(),hlA=false,hlB=false;
     if(!livre){   /* destaque INLINE na PARTE escolhida (hp = h1a/h1b/both/none). Vale no desktop modo "texto" E SEMPRE no celular — inclusive quando o desktop usa "caixa livre": no celular a caixa livre absoluta não cabe, então o destaque cai no MESMO alvo de palavras do hp. O h1 INTEIRO nunca recebe degradê. Fallback p/ a outra parte se a escolhida estiver vazia (pra nunca sumir). */
@@ -443,7 +510,7 @@
     EXC.innerHTML=htmlFg;if(EXB)EXB.innerHTML=htmlBg;
     if(MOBILE&&htmlMobile){var mc=document.createElement('div');mc.className='extras-m';mc.style.cssText='padding:6px 16px 22px;position:relative;z-index:2';mc.innerHTML=htmlMobile;var ft=document.getElementById('footer');if(ft&&ft.parentNode)ft.parentNode.insertBefore(mc,ft);else if(EXC.parentNode)EXC.parentNode.appendChild(mc);}
   })();
-  set('ctaTxt',t.cta);set('ctaTxt2',t.cta);set('prova',t.prova);
+  set('ctaTxt',t.cta);set('ctaTxt2',t.cta);set('prova',t.prova);show('proofRow',!!t.prova);   /* prova social (estrelas+fotos+texto) só quando tem texto */
 
   /* _posReal: ignora posicao "identidade" (arraste acidental de ~1px, escala 1) — senao um nudge mínimo
      rotearia o texto pelo caminho de "texto livre" (absolute/inline-block), que estoura o card no publicado. */
@@ -510,6 +577,8 @@
     else document.getElementById('gseal').innerHTML='<div class="badge"><div class="num">'+esc(t.garantiaDias||'7')+'</div><div class="d">'+esc(t.garantiaDiasLbl||'dias')+'</div><div class="r">'+esc(t.garantiaSelo||'Garantia')+'</div></div>';
     set('garantiaTit',t.garantiaTit);set('garantiaTexto',t.garantiaTexto);show('guarantee',true);show('div1',true);show('div2',true);}
 
+  if(t.pagamentos){show('pagamentos',true);}   /* selos de pagamento: SÓ quando o flag está ligado (upsell). Outras páginas sem o flag = seção oculta. */
+
   var ic={ig:'<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.06 1.8.25 2.2.42.6.2 1 .47 1.4.9.4.4.7.8.9 1.4.17.4.36 1 .42 2.2.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.06 1.2-.25 1.8-.42 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.17-1 .36-2.2.42-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-1.2-.06-1.8-.25-2.2-.42-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.17-.4-.36-1-.42-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.9c.06-1.2.25-1.8.42-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.17 1-.36 2.2-.42C8.4 2.2 8.8 2.2 12 2.2zm0 3.3a6.3 6.3 0 100 12.6 6.3 6.3 0 000-12.6zm0 10.4a4.1 4.1 0 110-8.2 4.1 4.1 0 010 8.2zm6.5-10.6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg>',
     fb:'<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M22 12a10 10 0 10-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.2c-1.2 0-1.6.8-1.6 1.5V12h2.7l-.4 2.9h-2.3v7A10 10 0 0022 12z"/></svg>',
     wa:'<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M.1 24l1.7-6.2A11.9 11.9 0 1112 24a11.9 11.9 0 01-5.9-1.6L.1 24zM6.8 20l.4.2a9.9 9.9 0 005 1.4A9.9 9.9 0 102.1 12c0 1.8.5 3.5 1.4 5l.2.4-1 3.7 4.1-1.1z"/></svg>'};
@@ -531,7 +600,7 @@
     b.onclick=function(){var qs=new URLSearchParams(location.search);qs.delete('pais');qs.delete('src');qs.set('p',k);qs.set('ebook',ebook);if(p.src)qs.set('s',p.src);location.search=qs.toString();};lang.appendChild(b);});}
   else if(lang){lang.style.display='none';}
 
-  var EDMAP={banner:'banner',eyebrow:'eyebrow',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato'};
+  var EDMAP={banner:'banner',eyebrow:'eyebrow',garantBadge:'garantBadge',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato'};
   Object.keys(EDMAP).forEach(function(id){var e=document.getElementById(id);if(e)e.setAttribute('data-edit',EDMAP[id]);});
   if(!MOBILE&&t._fs){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fs[k])e.style.fontSize=t._fs[k];});}
   /* _secH = ALTURA custom de seção (ex.: fitinha/gift) — só desktop (mobile mantém a altura responsiva). Px fixo determinístico, sem medição -> editor=abrir. */
@@ -704,7 +773,8 @@
   var ticking=false;
   function fit(){
     var vw=document.documentElement.clientWidth||window.innerWidth||REF;
-    if(vw<=880){ stage.style.width='';stage.style.transform='';stage.style.transformOrigin='';wrap.style.height='';return; }  /* mobile = fluido, sem prancheta nem escala */
+    var NARROW=document.body.classList.contains('colcentral');   /* MODO COLUNA (upsell): fluido estreito em qualquer tela — igual mobile, sem prancheta 1280 */
+    if(NARROW||vw<=880){ stage.style.width='';stage.style.transform='';stage.style.transformOrigin='';wrap.style.height='';return; }  /* mobile/coluna = fluido, sem prancheta nem escala */
     /* DESKTOP (editor E publicado): a prancheta é SEMPRE 1280 interno -> layout/quebra de linha IDÊNTICOS nos dois.
        Só muda a apresentação: editor 1:1 (sem escala, pra as alças baterem) e publicado escala 1280->tela. */
     stage.style.width=REF+'px';
