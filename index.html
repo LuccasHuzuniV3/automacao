@@ -303,7 +303,7 @@
   </div>
 
   <div class="giftbar" id="giftbar" data-sec="gift" style="display:none"></div>
-  <div class="wrap" data-sec="bonus"><section class="bonus" id="bonus" style="display:none"></section></div>
+  <div class="wrap" data-sec="bonus"><section class="bonus" id="bonus" style="display:none"></section><div class="divider" id="bonusDiv1" style="display:none"></div><div class="divider" id="bonusDiv2" style="display:none;margin-top:10px"></div></div>
   <div class="wrap" data-sec="bundle"><section class="bundle" id="bundle" style="display:none"></section></div>
 
   <div class="wrap" data-sec="oferta">
@@ -605,7 +605,7 @@
 
   var bonus=t.bonus||[];
   if(bonus.length){document.getElementById('bonus').innerHTML='<div class="bgrid">'+
-    bonus.map(function(b,i){var cSt=(b.bg1?' style="background:linear-gradient(180deg,'+esc(b.bg1)+','+esc(b.bg2||b.bg1)+')"':'');return '<div class="bcard" data-move="bcard.'+i+'"'+(EDIT?' data-blk="bonus.'+i+'"':'')+cSt+'><div><div class="bt" data-edit="bonus.'+i+'.titulo">'+esc(b.titulo)+'</div><p data-edit="bonus.'+i+'.texto">'+esc(b.texto)+'</p></div>'+(b.img?'<img loading="lazy" src="'+esc(b.img)+'"'+' data-img="bonus.'+i+'.img"'+styAttr('bonus.'+i+'.img','')+' alt="">':'<div class="ph">'+esc(b.titulo)+'</div>')+'</div>';}).join('')+'</div>';show('bonus',true);}
+    bonus.map(function(b,i){var cSt=(b.bg1?' style="background:linear-gradient(180deg,'+esc(b.bg1)+','+esc(b.bg2||b.bg1)+')"':'');return '<div class="bcard" data-move="bcard.'+i+'"'+(EDIT?' data-blk="bonus.'+i+'"':'')+cSt+'><div><div class="bt" data-edit="bonus.'+i+'.titulo">'+esc(b.titulo)+'</div><p data-edit="bonus.'+i+'.texto">'+esc(b.texto)+'</p></div>'+(b.img?'<img loading="lazy" src="'+esc(b.img)+'"'+' data-img="bonus.'+i+'.img"'+styAttr('bonus.'+i+'.img','')+' alt="">':'<div class="ph">'+esc(b.titulo)+'</div>')+'</div>';}).join('')+'</div>';show('bonus',true);show('bonusDiv1',true);show('bonusDiv2',true);}   /* 2 listrinhas (.divider) depois do bônus, separando dos livros/combos abaixo — só quando tem bônus */
 
   function bitem(b,sz,idx){var bcs='';return '<div class="bitem '+sz+'" data-move="bunditem.'+idx+'"'+(EDIT?' data-blk="bundle.'+idx+'"':'')+'>'+(b.img?'<img loading="lazy" src="'+esc(b.img)+'"'+' data-img="bundle.'+idx+'.img"'+styAttr('bundle.'+idx+'.img',bcs)+' alt="">':'<div class="ph" data-edit="bundle.'+idx+'.titulo">'+esc(b.titulo||'')+'</div>')+
     '<div class="pb"><span class="de" data-edit="bundle.'+idx+'.precoDe">'+esc(b.precoDe||'')+'</span><span class="por" data-edit="bundle.'+idx+'.precoPor">'+esc(b.precoPor||'')+'</span></div></div>';}
