@@ -144,7 +144,7 @@
   .offerInfo{text-align:center}
   .offerInfo .line{font-weight:900;font-size:clamp(26px,3.7vw,44px);margin-bottom:10px;line-height:1.1}
   .offerInfo .line .de{color:var(--priceOld,#fff);text-decoration:none;position:relative;display:inline-block;margin-right:10px}
-  .offerInfo .line .por{color:var(--priceNow,#1ee04d)}
+  .offerInfo .line .por{color:var(--priceNow,#1ee04d);margin-left:10px}   /* gap CONTROLADO entre "por apenas" e o valor (igual o margin-right:10px do "De") — antes era um espaço-em-branco solto que variava com a fonte */
   .validade{color:#f5c518;font-weight:900;margin-top:14px;text-transform:uppercase;font-size:clamp(16px,2.2vw,24px)}
   .ofDesc{color:var(--muted);max-width:560px;margin:14px auto 0;line-height:1.55;font-size:14px}
 
@@ -205,7 +205,7 @@
     .bbonuses{flex-direction:column;gap:20px;align-items:center}
     .scarcity{font-size:clamp(24px,7vw,40px);padding:22px 0 8px}
     .offer{gap:18px;padding:14px 0 24px}.offer::before{display:none}.offer::after{left:0;right:0}
-    .offerInfo .line{font-size:clamp(27px,7.2vw,34px);display:flex;flex-direction:column;align-items:center;gap:5px;line-height:1.08}.offerInfo .line .de{font-size:.72em;opacity:.85;margin-right:0}.offerInfo .line #ofertaTit{font-size:.64em;letter-spacing:.04em;opacity:.95}.offerInfo .line .por{font-size:1.36em}.validade{font-size:clamp(20px,5.6vw,27px);margin-top:2px}.pb .de{font-size:clamp(20px,5vw,26px)}.pb .por{font-size:clamp(22px,5.5vw,30px)}.price{font-size:clamp(40px,12vw,56px)}
+    .offerInfo .line{font-size:clamp(27px,7.2vw,34px);display:flex;flex-direction:column;align-items:center;gap:5px;line-height:1.08}.offerInfo .line .de{font-size:.72em;opacity:.85;margin-right:0}.offerInfo .line #ofertaTit{font-size:.64em;letter-spacing:.04em;opacity:.95}.offerInfo .line .por{font-size:1.36em;margin-left:0}.validade{font-size:clamp(20px,5.6vw,27px);margin-top:2px}.pb .de{font-size:clamp(20px,5vw,26px)}.pb .por{font-size:clamp(22px,5.5vw,30px)}.price{font-size:clamp(40px,12vw,56px)}
     .sub{font-size:clamp(16px,4.4vw,19px);line-height:1.5}
     .block{padding:16px}.block h3{font-size:19px}.block p{font-size:15px;line-height:1.55}
     .guarantee{padding:10px 4px;margin:24px auto}.badge{transform:scale(.92)}
@@ -286,7 +286,7 @@
         <p class="sub" id="sub"></p>
         <div class="heroprice" id="heroPrice" style="display:none"><span class="hpDe" id="precoDe"></span> <span class="hpLbl" id="precoLbl"></span> <span class="hpVal" id="preco"></span></div>
         <a class="cta ctaLink" data-move="cta1" href="#" target="_blank" rel="noopener"><span id="ctaTxt"></span><span class="arw">&#8594;</span></a>
-        <div class="proof" id="proofRow" style="display:none"><span class="pavs"><span class="pav"></span><span class="pav"></span><span class="pav"></span></span><span class="pstars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span id="prova"></span></div>
+        <div class="proof" id="proofRow" style="display:none"><span class="pavs"><span class="pav"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15.5" r="6.6"/><path d="M6.5 35c1.5-8.6 8-10.6 13.5-10.6S32 26.4 33.5 35z"/></svg></span><span class="pav"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15.5" r="6.6"/><path d="M6.5 35c1.5-8.6 8-10.6 13.5-10.6S32 26.4 33.5 35z"/></svg></span><span class="pav"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15.5" r="6.6"/><path d="M6.5 35c1.5-8.6 8-10.6 13.5-10.6S32 26.4 33.5 35z"/></svg></span></span><span class="pstars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span id="prova"></span></div>
       </div>
       <div class="art" id="art"></div>
     </section>
@@ -311,7 +311,7 @@
     <section class="offer" id="offer" style="display:none">
       <div class="offerBook" id="offerBook"></div>
       <div class="offerInfo">
-        <div class="line"><span class="de" id="offerDe"></span><span id="ofertaTit"></span> <span class="por" id="offerPreco"></span></div>
+        <div class="line"><span class="de" id="offerDe"></span><span id="ofertaTit"></span><span class="por" id="offerPreco"></span></div>
         <a class="cta ctaLink" data-move="cta2" href="#" target="_blank" rel="noopener" style="margin:18px auto 0"><span id="ctaTxt2"></span><span class="arw">&#8594;</span></a>
         <div class="validade" id="validade"></div>
         <p class="ofDesc" id="ofertaDesc"></p>
@@ -325,6 +325,26 @@
     <div class="gtxt"><h3 id="garantiaTit"></h3><p id="garantiaTexto"></p></div>
   </section>
   <div class="wrap" id="div2" style="display:none"><div class="divider"></div></div>
+
+  <!-- ===== PROVA REAL: estatística (89%) + depoimento. Cores do tema (dourado/roxo/escuro). Gated por dado. ===== -->
+  <section class="statsec" id="stat" data-sec="stat" style="display:none">
+    <div class="statcard"><div class="statnum" id="statNum"></div><div class="statdesc" id="statDesc"></div></div>
+  </section>
+  <section class="deposec" id="depo" data-sec="depo" style="display:none">
+    <div class="depocard">
+      <div class="depohead"><span class="depoav"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15.5" r="6.6"/><path d="M6.5 35c1.5-8.6 8-10.6 13.5-10.6S32 26.4 33.5 35z"/></svg></span><div class="depoinfo"><span class="depostars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span class="deponome" id="depoNome"></span></div></div>
+      <p class="depotxt" id="depoTexto"></p>
+    </div>
+  </section>
+  <!-- ===== ÚLTIMA CHANCE: fechamento (eyebrow+título+sub+preço+CTA) + botão recusar. Gated por t.ultimaTit. ===== -->
+  <section class="ultsec" id="ultima" data-sec="ultima" style="display:none">
+    <span class="pill" id="ultimaEyebrow" style="display:none"></span>
+    <h2 class="ulttit" id="ultimaTit"></h2>
+    <p class="ultsub" id="ultimaSub"></p>
+    <div class="ultprice" id="ultimaPrice" style="display:none"><span class="hpDe" id="ultPrecoDe"></span> <span class="hpLbl" id="ultPrecoLbl"></span> <span class="hpVal" id="ultPreco"></span></div>
+    <a class="cta ctaLink" href="#" target="_blank" rel="noopener"><span id="ultimaCtaTxt"></span><span class="arw">&#8594;</span></a>
+    <a class="recusar" id="recusarBtn" href="#" style="display:none"><span id="recusarTxt"></span></a>
+  </section>
 
   <!-- ===== Selos de pagamento (aparece SÓ quando t.pagamentos=true; não afeta páginas sem o flag). Bandeiras+Hotmart+selo em SVG/CSS, sem imagem externa. ===== -->
   <style>
@@ -343,7 +363,7 @@
     .paysec .hot{display:inline-flex;align-items:center;gap:7px;color:#e9e0f5;font:800 21px/1 Arial}
     .paysec .seal{display:inline-flex;align-items:center;gap:8px;background:rgba(26,143,60,.14);border:1px solid rgba(40,190,90,.5);border-radius:30px;padding:8px 16px;color:#7be39a;font:800 12px/1.1 Arial}
     /* ===== MODO COLUNA (body.colcentral via t.colCentral): upsell vira COLUNA ESTREITA centralizada em QUALQUER tela (igual Canva). Sem prancheta 1280, sem arrastar. Fontes fixas (não vw) pra não estourar na coluna. ===== */
-    body.colcentral #stagewrap{max-width:460px;margin:0 auto}
+    body.colcentral #stagewrap{max-width:460px;margin:0 auto;overflow:visible}   /* modo coluna: NÃO corta o que é arrastado pra fora da coluna (senão "some" ao arrastar no web). Editor=publicado. */
     body.colcentral .wrap{padding:0 16px}
     body.colcentral .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:22px 0 12px}
     body.colcentral .herotext{display:contents}   /* solta pill/h1/sub/cta como itens flex do .hero pra a 'order' (imagem ANTES do CTA) funcionar */
@@ -358,10 +378,36 @@
     .hpVal{font-weight:900;font-size:clamp(34px,5vw,52px);color:#e8b84b;font-family:var(--titleFont);line-height:1}
     /* prova social: avatares + estrelas + texto */
     .proof .pavs{display:inline-flex}
-    .proof .pav{width:30px;height:30px;border-radius:50%;border:2px solid var(--bg2,#1a0b2e);margin-left:-9px;background:linear-gradient(135deg,#8a52e0,#c98bff)}
+    .proof .pav{position:relative;width:30px;height:30px;border-radius:50%;border:2px solid var(--bg2,#1a0b2e);margin-left:-9px;overflow:hidden;background:linear-gradient(135deg,#8a52e0,#c98bff)}
     .proof .pav:first-child{margin-left:0}
+    .proof .pav:nth-child(2){background:linear-gradient(135deg,#6f44c4,#a878e8)}
+    .proof .pav:nth-child(3){background:linear-gradient(135deg,#9a5fd8,#caa0f5)}
+    .proof .pav svg{position:absolute;left:0;top:2px;width:100%;height:100%;fill:rgba(255,255,255,.95)}
     .proof .pstars{color:#f5b50a;letter-spacing:2px;font-size:15px}
     .proof #prova{color:var(--muted);font-size:13px;font-weight:600}
+    /* ===== Estatística (89%) — número grande dourado + card escuro ===== */
+    .statsec{max-width:460px;margin:0 auto;padding:8px 16px}
+    .statcard{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:26px 20px;text-align:center;box-shadow:0 14px 34px -16px rgba(0,0,0,.7)}
+    .statnum{font-family:var(--titleFont);font-weight:900;font-size:52px;color:#e8b84b;line-height:1}
+    .statdesc{color:var(--muted);font-size:14px;line-height:1.45;margin-top:8px}
+    /* ===== Depoimento (silhueta + estrelas + nome + citação) ===== */
+    .deposec{max-width:460px;margin:0 auto;padding:12px 16px}
+    .depocard{background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.10);border-radius:16px;padding:18px 20px;box-shadow:0 14px 34px -16px rgba(0,0,0,.7)}
+    .depohead{display:flex;align-items:center;gap:12px;text-align:left}
+    .depoav{position:relative;flex:0 0 auto;width:46px;height:46px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,#8a52e0,#c98bff);border:2px solid var(--bg2,#1a0b2e)}
+    .depoav svg{position:absolute;left:0;top:3px;width:100%;height:100%;fill:rgba(255,255,255,.95)}
+    .depoinfo{display:flex;flex-direction:column;gap:2px}
+    .depostars{color:#f5b50a;letter-spacing:2px;font-size:14px}
+    .deponome{color:#fff;font-weight:800;font-size:13px}
+    .depotxt{color:var(--muted);font-style:italic;font-size:14px;line-height:1.5;margin-top:12px}
+    /* ===== Última chance (fechamento + recusar) ===== */
+    .ultsec{max-width:460px;margin:0 auto;padding:28px 16px 8px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:12px}
+    .ulttit{font-family:var(--titleFont);font-weight:800;font-size:24px;line-height:1.18;color:#fff}
+    .ultsub{color:var(--muted);font-size:14px;line-height:1.5;max-width:100%}
+    .ultprice{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;justify-content:center;margin-top:2px}
+    .ultsec .cta{width:100%;box-sizing:border-box;font-size:19px;padding:15px 24px;margin-top:2px}
+    .recusar{display:inline-block;margin-top:2px;padding:11px 22px;border:1px solid rgba(255,90,90,.55);border-radius:999px;color:#ff8f8f;font-weight:700;font-size:13px;text-decoration:none;background:transparent}
+    .recusar:hover{background:rgba(255,90,90,.08)}
     body.colcentral h1{font-size:26px;line-height:1.22}
     body.colcentral .sub{max-width:100%;font-size:14px;margin-top:8px}
     body.colcentral .art img{width:min(92%,340px);max-width:92%;height:auto}
@@ -437,7 +483,7 @@
   set('banner',t.banner);show('banner',!!t.banner);set('eyebrow',t.eyebrow);show('eyebrow',!!t.eyebrow);
   set('garantBadge',t.garantBadge);show('garantBadge',!!t.garantBadge);   /* selo verde "pedido garantido" no topo */
   set('h1a',t.h1a);set('h1b',t.h1b);set('sub',t.sub);set('precoDe',t.precoDe);set('precoLbl',t.precoLbl);set('preco',t.preco);
-  show('heroPrice',!!(t.precoDe||t.preco));   /* bloco de preço no herói (de X / por apenas / X) */
+  show('heroPrice',!!(t.precoDe||t.preco) && !!t.colCentral);   /* preço no herói: SÓ no modo coluna (upsell). Em página normal o preço fica na seção de oferta -> evita preço DUPLICADO. */
   (function(){var isLivre=(t.hlMode==='livre'),livre=isLivre&&!MOBILE,hp=t.hlPart||'h1b',ea=document.getElementById('h1a'),eb=document.getElementById('h1b');
     var aT=ea&&ea.textContent.trim(),bT=eb&&eb.textContent.trim(),hlA=false,hlB=false;
     if(!livre){   /* destaque INLINE na PARTE escolhida (hp = h1a/h1b/both/none). Vale no desktop modo "texto" E SEMPRE no celular — inclusive quando o desktop usa "caixa livre": no celular a caixa livre absoluta não cabe, então o destaque cai no MESMO alvo de palavras do hp. O h1 INTEIRO nunca recebe degradê. Fallback p/ a outra parte se a escolhida estiver vazia (pra nunca sumir). */
@@ -569,7 +615,7 @@
 
   set('scarcity',t.escassez);
   var ofImg=img.oferta||img.hero;   /* capa da OFERTA: imagem própria; sem ela, usa a do topo */
-  if(t.preco||t.ofertaTit){document.getElementById('offerBook').innerHTML=ofImg?'<img src="'+esc(ofImg)+'"'+' data-img="offerCapa"'+styAttr('offerCapa','')+' alt="">':'<div class="ph">'+esc(t.capaTit||'')+'</div>';
+  if((t.preco||t.ofertaTit) && !t.colCentral){document.getElementById('offerBook').innerHTML=ofImg?'<img src="'+esc(ofImg)+'"'+' data-img="offerCapa"'+styAttr('offerCapa','')+' alt="">':'<div class="ph">'+esc(t.capaTit||'')+'</div>';
     set('offerDe',t.precoDe||'');set('ofertaTit',t.ofertaTit||'');set('offerPreco',t.preco||'');set('validade',t.validade);set('ofertaDesc',t.ofertaDesc);show('offer',true);}
 
   if(t.garantiaTit||t.garantiaTexto){
@@ -578,6 +624,14 @@
     set('garantiaTit',t.garantiaTit);set('garantiaTexto',t.garantiaTexto);show('guarantee',true);show('div1',true);show('div2',true);}
 
   if(t.pagamentos){show('pagamentos',true);}   /* selos de pagamento: SÓ quando o flag está ligado (upsell). Outras páginas sem o flag = seção oculta. */
+  /* ===== Seções extras (prova real: estatística + depoimento | última chance) — cada uma gated pelo seu texto ===== */
+  set('statNum',t.statNum);set('statDesc',t.statDesc);show('stat',!!(t.statDesc||t.statNum));
+  set('depoNome',t.depoNome);set('depoTexto',t.depoTexto);show('depo',!!t.depoTexto);
+  set('ultimaEyebrow',t.ultimaEyebrow);show('ultimaEyebrow',!!t.ultimaEyebrow);
+  set('ultimaTit',t.ultimaTit);set('ultimaSub',t.ultimaSub);set('ultimaCtaTxt',t.cta);
+  set('ultPrecoDe',t.precoDe);set('ultPrecoLbl',t.precoLbl);set('ultPreco',t.preco);show('ultimaPrice',!!(t.precoDe||t.preco));
+  set('recusarTxt',t.recusarTxt);show('recusarBtn',!!t.recusarTxt);
+  show('ultima',!!t.ultimaTit);
 
   var ic={ig:'<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.9.07 1.2.06 1.8.25 2.2.42.6.2 1 .47 1.4.9.4.4.7.8.9 1.4.17.4.36 1 .42 2.2.06 1.3.07 1.7.07 4.9s0 3.6-.07 4.9c-.06 1.2-.25 1.8-.42 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.17-1 .36-2.2.42-1.3.06-1.7.07-4.9.07s-3.6 0-4.9-.07c-1.2-.06-1.8-.25-2.2-.42-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.17-.4-.36-1-.42-2.2C2.2 15.6 2.2 15.2 2.2 12s0-3.6.07-4.9c.06-1.2.25-1.8.42-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.17 1-.36 2.2-.42C8.4 2.2 8.8 2.2 12 2.2zm0 3.3a6.3 6.3 0 100 12.6 6.3 6.3 0 000-12.6zm0 10.4a4.1 4.1 0 110-8.2 4.1 4.1 0 010 8.2zm6.5-10.6a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg>',
     fb:'<svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor"><path d="M22 12a10 10 0 10-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.2c-1.2 0-1.6.8-1.6 1.5V12h2.7l-.4 2.9h-2.3v7A10 10 0 0022 12z"/></svg>',
@@ -600,7 +654,7 @@
     b.onclick=function(){var qs=new URLSearchParams(location.search);qs.delete('pais');qs.delete('src');qs.set('p',k);qs.set('ebook',ebook);if(p.src)qs.set('s',p.src);location.search=qs.toString();};lang.appendChild(b);});}
   else if(lang){lang.style.display='none';}
 
-  var EDMAP={banner:'banner',eyebrow:'eyebrow',garantBadge:'garantBadge',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato'};
+  var EDMAP={banner:'banner',eyebrow:'eyebrow',garantBadge:'garantBadge',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',statNum:'statNum',statDesc:'statDesc',depoNome:'depoNome',depoTexto:'depoTexto',ultimaEyebrow:'ultimaEyebrow',ultimaTit:'ultimaTit',ultimaSub:'ultimaSub',ultimaCtaTxt:'cta',recusarTxt:'recusarTxt',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato'};
   Object.keys(EDMAP).forEach(function(id){var e=document.getElementById(id);if(e)e.setAttribute('data-edit',EDMAP[id]);});
   if(!MOBILE&&t._fs){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fs[k])e.style.fontSize=t._fs[k];});}
   /* _secH = ALTURA custom de seção (ex.: fitinha/gift) — só desktop (mobile mantém a altura responsiva). Px fixo determinístico, sem medição -> editor=abrir. */

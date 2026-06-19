@@ -462,10 +462,12 @@ var META=[{k:'nome',label:'Nome do país',ph:'Brasil'},{k:'flag',label:'Sigla do
 /* campos de imagem agora sao montados direto no renderForm */
 var REDES=[{k:'instagram',label:'Instagram (URL)'},{k:'facebook',label:'Facebook (URL)'},{k:'whatsapp',label:'WhatsApp (link wa.me/55...)'}];
 var TXT=[
-  {k:'banner',label:'Faixa de urgência (topo)',area:true},{k:'eyebrow',label:'Selo (acima do título)'},
+  {k:'banner',label:'Faixa de urgência (topo)',area:true},{k:'eyebrow',label:'Selo (acima do título)'},{k:'garantBadge',label:'Selo verde "pedido garantido"'},
   {k:'h1a',label:'Título — parte normal'},{k:'h1b',label:'Título — parte destacada (marca-texto)'},
   {k:'sub',label:'Subtítulo',area:true},{k:'precoDe',label:'Preço "de"',small:true},{k:'precoLbl',label:'"por apenas"',small:true},
   {k:'preco',label:'Preço final',small:true},{k:'cta',label:'Texto do botão'},{k:'prova',label:'Prova social'},
+  {k:'statDesc',label:'Estatística — descrição (ex.: relataram...)',area:true},{k:'depoNome',label:'Depoimento — nome/idade'},{k:'depoTexto',label:'Depoimento — texto',area:true},
+  {k:'ultimaEyebrow',label:'Última chance — selo (ex.: ÚLTIMA CHANCE)'},{k:'ultimaTit',label:'Última chance — título'},{k:'ultimaSub',label:'Última chance — subtítulo',area:true},{k:'recusarTxt',label:'Botão "recusar e sair"'},
   {k:'capaTit',label:'Título na capa estilizada'},{k:'capaSub',label:'Subtítulo na capa estilizada',area:true},
   {k:'videoUrl',label:'Vídeo (link YouTube) — opcional'},{k:'giftBar',label:'Barra vermelha de bônus',area:true},
   {k:'bonusTit',label:'Título da seção de bônus'},{k:'escassez',label:'Escassez (vermelho grande)'},
@@ -479,7 +481,7 @@ var TXT=[
 var DEFAULT=(WS_SRC&&Object.keys(WS_SRC).length)?JSON.parse(JSON.stringify(WS_SRC)):{salomao:{tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}}};
 
 var model,curEbook,curPais,nonce=0,imgCounter=0,$=function(id){return document.getElementById(id)};
-var BUILDER_VER='13';
+var BUILDER_VER='17';
 function load(){
   try{ if(localStorage.getItem('BUILDER_VER')===BUILDER_VER) model=JSON.parse(localStorage.getItem(WS_STATEKEY)); }catch(e){}
   /* ANTI-CLOBBER: se o rascunho do navegador (localStorage) for de ebook(s) DIFERENTE(S) do que está salvo no disco
@@ -820,9 +822,12 @@ function translatePais(srcCode,tgtCode,onStep){
     if(!T.img||!T.img.hero){T.img=JSON.parse(JSON.stringify(S.img||{}));}
     if(!T.redes||!T.redes.instagram){T.redes=JSON.parse(JSON.stringify(S.redes||{}));}
     if(!T.t)T.t={};
-    var skip={precoDe:1,preco:1,garantiaDias:1,videoUrl:1};
+    var skip={precoDe:1,preco:1,garantiaDias:1,videoUrl:1,statNum:1};
     var tasks=[];
     TXT.forEach(function(f){ if(!skip[f.k]&&S.t[f.k]){ var _v=String(S.t[f.k]); if(f.k==='giftBar')_v=(_v.split(String.fromCodePoint(0x1F381))[0]||'').trim()||_v; tasks.push({set:function(v){T.t[f.k]=v;},val:_v}); } });   /* giftBar pode estar inchado (texto repetido c/ 🎁 salvo de volta) — manda só a 1a unidade pra traduzir */
+    /* "De"/"Von" do preco antigo: precoDe fica no SKIP (nao traduz o NUMERO/moeda), mas a PALAVRA inicial ("De") deve traduzir.
+       Traduz SO o prefixo de letras e recola o numero. Se precoDe comeca com numero (ex.: "500 zl"), nao mexe (regex nao casa). */
+    (function(){ var v=S.t.precoDe; if(!v)return; var p=String(v).match(/^(\D+?)\s+([\d$€£R].*)$/); if(p&&p[1].trim()) tasks.push({set:function(x){T.t.precoDe=(x||p[1].trim())+' '+p[2];},val:p[1].trim()}); })();
     /* rotulos do selo de garantia (NAO estao no TXT, mas APARECEM pro cliente: "dias"/"Garantia") */
     ['garantiaDiasLbl','garantiaSelo'].forEach(function(k){ if(S.t[k]) tasks.push({set:function(v){T.t[k]=v;},val:S.t[k]}); });
     ['blocos','bonus'].forEach(function(list){
@@ -836,17 +841,20 @@ function translatePais(srcCode,tgtCode,onStep){
     Object.keys(skip).forEach(function(k){ if(S.t[k]&&!T.t[k]) T.t[k]=S.t[k]; });
     if(S.t.mediaTipo)T.t.mediaTipo=S.t.mediaTipo;
     aplicarLayoutMolde(S.t,T.t);   /* copia TAMANHO+POSICAO do molde (imagens, combo, botoes, decor); texto traduzido flui */
+    /* MOEDA: ao traduzir pra FORA do Brasil, troca R$ -> US$ no preço (Brasil mantém R$). Só o SÍMBOLO; o valor numérico você ajusta. */
+    var ehBR=/pt-?br/i.test(String(T.idioma||tgtCode||''));
+    function aplicarMoeda(){ if(ehBR)return; ['precoDe','preco'].forEach(function(k){ if(T.t[k]) T.t[k]=String(T.t[k]).split('R$').join('US$'); }); }
     var total=tasks.length, done=0;
-    if(!total){resolve();return;}
+    if(!total){aplicarMoeda();resolve();return;}
     function myMemoryLoop(){ (function next(i){
-      if(i>=tasks.length){ resolve(); return; }
+      if(i>=tasks.length){ aplicarMoeda();resolve(); return; }
       tr(tasks[i].val,sl,tl).then(function(v){ tasks[i].set(v); }, function(){}).then(function(){ done++; if(onStep)onStep(done,total); setTimeout(function(){next(i+1);},350); });   /* SEMPRE avança: se um item falhar/expirar, mantém o original e segue (nunca trava a fila) */
     })(0); }
     if(usaGemini()){
       if(onStep)onStep(0,total);
       geminiTranslateBatch(tasks.map(function(t){return t.val;}), S.idioma||'pt-BR', T.idioma||tgtCode).then(function(arr){
         tasks.forEach(function(t,i){ if(arr[i]!=null&&String(arr[i]).trim())t.set(arr[i]); });
-        if(onStep)onStep(total,total); resolve();
+        if(onStep)onStep(total,total); aplicarMoeda();resolve();
       }).catch(function(err){ try{console.warn('agy falhou, voltando pro MyMemory:',err&&err.message);}catch(e){} try{toast('agy: '+((err&&err.message)||'falhou')+' — usando tradução grátis (mais lenta)');}catch(e){} myMemoryLoop(); });
     } else { myMemoryLoop(); }
   });
@@ -860,7 +868,7 @@ function traduzirPagina(){
 }
 
 function renderEbookTabs(){var box=$('ebookTabs');box.innerHTML='';
-  Object.keys(model).forEach(function(s){var t=document.createElement('div');t.className='tab'+(s===curEbook?' on':'');t.textContent=s;t.onclick=function(){curEbook=s;curPais=Object.keys(model[s].paises)[0];render();};box.appendChild(t);});
+  Object.keys(model).forEach(function(s){var t=document.createElement('div');t.className='tab'+(s===curEbook?' on':'');t.textContent=s;t.title='clique = abrir · duplo-clique = renomear';t.onclick=function(){curEbook=s;curPais=Object.keys(model[s].paises)[0];render();};t.ondblclick=function(e){e.preventDefault();e.stopPropagation();renomearEbook(s);};box.appendChild(t);});
   var add=document.createElement('div');add.className='tab add';add.textContent='+ Ebook';add.onclick=addEbook;box.appendChild(add);
   var del=document.createElement('div');del.className='tab';del.style.color='#ff8f8f';del.textContent='🗑 ebook';del.onclick=delEbook;box.appendChild(del);}
 function renderPaisTabs(){var box=$('paisTabs');box.innerHTML='';
@@ -1751,6 +1759,23 @@ function addEbook(){var n=prompt('Apelido do ebook na URL (ex.: arc01, foco):');
   base.dono=dono;base.rede=rede;
   model[slug]=base;curEbook=slug;curPais=srcCode;save();render();showView('editor');toast('Ebook "'+slug+'" criado'+(dono?' (dono: '+dono+')':'')+'.');}
 function delEbook(){if(Object.keys(model).length<=1){toast('Precisa ter ao menos 1 ebook');return;}if(!confirm('Excluir o ebook "'+curEbook+'"?'))return;delete model[curEbook];curEbook=Object.keys(model)[0];curPais=Object.keys(model[curEbook].paises)[0];save();render();}
+function renomearEbook(oldSlug){
+  oldSlug=oldSlug||curEbook;
+  if(!model[oldSlug])return;
+  var n=prompt('Novo apelido (URL) do ebook "'+oldSlug+'":',oldSlug);
+  if(n===null)return;
+  var slug=slugify(n);
+  if(!slug){toast('Nome inválido — use letras/números.');return;}
+  if(slug===oldSlug)return;
+  if(model[slug]){toast('Já existe um ebook "'+slug+'".');return;}
+  if(!confirm('Renomear "'+oldSlug+'" → "'+slug+'"?\n\n⚠️ O apelido É a URL e o rastreamento de vendas (?ebook='+oldSlug+'). Se este ebook JÁ foi publicado, os links antigos e o histórico no nome velho continuam até você republicar (Deploy) com o nome novo.'))return;
+  undoPush(undoSnap());
+  var novo={};Object.keys(model).forEach(function(k){novo[k===oldSlug?slug:k]=model[k];});   /* recria preservando a ORDEM das chaves */
+  model=novo;
+  if(curEbook===oldSlug)curEbook=slug;
+  save();render();try{renderEbooksHome();}catch(e){}
+  toast('Renomeado pra "'+slug+'" ✓');
+}
 var LANGMAP={us:'en-US',usa:'en-US',uk:'en-GB',gb:'en-GB',en:'en-US',ca:'en-CA',au:'en-AU',es:'es-ES',mx:'es-MX',ar:'es-AR',co:'es-CO',cl:'es-CL',pe:'es-PE',pt:'pt-PT',br:'pt-BR',fr:'fr-FR',de:'de-DE',it:'it-IT',nl:'nl-NL',pl:'pl-PL',ro:'ro-RO',tr:'tr-TR',ru:'ru-RU',jp:'ja-JP'};
 function flagEmoji(idioma){var r=(String(idioma||'').split('-')[1]||'').toUpperCase();if(r.length!==2)return '🌐';return r.replace(/./g,function(ch){return String.fromCodePoint(0x1F1E6+ch.charCodeAt(0)-65);});}
 function doAddPais(c,idioma){var src=curPais,P=model[curEbook].paises;c=slugify(c);if(!c)return;
