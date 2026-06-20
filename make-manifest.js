@@ -22,10 +22,10 @@ if (fs.existsSync(apiDir)) {
 }
 
 // incrementa a VERSAO (numero) a cada publicacao -> da pra saber quem esta atrasado
-let v = 0;
-try { v = parseInt(JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')).version, 10) || 0; } catch (e) {}
-v = v + 1;
-fs.writeFileSync(path.join(ROOT, 'version.json'), JSON.stringify({ version: v }, null, 2) + '\n');
+let v = 0, fresh = false;
+try { const _vj = JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')); v = parseInt(_vj.version, 10) || 0; fresh = !!_vj.fresh; } catch (e) {}
+if (!fresh) v = v + 1;   // 'fresh' = versao setada a mao (ex.: 200 -> v2.0): publica SEM incrementar na 1a vez; depois volta a incrementar (201=v2.1, ...)
+fs.writeFileSync(path.join(ROOT, 'version.json'), JSON.stringify({ version: v }, null, 2) + '\n');   // grava SEM o 'fresh'
 
 const man = { version: v, date: new Date().toISOString(), files: files };
 fs.writeFileSync(path.join(ROOT, 'manifest.json'), JSON.stringify(man, null, 2) + '\n');

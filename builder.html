@@ -211,6 +211,7 @@
     <button class="railb" id="navPrincipal" data-view="editor"><i>✏️</i><span>Principal</span></button>
     <button class="railb" id="navUpsell"><i>⬆️</i><span>UPSELL</span></button>
     <button class="railb" id="navDownsell"><i>⬇️</i><span>DOWNSELL</span></button>
+    <button class="railb" id="navDownsell2"><i>⏬</i><span>DOWNSELL 2</span></button>
     <button class="railb" data-view="analytics"><i>📊</i><span>Analytics</span></button>
     <button class="railb" data-view="vendas"><i>💰</i><span>Vendas</span></button>
     <button class="railb" data-view="config"><i>⚙️</i><span>Config</span></button>
@@ -232,7 +233,7 @@
   </section>
   <section class="preview">
     <div class="pbar"><span class="lbl">Prévia:</span><span class="lbl" id="pvLabel" style="color:var(--gold)"></span><span class="lbl" style="color:var(--teal)">✏️ clique no texto pra editar</span>
-      <span class="sep"></span><button class="btn" id="btnAddEl" title="Adicionar elemento livre: degradê, caixa de fundo ou texto">➕ Elemento</button><button class="btn" id="btnOcultos" style="display:none" title="Elementos escondidos deste idioma — clique pra restaurar">👁 Ocultos (0)</button><button class="btn" id="btnUndo" title="Desfazer o último movimento (Ctrl+Z)">↩ Desfazer</button><button class="btn" id="btnFocus">⛶ Modo edição (largura real)</button><button class="btn" id="wDesk">🖥️</button><button class="btn" id="wMob">📱</button><button class="btn" id="btnOpen">Abrir ↗</button></div>
+      <span class="sep"></span><button class="btn" id="btnAddEl" title="Adicionar elemento livre: degradê, caixa de fundo ou texto">➕ Elemento</button><button class="btn" id="btnDsAlert" style="display:none" title="Ver/editar o alerta de 50% no preview — clica nos textos pra editar (só no upsell)">👁 Alerta 50%</button><button class="btn" id="btnOcultos" style="display:none" title="Elementos escondidos deste idioma — clique pra restaurar">👁 Ocultos (0)</button><button class="btn" id="btnUndo" title="Desfazer o último movimento (Ctrl+Z)">↩ Desfazer</button><button class="btn" id="btnFocus">⛶ Modo edição (largura real)</button><button class="btn" id="wDesk">🖥️</button><button class="btn" id="wMob">📱</button><button class="btn" id="btnOpen">Abrir ↗</button></div>
     <div class="frameWrap"><iframe id="frame"></iframe></div>
   </section>
   </main>
@@ -248,7 +249,8 @@
         <label class="cfgrow" style="max-width:190px;margin:0"><span>Ebook</span><select class="dom" id="anEbook"></select></label>
         <label class="cfgrow" style="max-width:150px;margin:0"><span>Versão (página)</span><select class="dom" id="anVersao"><option value="">todas</option></select></label>
         <label class="cfgrow" style="max-width:170px;margin:0"><span>Canal / rede</span><select class="dom" id="anRede"><option value="">todos</option></select></label>
-        <label class="cfgrow" style="max-width:160px;margin:0"><span>Período</span><select class="dom" id="anPeriodo"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option></select></label>
+        <label class="cfgrow" style="max-width:160px;margin:0"><span>Período</span><select class="dom" id="anPeriodo"><option value="7">Últimos 7 dias</option><option value="30" selected>Últimos 30 dias</option><option value="90">Últimos 90 dias</option><option value="custom">📅 Personalizado…</option></select></label>
+        <label class="cfgrow" id="anRangeWrap" style="display:none;max-width:250px;margin:0"><span>De → até</span><span style="display:flex;gap:6px;align-items:center"><input type="date" class="dom" id="anFrom" style="padding:6px"><span style="color:var(--muted)">→</span><input type="date" class="dom" id="anTo" style="padding:6px"></span></label>
       </div>
       <div class="ankpis" id="anCards"></div>
       <div class="anpanel">
@@ -271,7 +273,8 @@
         <label class="cfgrow" style="max-width:150px;margin:0"><span>Canal</span><select class="dom" id="vdCanal"><option value="">todos</option></select></label>
         <label class="cfgrow" style="max-width:150px;margin:0"><span>Nicho / tema</span><select class="dom" id="vdTema"><option value="">todos</option></select></label>
         <label class="cfgrow" style="max-width:120px;margin:0"><span>País</span><select class="dom" id="vdPais"><option value="">todos</option></select></label>
-        <label class="cfgrow" style="max-width:150px;margin:0"><span>Período</span><select class="dom" id="vdPeriodo"><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="90">90 dias</option><option value="365">1 ano</option></select></label>
+        <label class="cfgrow" style="max-width:150px;margin:0"><span>Período</span><select class="dom" id="vdPeriodo"><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="90">90 dias</option><option value="365">1 ano</option><option value="custom">📅 Personalizado…</option></select></label>
+        <label class="cfgrow" id="vdRangeWrap" style="display:none;max-width:250px;margin:0"><span>De → até</span><span style="display:flex;gap:6px;align-items:center"><input type="date" class="dom" id="vdFrom" style="padding:6px"><span style="color:var(--muted)">→</span><input type="date" class="dom" id="vdTo" style="padding:6px"></span></label>
       </div>
       <div class="ankpis" id="vdKpis"></div>
       <div id="vdTable"></div>
@@ -343,6 +346,8 @@
 <script src="ebooks.js"></script>
 <script src="ebooks-upsell.js"></script>
 <script src="ebooks-downsell.js"></script>
+<script src="ebooks-downsell2.js"></script>
+<script src="desconto.js"></script>
 <script>
 /* ---------- IndexedDB p/ guardar as imagens escolhidas do PC ---------- */
 function idbOpen(){return new Promise(function(res,rej){var r=indexedDB.open('salomon-builder',1);
@@ -390,7 +395,8 @@ var APP = /^https?:$/.test(location.protocol);
 var WS_DEFS={
   principal:{global:'EBOOKS',          src:function(){return window.EBOOKS||{};},           qs:'',             key:'',          label:'Principal',icon:'✏️'},
   upsell:   {global:'EBOOKS_UPSELL',   src:function(){return window.EBOOKS_UPSELL||{};},    qs:'?ws=upsell',   key:'_upsell',   label:'UPSELL',   icon:'⬆️'},
-  downsell: {global:'EBOOKS_DOWNSELL', src:function(){return window.EBOOKS_DOWNSELL||{};},  qs:'?ws=downsell', key:'_downsell', label:'DOWNSELL', icon:'⬇️'}
+  downsell: {global:'EBOOKS_DOWNSELL', src:function(){return window.EBOOKS_DOWNSELL||{};},  qs:'?ws=downsell', key:'_downsell', label:'DOWNSELL', icon:'⬇️', cloneFrom:'principal', discount:true},
+  downsell2:{global:'EBOOKS_DOWNSELL2',src:function(){return window.EBOOKS_DOWNSELL2||{};}, qs:'?ws=downsell2',key:'_downsell2',label:'DOWNSELL 2',icon:'⏬', cloneFrom:'upsell',    discount:true}
 };
 var WS=(function(){try{var w=new URLSearchParams(location.search).get('ws');return WS_DEFS[w]?w:'principal';}catch(e){return 'principal';}})();
 var WS_DEF=WS_DEFS[WS]||WS_DEFS.principal;
@@ -398,6 +404,7 @@ var WS_SRC=WS_DEF.src();
 var WS_GLOBAL=WS_DEF.global;
 var WS_STATEKEY='BUILDER_STATE'+WS_DEF.key;
 var WS_SAVEQS=WS_DEF.qs;
+var DSALERT_OPEN=false;   /* Fase 2: "ver/editar o alerta" no preview (liga ?dsalert=1 no iframe) */
 // ---- COMPARTILHAR: se aberto via link (?share=TOKEN), vira sessao de CONVIDADO (edita SO o escopo do link) ----
 var SHARE=null;
 try{ var _sp=new URLSearchParams(location.search); var _tk=_sp.get('share'); if(_tk)SHARE={token:_tk,ebook:'',pais:''}; }catch(e){}
@@ -468,6 +475,7 @@ var TXT=[
   {k:'preco',label:'Preço final',small:true},{k:'cta',label:'Texto do botão'},{k:'prova',label:'Prova social'},
   {k:'statDesc',label:'Estatística — descrição (ex.: relataram...)',area:true},{k:'depoNome',label:'Depoimento — nome/idade'},{k:'depoTexto',label:'Depoimento — texto',area:true},
   {k:'ultimaEyebrow',label:'Última chance — selo (ex.: ÚLTIMA CHANCE)'},{k:'ultimaTit',label:'Última chance — título'},{k:'ultimaSub',label:'Última chance — subtítulo',area:true},{k:'recusarTxt',label:'Botão "recusar e sair"'},
+  {k:'dsAlertTit',label:'Alerta 50% — título (ex.: ESPERA! 🎁)'},{k:'dsAlertMsg',label:'Alerta 50% — mensagem',area:true},{k:'dsAlertVal',label:'Alerta 50% — rótulo do valor (ex.: só agora, por apenas)'},{k:'dsAlertCta',label:'Alerta 50% — botão (ex.: QUERO!)'},{k:'dsAlertNo',label:'Alerta 50% — link recusar (ex.: não, sair)'},
   {k:'capaTit',label:'Título na capa estilizada'},{k:'capaSub',label:'Subtítulo na capa estilizada',area:true},
   {k:'videoUrl',label:'Vídeo (link YouTube) — opcional'},{k:'giftBar',label:'Barra vermelha de bônus',area:true},
   {k:'bonusTit',label:'Título da seção de bônus'},{k:'escassez',label:'Escassez (vermelho grande)'},
@@ -481,7 +489,7 @@ var TXT=[
 var DEFAULT=(WS_SRC&&Object.keys(WS_SRC).length)?JSON.parse(JSON.stringify(WS_SRC)):{salomao:{tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}}};
 
 var model,curEbook,curPais,nonce=0,imgCounter=0,$=function(id){return document.getElementById(id)};
-var BUILDER_VER='17';
+var BUILDER_VER='25';
 function load(){
   try{ if(localStorage.getItem('BUILDER_VER')===BUILDER_VER) model=JSON.parse(localStorage.getItem(WS_STATEKEY)); }catch(e){}
   /* ANTI-CLOBBER: se o rascunho do navegador (localStorage) for de ebook(s) DIFERENTE(S) do que está salvo no disco
@@ -599,11 +607,13 @@ function field(f,getv,setv){
   if(f.img)return imgField(f,getv,setv);
   var w=document.createElement('div');w.className='f'+(f.small?' small':'');
   var l=document.createElement('label');l.textContent=f.label;w.appendChild(l);
+  if(f.color){var ci=document.createElement('input');ci.type='color';ci.value=(/^#[0-9a-fA-F]{6}$/.test(getv()||'')?getv():(f.def||'#000000'));ci.style.cssText='width:56px;height:34px;border:1px solid var(--line2,#2a3550);border-radius:8px;background:#0a1322;cursor:pointer;padding:2px';ci.oninput=function(){setv(ci.value);save();updatePreview();};w.appendChild(ci);return w;}
   var i=document.createElement(f.area?'textarea':'input');if(f.ph)i.placeholder=f.ph;i.value=getv()||'';
   i.oninput=function(){setv(i.value);save();updatePreview();};w.appendChild(i);return w;
 }
-function groupFields(title,fields,target){var w=document.createElement('div');w.className='group';
+function groupFields(title,fields,target,desc){var w=document.createElement('div');w.className='group';
   var h=document.createElement('div');h.className='gh';h.textContent=title;w.appendChild(h);
+  if(desc){var hd=document.createElement('div');hd.style.cssText='font-size:11.5px;font-weight:400;color:var(--muted,#8a93a6);line-height:1.45;margin:-2px 2px 8px';hd.textContent=desc;w.appendChild(hd);}   /* descrição PEQUENA (não no header grande) */
   fields.forEach(function(f){w.appendChild(field(f,function(){return target[f.k]},function(v){target[f.k]=v}));});return w;}
 function renderTema(){var tema=model[curEbook].tema||(model[curEbook].tema={});
   var w=document.createElement('div');w.className='group';var h=document.createElement('div');h.className='gh';h.textContent='Cores do tema (todos os países deste ebook)';w.appendChild(h);
@@ -699,6 +709,13 @@ function renderForm(){var form=$('form');form.innerHTML='';var P=model[curEbook]
   gi.appendChild(sizeInput('↕ Tamanho do atendente (px)',function(){return tema.szAtend},function(v){tema.szAtend=v}));
   form.appendChild(gi);
   form.appendChild(groupFields('Configuração do país',META,P));
+  if(WS==='upsell'||WS==='principal'){   /* PAINEL do alerta de saída: textos (traduzíveis) + % + cores. Principal (→DS1) e Upsell (→DS2). */
+    var _dsT=TXT.filter(function(f){return /^dsAlert(Tit|Msg|Val|Cta|No)$/.test(f.k);});
+    var _dsX=[{k:'dsAlertPct',label:'% de desconto (padrão 50)',small:true},{k:'dsAlertScale',label:'Tamanho do card % (50–150)',small:true},
+      {k:'dsAlertCardBg',label:'Cor: fundo do card',color:true,def:'#1c0b34'},{k:'dsAlertBorda',label:'Cor: borda',color:true,def:'#8a52e0'},
+      {k:'dsAlertTitCor',label:'Cor: título',color:true,def:'#ffd34d'},{k:'dsAlertValCor',label:'Cor: valor',color:true,def:'#1cca0c'},{k:'dsAlertBtnBg',label:'Cor: botão',color:true,def:'#16a836'}];
+    form.appendChild(groupFields('🎁 Alerta de saída',_dsT.concat(_dsX),P.t,'Aparece quando o visitante tenta VOLTAR/SAIR ou clica em "negar" → vai pro downsell ('+(WS==='principal'?'DS1':'DS2')+'). Vazio = texto automático no idioma; {pct} vira a %. Editar visual: botão "👁 Alerta 50%" na barra de cima. O botão "negar" da página é o campo "Botão recusar e sair" (abaixo).'));
+  }
   form.appendChild(groupFields('Redes sociais (rodapé)',REDES,P.redes));
   form.appendChild(renderList('trust','Barra de confiança (ícone; texto na prévia)',[{k:'icon',label:'Ícone: lock, play, thumb, shield, clock, check'}],P.t));
   form.appendChild(renderImgList('blocos','Blocos — imagem + tamanho (texto na prévia)',P.t,{titulo:'',texto:'',img:'',sz:''}));
@@ -871,8 +888,41 @@ function traduzirPagina(){
 }
 
 function renderEbookTabs(){var box=$('ebookTabs');box.innerHTML='';
-  Object.keys(model).forEach(function(s){var t=document.createElement('div');t.className='tab'+(s===curEbook?' on':'');t.textContent=s;t.title='clique = abrir · duplo-clique = renomear';t.onclick=function(){curEbook=s;curPais=Object.keys(model[s].paises)[0];render();};t.ondblclick=function(e){e.preventDefault();e.stopPropagation();renomearEbook(s);};box.appendChild(t);});
-  var add=document.createElement('div');add.className='tab add';add.textContent='+ Ebook';add.onclick=addEbook;box.appendChild(add);
+  var dono=ehDono(curEbook), realDono=((model[curEbook]||{}).dono||'').trim();   /* lateral ESCOPADA na pessoa do ebook atual — não mistura todo mundo */
+  var mine=Object.keys(model).filter(function(k){return ehDono(k)===dono;});
+  var curRede=((model[curEbook]||{}).rede||'').trim();
+  /* DONO = dropdown: troca de pessoa ali mesmo (sem ir pra home). Última opção edita o dono deste ebook. */
+  var dwrap=document.createElement('div');dwrap.style.cssText='position:relative;padding:2px 6px 2px';
+  var dbtn=document.createElement('div');dbtn.style.cssText='cursor:pointer;font-weight:800;color:#e8eef7;font-size:15px;display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid rgba(255,255,255,.14);border-radius:8px';dbtn.innerHTML='👤 '+ehEsc(dono)+' <span style="font-size:11px;opacity:.65">▾</span>';dbtn.title='Trocar de pessoa';
+  var dlist=document.createElement('div');dlist.style.cssText='display:none;position:absolute;left:6px;top:100%;margin-top:4px;z-index:60;min-width:175px;max-height:300px;overflow:auto;background:#0f1726;border:1px solid rgba(255,255,255,.16);border-radius:9px;box-shadow:0 12px 34px rgba(0,0,0,.55);padding:4px';
+  function ddItem(txt,col,fn){var it=document.createElement('div');it.style.cssText='padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:'+col+';white-space:nowrap';it.innerHTML=txt;it.onmouseenter=function(){it.style.background='rgba(255,255,255,.07)';};it.onmouseleave=function(){it.style.background='transparent';};it.onclick=function(ev){ev.stopPropagation();dlist.style.display='none';fn();};return it;}
+  var donos=[];Object.keys(model).forEach(function(k){var d=ehDono(k);if(donos.indexOf(d)<0)donos.push(d);});donos.sort();
+  donos.forEach(function(dn){dlist.appendChild(ddItem('👤 '+ehEsc(dn)+(dn===dono?'  ✓':''),dn===dono?'#2dd4bf':'#cdd6e4',function(){if(dn===dono)return;var first=Object.keys(model).filter(function(k){return ehDono(k)===dn;})[0];if(first){curEbook=first;curPais=Object.keys(model[first].paises)[0];render();}}));});
+  var dv=document.createElement('div');dv.style.cssText='height:1px;background:rgba(255,255,255,.1);margin:4px 2px';dlist.appendChild(dv);
+  dlist.appendChild(ddItem('✎ Mudar o dono deste ebook…','#9fb0c8',function(){var nd=prompt('Dono / pessoa deste ebook:',realDono);if(nd===null)return;model[curEbook].dono=nd.trim();save();renderEbookTabs();}));
+  dbtn.onclick=function(ev){ev.stopPropagation();
+    if(dlist.style.display==='block'){dlist.style.display='none';if(dlist._clo){document.removeEventListener('mousedown',dlist._clo);dlist._clo=null;}return;}
+    dlist.style.display='block';var clo=function(e){if(!dwrap.contains(e.target)){dlist.style.display='none';document.removeEventListener('mousedown',clo);dlist._clo=null;}};dlist._clo=clo;setTimeout(function(){document.addEventListener('mousedown',clo);},0);};
+  dwrap.appendChild(dbtn);dwrap.appendChild(dlist);box.appendChild(dwrap);
+  /* REDE = dropdown também (organizado, igual o dono): lista as redes existentes + nova + tirar */
+  var rwrap=document.createElement('div');rwrap.style.cssText='position:relative;padding:0 6px 10px';
+  var rbtn=document.createElement('div');rbtn.style.cssText='cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:'+(curRede?'#7fd1ff':'#8a93a6');rbtn.innerHTML='📡 '+(curRede?('Rede: '+ehEsc(curRede)):'definir rede / canal')+' <span style="font-size:11px;opacity:.65">▾</span>';rbtn.title='Rede / canal deste ebook (agrupa por canal na lista)';
+  var rlist=document.createElement('div');rlist.style.cssText='display:none;position:absolute;left:6px;top:100%;margin-top:4px;z-index:60;min-width:175px;max-height:300px;overflow:auto;background:#0f1726;border:1px solid rgba(255,255,255,.16);border-radius:9px;box-shadow:0 12px 34px rgba(0,0,0,.55);padding:4px';
+  function rItem(txt,col,fn){var it=document.createElement('div');it.style.cssText='padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:'+col+';white-space:nowrap';it.innerHTML=txt;it.onmouseenter=function(){it.style.background='rgba(255,255,255,.07)';};it.onmouseleave=function(){it.style.background='transparent';};it.onclick=function(ev){ev.stopPropagation();rlist.style.display='none';fn();};return it;}
+  var redesAll=[];Object.keys(model).forEach(function(k){var rd=((model[k]||{}).rede||'').trim();if(rd&&redesAll.indexOf(rd)<0)redesAll.push(rd);});redesAll.sort();
+  redesAll.forEach(function(rd){rlist.appendChild(rItem('📡 '+ehEsc(rd)+(rd===curRede?'  ✓':''),rd===curRede?'#2dd4bf':'#cdd6e4',function(){model[curEbook].rede=rd;save();renderEbookTabs();}));});
+  if(redesAll.length){var rsep=document.createElement('div');rsep.style.cssText='height:1px;background:rgba(255,255,255,.1);margin:4px 2px';rlist.appendChild(rsep);}
+  rlist.appendChild(rItem('✎ Nova rede / canal…','#9fb0c8',function(){var nr=prompt('Rede / canal deste ebook (ex.: Instagram, Facebook):',curRede);if(nr===null)return;model[curEbook].rede=nr.trim();save();renderEbookTabs();}));
+  if(curRede)rlist.appendChild(rItem('✕ Tirar a rede','#9fb0c8',function(){model[curEbook].rede='';save();renderEbookTabs();}));
+  rbtn.onclick=function(ev){ev.stopPropagation();if(rlist.style.display==='block'){rlist.style.display='none';if(rlist._clo){document.removeEventListener('mousedown',rlist._clo);rlist._clo=null;}return;}rlist.style.display='block';var clo=function(e){if(!rwrap.contains(e.target)){rlist.style.display='none';document.removeEventListener('mousedown',clo);rlist._clo=null;}};rlist._clo=clo;setTimeout(function(){document.addEventListener('mousedown',clo);},0);};
+  rwrap.appendChild(rbtn);rwrap.appendChild(rlist);box.appendChild(rwrap);
+  var byRede={};mine.forEach(function(k){var rd=ehRede(k);if(!byRede[rd])byRede[rd]=[];byRede[rd].push(k);});
+  var redes=Object.keys(byRede).sort(),multiRede=redes.length>1;
+  function addTab(s){var t=document.createElement('div');t.className='tab'+(s===curEbook?' on':'');t.textContent=s;t.title='clique = abrir · duplo-clique = renomear';t.onclick=function(){curEbook=s;curPais=Object.keys(model[s].paises)[0];render();};t.ondblclick=function(e){e.preventDefault();e.stopPropagation();renomearEbook(s);};box.appendChild(t);}
+  if(multiRede){redes.forEach(function(rd){var rh=document.createElement('div');rh.style.cssText='padding:6px 10px 2px;font-size:11px;color:#7a8499';rh.textContent='📡 '+rd;box.appendChild(rh);byRede[rd].forEach(addTab);});}
+  else{mine.forEach(addTab);}
+  var add=document.createElement('div');add.className='tab add';add.textContent='+ Ebook';add.title='Cria um ebook pra '+dono;add.onclick=function(){addEbook(realDono);};box.appendChild(add);
+  if(WS!=='principal'){var _cf=(WS_DEFS[WS_DEF.cloneFrom||'principal']||WS_DEFS.principal).label;var clo=document.createElement('div');clo.className='tab';clo.style.color='#7fffa0';clo.textContent='⬇️ Clonar '+_cf;clo.title='Copia um ebook de '+_cf+' pra cá — o preço atual vira o "De" riscado, aí você baixa o "por"';clo.onclick=clonarDaPrincipal;box.appendChild(clo);}
   var del=document.createElement('div');del.className='tab';del.style.color='#ff8f8f';del.textContent='🗑 ebook';del.onclick=delEbook;box.appendChild(del);}
 function renderPaisTabs(){var box=$('paisTabs');box.innerHTML='';
   Object.keys(model[curEbook].paises).forEach(function(c){var t=document.createElement('div');t.className='tab'+(c===curPais?' on':'');t.textContent=c+' · '+(model[curEbook].paises[c].nome||'');t.onclick=function(){curPais=c;render();};box.appendChild(t);});
@@ -886,7 +936,7 @@ var curDevice='desktop';   /* 'desktop' | 'mobile' — pré-visualização/ediç
 function loadFrame(){
   var fr=$('frame'),sc=0;
   try{sc=fr.contentDocument.documentElement.scrollTop||0;}catch(e){}   /* guarda onde você estava */
-  fr.src='index.html?preview=1&edit=1&device='+curDevice+'&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais)+'&n='+(++nonce);
+  fr.src='index.html?preview=1&edit=1&device='+curDevice+'&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais)+(DSALERT_OPEN?'&dsalert=1':'')+'&n='+(++nonce);
   if(sc>0){var f2=function(){try{fr.contentDocument.documentElement.scrollTop=sc;}catch(e){}fr.removeEventListener('load',f2);};fr.addEventListener('load',f2);}   /* volta pro MESMO lugar (sem pulo pro topo) */
 }
 function setByPath(o,path,val){var ks=path.split('.');for(var i=0;i<ks.length-1;i++){var k=/^\d+$/.test(ks[i])?+ks[i]:ks[i];if(o[k]==null)o[k]=/^\d+$/.test(ks[i+1])?[]:{};o=o[k];}var last=/^\d+$/.test(ks[ks.length-1])?+ks[ks.length-1]:ks[ks.length-1];o[last]=val;}
@@ -997,6 +1047,26 @@ function wireInlineEdit(){
       if(!ev.repeat){try{undoPush(undoSnap());}catch(_e){}}   /* 1 passo de undo por toque/segurada (auto-repeat não floda) */
       EDSEL.__edNudge(dx,dy);
     },true);
+    /* ===== ALERTA (só upsell, com o alerta aberto): puxador ⤢ pra escalar o CARD INTEIRO na tela.
+       Mexe em t.dsAlertScale / --dsScale -> o CSS do card e a animação dspop JÁ usam essa var, então não há conflito de transform. ===== */
+    if((WS==='upsell'||WS==='principal')&&DSALERT_OPEN){(function(){
+      var card=doc.querySelector('.dsalert-card'),al=doc.getElementById('dsAlert');
+      if(!card||!al)return;
+      function curS(){var v=parseInt(t.dsAlertScale,10);return (v>=50&&v<=150)?v/100:1;}
+      var h=mkHandle(doc,'⤢','#b56bff','#fff','nwse-resize','arraste pra aumentar/diminuir o CARD inteiro','#fff');
+      h.style.zIndex='9995';doc.body.appendChild(h);
+      function place(){var r=card.getBoundingClientRect(),sx=doc.documentElement.scrollLeft||0,sy=doc.documentElement.scrollTop||0;h.style.left=(r.right+sx-16)+'px';h.style.top=(r.bottom+sy-16)+'px';}
+      place();
+      try{doc.defaultView.addEventListener('load',place);doc.defaultView.addEventListener('resize',place);}catch(_e){}
+      setTimeout(place,500);setTimeout(place,1500);   /* re-posiciona depois das imagens/fontes assentarem o layout (o card fica lá embaixo, abaixo de tudo) */
+      h.addEventListener('mousedown',function(e){e.preventDefault();e.stopPropagation();
+        var sx0=e.clientX,sy0=e.clientY,s0=curS(),r0=card.getBoundingClientRect(),baseW=(r0.width/s0)||300;
+        function mm(ev){var d=((ev.clientX-sx0)+(ev.clientY-sy0))/2;var ns=Math.max(0.5,Math.min(1.5,Math.round((r0.width+d)/baseW*100)/100));
+          al.style.setProperty('--dsScale',String(ns));t.dsAlertScale=Math.round(ns*100);place();}
+        function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);save();}
+        doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);
+      });
+    })();}
     Array.prototype.forEach.call(doc.querySelectorAll('[data-edit]'),function(el){
       el.setAttribute('contenteditable','true');el.spellcheck=false;
       el.addEventListener('blur',function(){
@@ -1024,7 +1094,7 @@ function wireInlineEdit(){
       function tmaybe(){setTimeout(function(){if(EDSEL===el)return;if(!tdrag&&tbox&&!el.matches(':hover')&&!thandle.matches(':hover')&&(!tmove||!tmove.matches(':hover'))&&(!twidth||!twidth.matches(':hover'))&&(!tdup||!tdup.matches(':hover'))&&(!tdel||!tdel.matches(':hover')))thide();},180);}
       function tposF(){return curDevice==='mobile'?'_posM':'_pos';}   /* Modo celular grava posição/escala SÓ no mobile */
       function getTP(){var pm=t[tposF()],p=pm&&pm[fpath];return p?{x:p.x||0,y:p.y||0,s:p.s||1}:{x:0,y:0,s:1};}
-      function applyTP(p){var v='translate('+p.x+'px,'+p.y+'px) scale('+(p.s||1)+')';if(curDevice==='mobile'){el.style.setProperty('display','inline-block','important');el.style.setProperty('transform',v,'important');el.style.transformOrigin='top left';}else{el.style.display='inline-block';el.style.transform=v;}}
+      function applyTP(p){var v='translate('+p.x+'px,'+p.y+'px) scale('+(p.s||1)+')';var dsp=(fpath==='dsAlertCta')?'block':'inline-block';if(curDevice==='mobile'){el.style.setProperty('display',dsp,'important');el.style.setProperty('transform',v,'important');el.style.transformOrigin='top left';}else{el.style.display=dsp;el.style.transform=v;}}   /* botão do alerta fica BLOCK (transform num bloco não refluí o card -> mover/escalar não empurra os vizinhos) */
       function saveTP(p){var f=tposF();if(!t[f])t[f]={};t[f][fpath]={x:p.x,y:p.y,s:p.s||1};}
       function tmoveStart(e){e.preventDefault();e.stopPropagation();tdrag=true;
         var sx0=e.clientX,sy0=e.clientY,p0=getTP();
@@ -1032,6 +1102,11 @@ function wireInlineEdit(){
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);tdrag=false;cgHide();save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
       function tstart(e){e.preventDefault();e.stopPropagation();tdrag=true;
+        if(fpath==='dsAlertCta'){   /* BOTÃO do alerta: ⤢ mexe na FONTE (padding em -> cresce proporcional) e o card REFLUÍ limpo, sem sobrepor o "no"/valor. Mover (✛) continua via translate (independente). */
+          var fs0=parseFloat(doc.defaultView.getComputedStyle(el).fontSize)||18,fx0=e.clientX,fy0=e.clientY;
+          function fmm(ev){var dd=((ev.clientX-fx0)+(ev.clientY-fy0))/2;var nfs=Math.max(11,Math.min(40,Math.round((fs0+dd/7)*10)/10));el.style.fontSize=nfs+'px';if(!t._fs)t._fs={};t._fs[fpath]=nfs+'px';tlayout();}
+          function fmu(){doc.removeEventListener('mousemove',fmm,true);doc.removeEventListener('mouseup',fmu,true);tdrag=false;save();}
+          doc.addEventListener('mousemove',fmm,true);doc.addEventListener('mouseup',fmu,true);return;}
         var p0=getTP(),sx0=e.clientX,sy0=e.clientY,r0=el.getBoundingClientRect(),s0=(p0.s||1),sw0=(r0.width||40),baseW=sw0/s0,baseH=(r0.height||40)/s0;
         /* ANCORA o canto superior-esquerdo ao escalar: o transform-origin é o centro, entao compensamos x/y pra
            o elemento NAO "fugir" crescendo pros dois lados. Mantem o modelo (centro) -> editor=publicado e nao desloca os outros. */
@@ -1072,6 +1147,7 @@ function wireInlineEdit(){
         twidth=mkHandle(doc,'↔','#ff9f1c','#5a3500','ew-resize','arraste para a LARGURA (expandir lateral)');
         tmove=mkHandle(doc,'✛','#f5c518','#3a2a02','move','arraste para mover');
         if(fpath==='giftBar'){thandle.style.display='none';twidth.style.display='none';tmove.style.display='none';}   /* fitinha é full-width/fixa: mover/escalar/largura livre a quebram (vira filete). Edita o TEXTO clicando; altura pelo ↕ da barra de SEÇÃO. */
+        if(fpath==='dsAlertCta'||fpath==='dsAlertBigVal'){twidth.style.display='none';}   /* botão e valor do alerta: SÓ ⤢ escala proporcional + ✛ mover. A largura solta (↔) deformava (só largura) e transbordava o card -> "cada coisa independente". */
         tlabel=mkTag(doc,'✏️ '+niceName(fpath));
         doc.body.appendChild(tbox);doc.body.appendChild(thandle);doc.body.appendChild(twidth);doc.body.appendChild(tmove);
         if(isList){tdup=mkHandle(doc,'⧉','#b56bff','#1b0b34','pointer','duplicar SÓ este texto (cópia livre) — o bloco inteiro tem a barra na LATERAL','#fff');doc.body.appendChild(tdup);
@@ -1750,9 +1826,9 @@ function buildSecNav(){var nav=$('secNav');if(!nav)return;nav.innerHTML='';var n
     var it=document.createElement('div');it.className='navitem';it.innerHTML='<span class="num">'+num+'</span>'+h.textContent;
     it.onclick=function(){g.scrollIntoView({behavior:'smooth',block:'start'});};nav.appendChild(it);});}
 function slugify(s){return (s||'').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'').slice(0,24);}
-function addEbook(){var n=prompt('Apelido do ebook na URL (ex.: arc01, foco):');if(!n)return;var slug=slugify(n);if(!slug)return;
+function addEbook(defDono){var n=prompt('Apelido do ebook na URL (ex.: arc01, foco):');if(!n)return;var slug=slugify(n);if(!slug)return;
   if(model[slug]){curEbook=slug;render();showView('editor');return;}
-  var dono=(prompt('Dono / pessoa deste ebook (ex.: luccas):')||'').trim();
+  var dono=(prompt('Dono / pessoa deste ebook (ex.: luccas):', defDono||'')||'').trim();
   var rede=(prompt('Rede / canal principal (ex.: instagram) — opcional:')||'').trim();
   /* Puxa o MOLDE do ebook atual (layout + estrutura + posicoes + tema), mas SO com o pais fonte (1o = BR). */
   var base=JSON.parse(JSON.stringify(model[curEbook]));
@@ -1761,6 +1837,33 @@ function addEbook(){var n=prompt('Apelido do ebook na URL (ex.: arc01, foco):');
   base.paises={};base.paises[srcCode]=fonte;
   base.dono=dono;base.rede=rede;
   model[slug]=base;curEbook=slug;curPais=srcCode;save();render();showView('editor');toast('Ebook "'+slug+'" criado'+(dono?' (dono: '+dono+')':'')+'.');}
+function clonarDaPrincipal(){
+  if(WS==='principal'){toast('Use isto no UPSELL ou DOWNSELL');return;}
+  var srcWs=WS_DEF.cloneFrom||'principal', srcLabel=(WS_DEFS[srcWs]||WS_DEFS.principal).label;
+  var prin=(WS_DEFS[srcWs]||WS_DEFS.principal).src()||{};   /* DOWNSELL clona da Principal; DOWNSELL 2 clona do UPSELL (WS_DEF.cloneFrom) */
+  var slugs=Object.keys(prin).filter(function(s){return prin[s]&&prin[s].paises&&Object.keys(prin[s].paises).length;});
+  if(!slugs.length){toast('Nenhum ebook em '+srcLabel+' pra clonar');return;}
+  var slug=(slugs.length===1)?slugs[0]:((prompt('Clonar qual ebook de '+srcLabel+' pro '+WS_DEF.label+'?\nDisponíveis: '+slugs.join(', '),slugs[0])||'').trim());
+  if(!slug)return;
+  if(!prin[slug]){toast('Ebook "'+slug+'" não existe em '+srcLabel);return;}
+  if(model[slug]&&!confirm('Já existe "'+slug+'" no '+WS_DEF.label+'. Sobrescrever com a cópia de '+srcLabel+'?'))return;
+  undoPush(undoSnap());
+  var copy=JSON.parse(JSON.stringify(prin[slug]));
+  var _pct=50;
+  if(WS_DEF.discount){   /* DOWNSELL/DOWNSELL 2 = desconto automático (pergunta a %, padrão 50): preço cheio vira o "De" riscado e o "por" cai pela %. descontoPct preserva R$/zł/US$. */
+    _pct=Math.max(1,Math.min(99,parseInt((prompt('Desconto do '+WS_DEF.label+' em % (Enter = 50):','50')||'50'),10)||50));
+    Object.keys(copy.paises||{}).forEach(function(c){var t=(copy.paises[c]||{}).t;if(!t)return;
+      if(t.preco){t.precoDe=t.preco;t.preco=descontoPct(t.preco,_pct);}
+      if(Array.isArray(t.bundle))t.bundle.forEach(function(b){if(b&&b.precoPor){b.precoDe=b.precoPor;b.precoPor=descontoPct(b.precoPor,_pct);}});
+    });
+  }
+  model[slug]=copy;
+  /* limpa o stub vazio "salomao" (placeholder do downsell/upsell novo), se ainda estiver lá e sem conteúdo */
+  if(model.salomao&&slug!=='salomao'){var st=model.salomao,vazio=st&&st.paises&&Object.keys(st.paises).every(function(c){var tt=(st.paises[c]||{}).t||{};return !tt.h1a&&!tt.preco&&!tt.sub;});if(vazio)delete model.salomao;}
+  curEbook=slug;curPais=Object.keys(model[slug].paises)[0];
+  save();render();showView('editor');
+  toast(WS_DEF.discount?('Clonado com '+_pct+'% OFF aplicado ✓ — confira os preços em cada idioma.'):('Clonado de '+srcLabel+' ✓'));
+}
 function delEbook(){if(Object.keys(model).length<=1){toast('Precisa ter ao menos 1 ebook');return;}if(!confirm('Excluir o ebook "'+curEbook+'"?'))return;delete model[curEbook];curEbook=Object.keys(model)[0];curPais=Object.keys(model[curEbook].paises)[0];save();render();}
 function renomearEbook(oldSlug){
   oldSlug=oldSlug||curEbook;
@@ -1886,13 +1989,16 @@ $('btnOpen').onclick=function(){
   var qs='ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais);
   try{save();}catch(e){}
   if(APP){
-    var open=function(){window.open('index.html?'+qs,'_blank');};   /* SEM preview=1 -> lê o disco */
-    try{ apiSave().then(open,open); }catch(e){ open(); }             /* espera o disco; abre de qualquer jeito */
+    var route=(WS==='upsell')?'/upsell/':(WS==='downsell')?'/downsell/':(WS==='downsell2')?'/downsell2/':'index.html';   /* /upsell/ e /downsell/ são servidos pelo server.js (espelham o deploy); principal=index.html. Tudo lê o DISCO após o save. */
+    var open=function(){window.open(route+'?'+qs,'_blank');};
+    try{ apiSave().then(open,open); }catch(e){ open(); }             /* espera gravar o disco; abre de qualquer jeito */
   }else{
-    window.open('index.html?preview=1&'+qs,'_blank');               /* file:// sem servidor -> usa o rascunho */
+    try{localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){}
+    window.open('index.html?preview=1&'+qs,'_blank');               /* file:// sem servidor: usa o rascunho */
   }
 };
 /* ➕ Elemento livre: menu visual (degradê, caixa de fundo, texto) */
+(function(){var b=$('btnDsAlert');if(!b)return;if(WS!=='upsell'&&WS!=='principal'){b.style.display='none';return;}b.style.display='';function lbl(){return DSALERT_OPEN?'✕ Fechar alerta':'👁 Alerta 50%';}b.textContent=lbl();b.onclick=function(){DSALERT_OPEN=!DSALERT_OPEN;b.textContent=lbl();b.classList.toggle('on',DSALERT_OPEN);loadFrame();};})();   /* Fase 2: ver/editar o alerta no preview — só no upsell */
 (function(){var b=$('btnAddEl');if(!b)return;var menu=null;
   function close(){if(menu&&menu.parentNode)menu.parentNode.removeChild(menu);menu=null;}
   function add(kind){
@@ -2125,7 +2231,7 @@ function bTokQS(){var t=($('viewToken')&&$('viewToken').value||'').trim();return
   }).catch(function(){b.disabled=false;b.textContent=old;alert('⚠️ Sem conexão pra atualizar (o app local tá rodando?).');});
 };})();
 /* mostra a versão e avisa se tem versão nova no GitHub */
-(function(){function vs(n){return 'v1.'+n;}fetch('/api/version').then(function(r){return r.json();}).then(function(d){
+(function(){function vs(n){n=parseInt(n,10)||0;return 'v'+Math.floor(n/100)+'.'+(n%100);}fetch('/api/version').then(function(r){return r.json();}).then(function(d){
   if(!d||!d.ok)return;var b=$('verBadge'),u=$('btnSysUpdate'),loc=d.local||0;
   if(b)b.textContent=vs(loc);
   if(d.latest!=null&&d.latest>loc){
@@ -2232,9 +2338,24 @@ function renderAnalytics(){
   var ebk=eb?eb.value:'';
   var vs=$('anVersao');
   if(vs){var cv=vs.value;vs.innerHTML='<option value="">todas</option>';var ps=(model[ebk]&&model[ebk].paises)?Object.keys(model[ebk].paises):[];ps.forEach(function(p){var o=document.createElement('option');o.value=p;o.textContent=p.toUpperCase();vs.appendChild(o);});if(cv)vs.value=cv;}
-  var ver=vs?vs.value:'', rede=$('anRede')?$('anRede').value:'', dias=$('anPeriodo')?$('anPeriodo').value:'30';
-  var qs='?days='+encodeURIComponent(dias)+'&ebook='+encodeURIComponent(ebk)+'&versao='+encodeURIComponent(ver)+'&rede='+encodeURIComponent(rede)+bTokQS();
-  var qsPrev=qs+'&offset='+encodeURIComponent(dias);   // período imediatamente anterior, mesmo tamanho
+  var ver=vs?vs.value:'', rede=$('anRede')?$('anRede').value:'', per=$('anPeriodo')?$('anPeriodo').value:'30';
+  var rw=$('anRangeWrap');if(rw)rw.style.display=(per==='custom')?'':'none';
+  var qsBase='&ebook='+encodeURIComponent(ebk)+'&versao='+encodeURIComponent(ver)+'&rede='+encodeURIComponent(rede)+bTokQS();
+  var qs, qsPrev;
+  if(per==='custom'){
+    var fI=$('anFrom'), tI=$('anTo');
+    if(fI&&tI&&(!fI.value||!tI.value)){var _t=new Date();var _a=new Date(_t.getTime()-29*86400000);if(!tI.value)tI.value=_t.toISOString().slice(0,10);if(!fI.value)fI.value=_a.toISOString().slice(0,10);}   // pré-preenche os últimos 30 dias na 1a vez
+    var f=fI?fI.value:'', t=tI?tI.value:'';
+    if(!f||!t){anPaint(anSample(),null,false);return;}
+    if(f>t){var _x=f;f=t;t=_x;}
+    qs='?from='+encodeURIComponent(f)+'&to='+encodeURIComponent(t)+qsBase;
+    var dA=new Date(f+'T00:00:00Z'), dB=new Date(t+'T00:00:00Z');
+    var pTo=new Date(dA.getTime()-86400000), pFrom=new Date(pTo.getTime()-(dB-dA));   // período anterior = mesmo tamanho, logo antes do "de"
+    qsPrev='?from='+encodeURIComponent(pFrom.toISOString().slice(0,10))+'&to='+encodeURIComponent(pTo.toISOString().slice(0,10))+qsBase;
+  }else{
+    qs='?days='+encodeURIComponent(per)+qsBase;
+    qsPrev=qs+'&offset='+encodeURIComponent(per);   // período imediatamente anterior, mesmo tamanho
+  }
   fxLoad().then(function(){return fetch('/deploy-config.json',{cache:'no-store'}).then(function(r){return r.json();});}).then(function(cfg){
     var base=(cfg&&cfg.prodUrl)?String(cfg.prodUrl).replace(/\/$/,''):'';
     if(!base)throw new Error('sem prodUrl');
@@ -2312,34 +2433,63 @@ function vdRenderNav(){
   Array.prototype.forEach.call(t.querySelectorAll('[data-nav]'),function(el){el.onclick=function(){var n=el.getAttribute('data-nav');if(n==='home')vdNav={canal:'',tema:''};else if(n==='canal')vdNav.tema='';vdRenderNav();};});
 }
 function renderVendas(){
-  var ebk=$('vdEbook')?$('vdEbook').value:'',cnl=$('vdCanal')?$('vdCanal').value:'',tma=$('vdTema')?$('vdTema').value:'',pa=$('vdPais')?$('vdPais').value:'',dias=$('vdPeriodo')?$('vdPeriodo').value:'30';
-  var qs='?days='+encodeURIComponent(dias)+'&ebook='+encodeURIComponent(ebk)+'&canal='+encodeURIComponent(cnl)+'&tema='+encodeURIComponent(tma)+'&pais='+encodeURIComponent(pa)+bTokQS();
+  var ebk=$('vdEbook')?$('vdEbook').value:'',cnl=$('vdCanal')?$('vdCanal').value:'',tma=$('vdTema')?$('vdTema').value:'',pa=$('vdPais')?$('vdPais').value:'',per=$('vdPeriodo')?$('vdPeriodo').value:'30';
+  var rw=$('vdRangeWrap');if(rw)rw.style.display=(per==='custom')?'':'none';
+  var qsBase='&ebook='+encodeURIComponent(ebk)+'&canal='+encodeURIComponent(cnl)+'&tema='+encodeURIComponent(tma)+'&pais='+encodeURIComponent(pa)+bTokQS();
+  var qs;
+  if(per==='custom'){
+    var fI=$('vdFrom'), tI=$('vdTo');
+    if(fI&&tI&&(!fI.value||!tI.value)){var _t=new Date();var _a=new Date(_t.getTime()-29*86400000);if(!tI.value)tI.value=_t.toISOString().slice(0,10);if(!fI.value)fI.value=_a.toISOString().slice(0,10);}
+    var f=fI?fI.value:'', t=tI?tI.value:'';
+    if(!f||!t){vdEmpty('Escolha as duas datas (de e até).');return;}
+    if(f>t){var _x=f;f=t;t=_x;}
+    qs='?from='+encodeURIComponent(f)+'&to='+encodeURIComponent(t)+qsBase;
+  }else{
+    qs='?days='+encodeURIComponent(per)+qsBase;
+  }
   fxLoad().then(function(){return fetch('/deploy-config.json',{cache:'no-store'}).then(function(r){return r.json();});}).then(function(c){
     var base=(c&&c.prodUrl)?String(c.prodUrl).replace(/\/$/,''):'';if(!base)throw new Error('x');
     return fetch(base+'/api/sales'+qs,{cache:'no-store'}).then(function(r){return r.json();});
   }).then(function(d){if(d&&d.ok)vdPaint(d);else vdEmpty('Sem conexão com o banco — fez o Deploy?');}).catch(function(){vdEmpty('Sem conexão — fez o Deploy do /api/sales?');});
 }
-(function(){var r=$('vdRefresh');if(r)r.onclick=renderVendas;['vdEbook','vdCanal','vdTema','vdPais','vdPeriodo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderVendas;});})();
+(function(){var r=$('vdRefresh');if(r)r.onclick=renderVendas;['vdEbook','vdCanal','vdTema','vdPais','vdPeriodo','vdFrom','vdTo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderVendas;});})();
 function openLinksFor(ek){fetch('/deploy-config.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(c){showDeployResult((c&&c.prodUrl)||'',ek);}).catch(function(){showDeployResult('',ek);});}
-var ebNav={dono:''};
+var ebNav={dono:'',rede:''};
 function ehEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function ehDono(k){return ((model[k]&&model[k].dono)||'').trim()||'(sem dono)';}
+function ehRede(k){return ((model[k]&&model[k].rede)||'').trim()||'(sem rede)';}
+function ehFolder(kind,val,n){return '<div class="vdfolder" data-'+kind+'="'+ehEsc(val)+'"><span class="vdfi">'+(kind==='dono'?'👤':'📡')+'</span><span class="vdfn">'+ehEsc(val)+'</span><span class="vdft">'+n+' ebook'+(n===1?'':'s')+'</span><span class="vdfa">›</span></div>';}
 function renderEbooksHome(){
   var box=$('ebooksHome');if(!box)return;
   var dep={};try{dep=JSON.parse(localStorage.getItem('LAST_DEPLOY')||'{}');}catch(e){}
   var depSet={};(dep.ebooks||[]).forEach(function(x){depSet[x]=1;});
   var byDono={};Object.keys(model).forEach(function(k){var dn=ehDono(k);if(!byDono[dn])byDono[dn]=[];byDono[dn].push(k);});
-  if(ebNav.dono&&!byDono[ebNav.dono])ebNav.dono='';
+  if(ebNav.dono&&!byDono[ebNav.dono]){ebNav.dono='';ebNav.rede='';}
+  /* NÍVEL 1 — pessoas (dono) */
   if(!ebNav.dono){
-    box.innerHTML=Object.keys(byDono).sort().map(function(dn){
-      return '<div class="vdfolder" data-dono="'+ehEsc(dn)+'"><span class="vdfi">👤</span><span class="vdfn">'+ehEsc(dn)+'</span><span class="vdft">'+byDono[dn].length+' ebook'+(byDono[dn].length===1?'':'s')+'</span><span class="vdfa">›</span></div>';
-    }).join('');
-    Array.prototype.forEach.call(box.querySelectorAll('[data-dono]'),function(el){el.onclick=function(){ebNav.dono=el.getAttribute('data-dono');renderEbooksHome();};});
+    box.innerHTML=Object.keys(byDono).sort().map(function(dn){return ehFolder('dono',dn,byDono[dn].length);}).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('[data-dono]'),function(el){el.onclick=function(){ebNav.dono=el.getAttribute('data-dono');ebNav.rede='';renderEbooksHome();};});
     return;
   }
-  var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-eback>📂 Ebooks</span><span class="vdcrumb-s">›</span><span class="vdcrumb-cur">👤 '+ehEsc(ebNav.dono)+'</span></div>';
+  /* dentro da pessoa: agrupa por REDE (canal) */
+  var mine=byDono[ebNav.dono]||[];
+  var byRede={};mine.forEach(function(k){var rd=ehRede(k);if(!byRede[rd])byRede[rd]=[];byRede[rd].push(k);});
+  var redes=Object.keys(byRede),multiRede=redes.length>1;   /* colapso adaptativo: 1 canal só -> pula o nível de rede */
+  if(ebNav.rede&&!byRede[ebNav.rede])ebNav.rede='';
+  /* NÍVEL 2 — redes (só aparece se a pessoa tem >1 canal) */
+  if(multiRede&&!ebNav.rede){
+    box.innerHTML='<div class="vdcrumb"><span class="vdcrumb-a" data-eback>📂 Ebooks</span><span class="vdcrumb-s">›</span><span class="vdcrumb-cur">👤 '+ehEsc(ebNav.dono)+'</span></div>'+
+      redes.sort().map(function(rd){return ehFolder('rede',rd,byRede[rd].length);}).join('');
+    box.querySelector('[data-eback]').onclick=function(){ebNav.dono='';ebNav.rede='';renderEbooksHome();};
+    Array.prototype.forEach.call(box.querySelectorAll('[data-rede]'),function(el){el.onclick=function(){ebNav.rede=el.getAttribute('data-rede');renderEbooksHome();};});
+    return;
+  }
+  /* NÍVEL 3 (ou colapsado) — páginas da pessoa (filtradas pela rede se houver) */
+  var list=(multiRede&&ebNav.rede)?byRede[ebNav.rede]:mine;
+  var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-eback>📂 Ebooks</span><span class="vdcrumb-s">›</span>'+
+    (multiRede?('<span class="vdcrumb-a" data-rback>👤 '+ehEsc(ebNav.dono)+'</span><span class="vdcrumb-s">›</span><span class="vdcrumb-cur">📡 '+ehEsc(ebNav.rede)+'</span>'):('<span class="vdcrumb-cur">👤 '+ehEsc(ebNav.dono)+'</span>'))+'</div>';
   var grid='<div class="ehgrid">';
-  (byDono[ebNav.dono]||[]).forEach(function(k){
+  list.forEach(function(k){
     var e=model[k]||{},np=e.paises?Object.keys(e.paises).length:0,pub=!!depSet[k];
     grid+='<div class="ehcard" data-open="'+ehEsc(k)+'"><div class="ehname">'+ehEsc(k)+'</div>'+
       '<div class="ehmeta">'+np+' idioma'+(np===1?'':'s')+(pub?' · <span style="color:#2dd4bf">no ar</span>':' · <span style="color:#8a93a6">rascunho</span>')+(e.rede?' · '+ehEsc(e.rede):'')+'</div>'+
@@ -2348,15 +2498,16 @@ function renderEbooksHome(){
   });
   grid+='</div>';
   box.innerHTML=crumb+grid;
-  box.querySelector('[data-eback]').onclick=function(){ebNav.dono='';renderEbooksHome();};
+  box.querySelector('[data-eback]').onclick=function(){ebNav.dono='';ebNav.rede='';renderEbooksHome();};
+  var _rb=box.querySelector('[data-rback]');if(_rb)_rb.onclick=function(){ebNav.rede='';renderEbooksHome();};
   Array.prototype.forEach.call(box.querySelectorAll('[data-open]'),function(el){el.onclick=function(ev){if(ev.target.closest('[data-links],[data-setdono]'))return;var k=el.getAttribute('data-open');curEbook=k;curPais=Object.keys(model[k].paises)[0];render();showView('editor');};});
   Array.prototype.forEach.call(box.querySelectorAll('[data-links]'),function(el){el.onclick=function(ev){ev.stopPropagation();openLinksFor(el.getAttribute('data-links'));};});
-  Array.prototype.forEach.call(box.querySelectorAll('[data-setdono]'),function(el){el.onclick=function(ev){ev.stopPropagation();var k=el.getAttribute('data-setdono');var nd=prompt('Dono / pessoa do ebook "'+k+'":',(model[k].dono||''));if(nd===null)return;model[k].dono=nd.trim();var nr=prompt('Rede / canal (opcional):',(model[k].rede||''));if(nr!==null)model[k].rede=nr.trim();save();ebNav.dono='';renderEbooksHome();toast('Atualizado!');};});
+  Array.prototype.forEach.call(box.querySelectorAll('[data-setdono]'),function(el){el.onclick=function(ev){ev.stopPropagation();var k=el.getAttribute('data-setdono');var nd=prompt('Dono / pessoa do ebook "'+k+'":',(model[k].dono||''));if(nd===null)return;model[k].dono=nd.trim();var nr=prompt('Rede / canal (opcional):',(model[k].rede||''));if(nr!==null)model[k].rede=nr.trim();save();ebNav.dono='';ebNav.rede='';renderEbooksHome();toast('Atualizado!');};});
 }
 Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.onclick=function(){showView(b.getAttribute('data-view'));};});
 // ---- WORKSPACE: Principal (ebooks.js -> /), UPSELL (ebooks-upsell.js -> /upsell), DOWNSELL (ebooks-downsell.js -> /downsell). Trocar = recarregar com ?ws. ----
 (function(){
-  var btns={principal:document.getElementById('navPrincipal'),upsell:document.getElementById('navUpsell'),downsell:document.getElementById('navDownsell')};
+  var btns={principal:document.getElementById('navPrincipal'),upsell:document.getElementById('navUpsell'),downsell:document.getElementById('navDownsell'),downsell2:document.getElementById('navDownsell2')};
   Object.keys(WS_DEFS).forEach(function(ws){
     var b=btns[ws]; if(!b)return;
     b.onclick=function(){ if(WS!==ws){location.href='builder.html'+(ws==='principal'?'?go=editor':WS_DEFS[ws].qs+'&go=editor');}else{showView('editor');} };
@@ -2367,7 +2518,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.o
   if(WS!=='principal'){try{document.title=WS_DEF.icon+' '+WS_DEF.label+' — '+document.title;}catch(e){}}
 })();
 (function(){var n=$('ehNew');if(n)n.onclick=function(){showView('editor');addEbook();};})();
-(function(){var r=$('anRefresh');if(r)r.onclick=renderAnalytics;['anEbook','anVersao','anRede','anPeriodo','anVerPor'].forEach(function(id){var e=$(id);if(e)e.onchange=renderAnalytics;});})();
+(function(){var r=$('anRefresh');if(r)r.onclick=renderAnalytics;['anEbook','anVersao','anRede','anPeriodo','anVerPor','anFrom','anTo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderAnalytics;});})();
 (function(){var b=$('anReset');if(!b)return;b.onclick=function(){
   if(!confirm('Isso APAGA todos os dados de analytics (acessos, cliques, vendas). Use só pra limpar testes. Continuar?'))return;
   b.disabled=true;b.textContent='Limpando…';

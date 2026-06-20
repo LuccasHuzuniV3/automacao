@@ -22,8 +22,17 @@ module.exports = async function (req, res) {
     const days = Math.min(Math.max(parseInt(q.days || '30', 10) || 30, 1), 365);
     const fE = q.ebook || '', fC = q.canal || '', fT = q.tema || '', fP = q.pais || '';
 
-    const base = Date.now(), dates = [];
-    for (let i = 0; i < days; i++) dates.push(new Date(base - i * 86400000).toISOString().slice(0, 10));
+    // datas (UTC): intervalo DE/ATÉ (from/to = YYYY-MM-DD) tem prioridade; senão, janela de N dias.
+    const reDt = /^\d{4}-\d{2}-\d{2}$/, dates = [];
+    let from = String(q.from || ''), to = String(q.to || '');
+    if (reDt.test(from) && reDt.test(to)) {
+      if (from > to) { const tmp = from; from = to; to = tmp; }
+      let cur = new Date(to + 'T00:00:00Z'); const end = new Date(from + 'T00:00:00Z'); let guard = 0;
+      while (cur >= end && guard < 400) { dates.push(cur.toISOString().slice(0, 10)); cur = new Date(cur.getTime() - 86400000); guard++; }
+    } else {
+      const base = Date.now();
+      for (let i = 0; i < days; i++) dates.push(new Date(base - i * 86400000).toISOString().slice(0, 10));
+    }
     const results = await Promise.all(dates.map(dt => redis(['LRANGE', 'salelog:' + dt, '0', '-1']).catch(() => ({ result: [] }))));
 
     const list = [];

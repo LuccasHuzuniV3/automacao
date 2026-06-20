@@ -29,9 +29,17 @@ module.exports = async function (req, res) {
     const fEbook = q.ebook || '', fVersao = q.versao || '', fRede = q.rede || '';
     const verPor = ['pais', 'canal', 'versao', 'dispositivo'].indexOf(q.verPor) >= 0 ? q.verPor : 'pais';
 
-    // datas (UTC) da janela de N dias, recuada por 'offset' dias
-    const base = Date.now(), dates = [];
-    for (let i = 0; i < days; i++) dates.push(new Date(base - (i + offset) * 86400000).toISOString().slice(0, 10));
+    // datas (UTC): intervalo DE/ATÉ (from/to = YYYY-MM-DD) tem prioridade; senão, janela de N dias recuada por 'offset'.
+    const reDt = /^\d{4}-\d{2}-\d{2}$/, dates = [];
+    let from = String(q.from || ''), to = String(q.to || '');
+    if (reDt.test(from) && reDt.test(to)) {
+      if (from > to) { const tmp = from; from = to; to = tmp; }
+      let cur = new Date(to + 'T00:00:00Z'); const end = new Date(from + 'T00:00:00Z'); let guard = 0;
+      while (cur >= end && guard < 400) { dates.push(cur.toISOString().slice(0, 10)); cur = new Date(cur.getTime() - 86400000); guard++; }   // mais novo -> mais antigo (mesma ordem da janela de dias)
+    } else {
+      const base = Date.now();
+      for (let i = 0; i < days; i++) dates.push(new Date(base - (i + offset) * 86400000).toISOString().slice(0, 10));
+    }
 
     // lê os hashes dos dias em paralelo
     const results = await Promise.all(dates.map(dt => redis(['HGETALL', 'stats:' + dt]).catch(() => ({ result: [] }))));
@@ -84,6 +92,6 @@ module.exports = async function (req, res) {
     function toRows(map, vmap) { return Object.keys(map).map(k => ({ p: k, ac: map[k].ac, cl: map[k].cl, vd: (vmap && vmap[k]) || 0 })).sort((a, b) => b.ac - a.ac).slice(0, 8); }
     const breakdowns = { pais: toRows(aggs.pais, vAgg.pais), canal: toRows(aggs.canal, vAgg.canal), versao: toRows(aggs.versao, vAgg.versao), dispositivo: toRows(aggs.dispositivo, null) };
     res.statusCode = 200;
-    res.end(JSON.stringify({ ok: true, acessos: totView, cliques: totClick, vendas: totVendas, receita: totReceitaCents / 100, receitas: receitas, serie: serie, breakdowns: breakdowns, days: days }));
+    res.end(JSON.stringify({ ok: true, acessos: totView, cliques: totClick, vendas: totVendas, receita: totReceitaCents / 100, receitas: receitas, serie: serie, breakdowns: breakdowns, days: dates.length }));
   } catch (e) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: String(e).slice(0, 200) })); }
 };

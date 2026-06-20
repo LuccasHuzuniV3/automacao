@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="desconto.js"></script>
 <!-- Tracking próprio (self-hosted) — define window.__track. O 'view' é disparado no corpo, com o ebook/versão JÁ RESOLVIDOS pela página (não o cru da URL). So na pagina publica. -->
 <script>
 (function(){
@@ -373,7 +374,8 @@
     .gbadge::before{content:"\2713";font-weight:900;font-size:13px}
     /* preço no herói: "De X" riscado + "por apenas" + valor grande dourado */
     .heroprice{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;margin-top:16px}
-    .hpDe{color:#9a9383;text-decoration:line-through;font-size:18px;font-weight:700}
+    .hpDe{color:#9a9383;text-decoration:none;position:relative!important;display:inline-block;font-size:18px;font-weight:700}
+    .hpDe::after{content:"";position:absolute;left:78%;top:54%;transform:translate(-50%,-50%);width:1.5em;height:1.8em;pointer-events:none;background:url('img/x-mark.png') center/contain no-repeat}   /* #3 X no preço antigo (igual o Principal); .hpDe só existe no upsell -> heroPrice + última chance */
     .hpLbl{color:var(--muted);font-size:14px}
     .hpVal{font-weight:900;font-size:clamp(34px,5vw,52px);color:#e8b84b;font-family:var(--titleFont);line-height:1}
     /* prova social: avatares + estrelas + texto */
@@ -409,12 +411,27 @@
     .ultsec .cta{width:100%;box-sizing:border-box;font-size:19px;padding:15px 24px;margin-top:2px}
     .recusar{display:inline-block;margin-top:2px;padding:11px 22px;border:1px solid rgba(255,90,90,.55);border-radius:999px;color:#ff8f8f;font-weight:700;font-size:13px;text-decoration:none;background:transparent}
     .recusar:hover{background:rgba(255,90,90,.08)}
+    /* ===== Alerta de 50% OFF (recusou o upsell -> antes de ir pro downsell) ===== */
+    .dsalert{position:fixed;inset:0;z-index:99999;background:rgba(5,2,12,.82);display:flex;align-items:center;justify-content:center;padding:20px}
+    .dsalert-card{max-width:380px;width:100%;text-align:center;background:var(--dsCard,#1c0b34);border:2px solid var(--dsBorda,#8a52e0);border-radius:20px;padding:26px 22px;box-shadow:0 0 0 4px rgba(138,82,224,.25),0 24px 60px -12px rgba(0,0,0,.85);transform:scale(var(--dsScale,1));animation:dspop .35s cubic-bezier(.2,1.3,.4,1)}
+    @keyframes dspop{from{transform:scale(calc(var(--dsScale,1)*.85));opacity:0}to{transform:scale(var(--dsScale,1));opacity:1}}
+    .dsalert-tit{font-family:var(--titleFont);font-weight:900;font-size:26px;color:var(--dsTit,#ffd34d);line-height:1.12;margin-bottom:8px}
+    .dsalert-msg{color:#fff;font-size:15px;font-weight:700;line-height:1.35;margin-bottom:12px}
+    .dsalert-val{margin:4px 0 18px}
+    .dsalert-vlbl{display:block;color:var(--muted,#b8a9d6);font-size:12px;margin-bottom:2px}
+    .dsalert-vbig{font-family:var(--titleFont);font-weight:900;font-size:42px;color:var(--dsVal,#1cca0c);line-height:1}
+    .dsalert-cta{display:block;width:fit-content;max-width:100%;margin:0 auto;background:var(--dsBtn,#16a836);color:#fff;font-weight:900;font-size:18px;padding:.83em 1.11em;border-radius:999px;text-decoration:none;box-shadow:0 10px 26px -8px rgba(40,200,90,.7);animation:dspulse 1.1s ease-in-out infinite}
+    @keyframes dspulse{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+    .dsalert-no{display:inline-block;margin-top:12px;color:var(--muted,#b8a9d6);font-size:12.5px;text-decoration:underline;opacity:.85}
+    .dsalert-no:hover{opacity:1}
     body.colcentral h1{font-size:26px;line-height:1.22}
+    body.colcentral h1 .hl{background:none;padding:0;border-radius:0;box-shadow:none;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.5)}   /* #2 upsell: título SEM degradê (tira a caixa roxa do destaque) */
     body.colcentral .sub{max-width:100%;font-size:14px;margin-top:8px}
     body.colcentral .art img{width:min(92%,340px);max-width:92%;height:auto}
     body.colcentral .cta{font-size:20px;padding:15px 28px;margin-top:16px;width:100%;box-sizing:border-box}
     body.colcentral .scarcity{font-size:19px;line-height:1.18;padding:16px 0 4px}
-    body.colcentral .giftbar{height:auto;margin:0}
+    body.colcentral .giftbar{display:none!important}   /* #1 upsell: remove a faixa VERMELHA do topo (giftbar). !important: a faixa é reordenada/forçada a block por regra de maior especificidade; gateado em colcentral = só upsell */
+    body.colcentral #banner{display:none!important}   /* #1b upsell: esconde TAMBÉM o #banner (faixa de urgência vazia, gradiente vermelho rgb(122,13,13)) — fantasma que reaparecia via clobber do localStorage; CSS no template = à prova de clobber */
     body.colcentral .ribbon.r2{display:none}
     body.colcentral .ribbon.r1{position:static;transform:none;left:auto;width:100%;font-size:12.5px;padding:10px 0;letter-spacing:.02em}
     body.colcentral .paysec{padding:16px 10px 6px}
@@ -443,6 +460,16 @@
     <div class="copy" id="footerCopy"></div>
   </footer>
   </div></div><!-- /#stage /#stagewrap -->
+  <!-- Alerta de 50% OFF: aparece ao recusar o upsell, antes de redirecionar pro downsell -->
+  <div class="dsalert" id="dsAlert" style="display:none" role="dialog" aria-modal="true">
+    <div class="dsalert-card">
+      <div class="dsalert-tit" id="dsAlertTit"></div>
+      <div class="dsalert-msg" id="dsAlertMsg"></div>
+      <div class="dsalert-val"><span class="dsalert-vlbl" id="dsAlertVlbl"></span><span class="dsalert-vbig" id="dsAlertVbig"></span></div>
+      <a class="dsalert-cta" id="dsAlertCta" href="#"></a>
+      <a class="dsalert-no" id="dsAlertNo" href="#"></a>
+    </div>
+  </div>
 
   <div class="track" id="track"><h4>RASTREAMENTO <span id="trkToggle">ocultar</span></h4>
     <div class="body"><div class="row"><b>País:</b> <span id="trkPais"></span></div><div class="row"><b>src recebido:</b> <span id="trkSrc"></span></div><div class="row"><b>enviado &#8594; Hotmart:</b> <code id="trkFinal"></code></div><div class="row"><b>checkout:</b> <span id="trkUrl"></span></div></div>
@@ -632,7 +659,42 @@
   set('ultimaTit',t.ultimaTit);set('ultimaSub',t.ultimaSub);set('ultimaCtaTxt',t.cta);
   set('ultPrecoDe',t.precoDe);set('ultPrecoLbl',t.precoLbl);set('ultPreco',t.preco);show('ultimaPrice',!!(t.precoDe||t.preco));
   set('recusarTxt',t.recusarTxt);show('recusarBtn',!!t.recusarTxt);
-  show('ultima',!!t.ultimaTit);
+  /* ===== FUNIL: alerta de 50% OFF antes de sair. PRINCIPAL (recusar OU voltar/sair) -> DownSell 1 (/downsell). UPSELL (recusar OU voltar/sair) -> DownSell 2 (/downsell2). Roda nos SOURCES publicados (/ e /upsell), não nas páginas de downsell nem no editor. ===== */
+  var DS_I18N={
+    pt:{tit:'ESPERA! 🎁',msg:'Você acabou de ganhar {pct}% DE DESCONTO!',val:'Só agora, por apenas',cta:'QUERO APROVEITAR!',no:'Não, sair sem o desconto'},
+    en:{tit:'WAIT! 🎁',msg:'You just got {pct}% OFF!',val:'Only now, for just',cta:'I WANT IT!',no:'No, leave without the discount'},
+    es:{tit:'¡ESPERA! 🎁',msg:'¡Acabas de ganar {pct}% DE DESCUENTO!',val:'Solo ahora, por apenas',cta:'¡LO QUIERO!',no:'No, salir sin el descuento'},
+    de:{tit:'WARTE! 🎁',msg:'Du hast gerade {pct}% RABATT erhalten!',val:'Nur jetzt, für nur',cta:'ICH WILL ES!',no:'Nein, ohne Rabatt gehen'},
+    pl:{tit:'CZEKAJ! 🎁',msg:'Właśnie otrzymałeś {pct}% ZNIŻKI!',val:'Tylko teraz, za jedyne',cta:'CHCĘ TO!',no:'Nie, wyjdę bez zniżki'},
+    it:{tit:'ASPETTA! 🎁',msg:'Hai appena ottenuto il {pct}% DI SCONTO!',val:'Solo ora, a soli',cta:'LO VOGLIO!',no:'No, esci senza lo sconto'},
+    fr:{tit:'ATTENDS! 🎁',msg:"Tu viens d'obtenir {pct}% DE RÉDUCTION!",val:'Seulement maintenant, pour',cta:'JE LE VEUX!',no:'Non, partir sans la réduction'},
+    nl:{tit:'WACHT! 🎁',msg:'Je hebt zojuist {pct}% KORTING gekregen!',val:'Alleen nu, voor slechts',cta:'IK WIL HET!',no:'Nee, weg zonder korting'},
+    sv:{tit:'VÄNTA! 🎁',msg:'Du fick precis {pct}% RABATT!',val:'Bara nu, för endast',cta:'JAG VILL HA DET!',no:'Nej, lämna utan rabatten'}
+  };
+  (function(){
+    var dsEdit=EDIT&&/[?&]dsalert=1/.test(location.search);   // EDITOR: modo "ver/editar o alerta" (botão do painel liga via ?dsalert=1)
+    if(EDIT&&!dsEdit)return;                                   // editor normal -> não mexe no alerta
+    if(!EDIT&&/\/downsell/.test(location.pathname.toLowerCase()))return;   // publicado: alerta nos SOURCES (Principal "/" e Upsell "/upsell"); NÃO nas páginas de downsell (que são o destino)
+    var btn=document.getElementById('recusarBtn'),al=document.getElementById('dsAlert');
+    if(!al||typeof descontoPct!=='function')return;
+    var lng=String((paises[pais]&&paises[pais].idioma)||pais||'en').slice(0,2).toLowerCase();
+    var L=DS_I18N[lng]||DS_I18N.en;
+    var pct=Math.max(1,Math.min(99,parseInt(t.dsAlertPct,10)||50));
+    var novo=t.preco?descontoPct(t.preco,pct):'';
+    (function(){function v(k,c){if(c)al.style.setProperty(k,c);}v('--dsCard',t.dsAlertCardBg);v('--dsBorda',t.dsAlertBorda);v('--dsTit',t.dsAlertTitCor);v('--dsVal',t.dsAlertValCor);v('--dsBtn',t.dsAlertBtnBg);})();   /* cores customizadas */
+    al.style.setProperty('--dsScale',String(Math.max(50,Math.min(150,parseInt(t.dsAlertScale,10)||100))/100));   /* tamanho do card (50-150%) */
+    function fill(){var vBig=(t.dsAlertBigVal&&(''+t.dsAlertBigVal).trim())?t.dsAlertBigVal:novo;set('dsAlertTit',t.dsAlertTit||L.tit);set('dsAlertMsg',(t.dsAlertMsg||L.msg).replace(/\{pct\}/g,pct));set('dsAlertVlbl',vBig?(t.dsAlertVal||L.val):'');set('dsAlertVbig',vBig);set('dsAlertCta',t.dsAlertCta||L.cta);set('dsAlertNo',t.dsAlertNo||L.no);}   /* valor = override manual (dsAlertBigVal, editável clicando no editor) OU o 50%-auto */
+    if(dsEdit){al.style.position='static';al.style.display='flex';al.style.justifyContent='center';al.style.background='transparent';al.style.backdropFilter='none';al.style.padding='24px 16px 60px';al.style.zIndex='auto';fill();return;}   /* EDITOR: alerta INLINE (não overlay fixo). Assim os itens (botão, textos) viram elementos normais no fluxo e ganham as alças de mover/redimensionar do editor POSICIONADAS CERTO — num overlay fixed elas saíam do lugar por causa do scroll. */
+    if(typeof downsellURLFrom!=='function')return;
+    function showAlert(){fill();var c=document.getElementById('dsAlertCta');if(c)c.setAttribute('href',downsellURLFrom(location.pathname,location.search));al.style.display='flex';}
+    if(btn)btn.addEventListener('click',function(e){e.preventDefault();showAlert();});   // botão "negar/recusar" (Upsell e, se o user configurar o recusarTxt, no Principal) -> alerta
+    /* SAIR/VOLTAR: intercepta o botão voltar/fechar 1x (vale CELULAR e PC) -> mostra o alerta antes de deixar sair. Depois disso o voltar funciona normal. */
+    var armed=true;try{history.pushState(null,'',location.href);}catch(_e){}
+    window.addEventListener('popstate',function(){if(!armed)return;armed=false;try{history.pushState(null,'',location.href);}catch(_e){}showAlert();});
+    var no=document.getElementById('dsAlertNo');if(no)no.addEventListener('click',function(e){e.preventDefault();al.style.display='none';});
+    al.addEventListener('click',function(e){if(e.target===al)al.style.display='none';});
+  })();
+  show('ultima',!!(t.ultimaTit||t.recusarTxt));   /* mostra a seção se tem título OU só o botão recusar/negar (pra ter o "negar" sem montar a última-chance toda) */
   /* avatares (prova + depoimento): se subiu FOTO (data-img) usa a foto; senão silhueta clicável pra subir. ===== */
   (function(){
     function avHTML(p,k){var SIL='<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15.5" r="6.6"/><path d="M6.5 35c1.5-8.6 8-10.6 13.5-10.6S32 26.4 33.5 35z"/></svg>';return p?('<img class="avimg" src="'+esc(p)+'" data-img="'+k+'" alt="">'):('<span class="avph" data-img="'+k+'">'+SIL+'</span>');}
@@ -661,18 +723,18 @@
     b.onclick=function(){var qs=new URLSearchParams(location.search);qs.delete('pais');qs.delete('src');qs.set('p',k);qs.set('ebook',ebook);if(p.src)qs.set('s',p.src);location.search=qs.toString();};lang.appendChild(b);});}
   else if(lang){lang.style.display='none';}
 
-  var EDMAP={banner:'banner',eyebrow:'eyebrow',garantBadge:'garantBadge',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',statNum:'statNum',statDesc:'statDesc',depoNome:'depoNome',depoTexto:'depoTexto',ultimaEyebrow:'ultimaEyebrow',ultimaTit:'ultimaTit',ultimaSub:'ultimaSub',ultimaCtaTxt:'cta',recusarTxt:'recusarTxt',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato'};
+  var EDMAP={banner:'banner',eyebrow:'eyebrow',garantBadge:'garantBadge',h1a:'h1a',h1b:'h1b',sub:'sub',precoDe:'precoDe',precoLbl:'precoLbl',preco:'preco',ctaTxt:'cta',ctaTxt2:'cta',prova:'prova',statNum:'statNum',statDesc:'statDesc',depoNome:'depoNome',depoTexto:'depoTexto',ultimaEyebrow:'ultimaEyebrow',ultimaTit:'ultimaTit',ultimaSub:'ultimaSub',ultimaCtaTxt:'cta',recusarTxt:'recusarTxt',capaTit:'capaTit',capaSub:'capaSub',giftbar:'giftBar',scarcity:'escassez',offerDe:'precoDe',offerPreco:'preco',ofertaTit:'ofertaTit',validade:'validade',ofertaDesc:'ofertaDesc',garantiaTit:'garantiaTit',garantiaTexto:'garantiaTexto',footerRedes:'footerRedes',footerCopy:'footerCopy',contatoTxt:'contato',dsAlertTit:'dsAlertTit',dsAlertMsg:'dsAlertMsg',dsAlertVlbl:'dsAlertVal',dsAlertVbig:'dsAlertBigVal',dsAlertCta:'dsAlertCta',dsAlertNo:'dsAlertNo'};
   Object.keys(EDMAP).forEach(function(id){var e=document.getElementById(id);if(e)e.setAttribute('data-edit',EDMAP[id]);});
   if(!MOBILE&&t._fs){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fs[k])e.style.fontSize=t._fs[k];});}
   /* _secH = ALTURA custom de seção (ex.: fitinha/gift) — só desktop (mobile mantém a altura responsiva). Px fixo determinístico, sem medição -> editor=abrir. */
   if(!MOBILE&&t._secH){Object.keys(t._secH).forEach(function(k){var s=document.querySelector('[data-sec="'+k+'"]');var H=parseInt(t._secH[k],10);if(s&&H)s.style.height=H+'px';});}
-  if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');if(k==='giftBar')return;var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
+  if(!MOBILE&&t._pos){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-move');if(k==='giftBar')return;var p=t._pos[k];if(!_posReal(p))return;if(e.hasAttribute('data-edit')){if(k!=='dsAlertCta')e.style.display='inline-block';e.style.transform='translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')';}else{e.style.position='relative';e.style.left=(p.x||0)+'px';e.style.top=(p.y||0)+'px';if(p.s&&p.s!=1){e.style.transformOrigin='top left';e.style.transform='scale('+p.s+')';}}});}
   /* _w = largura (expansão lateral) dos TEXTOS — aplica como width do inline-block (controla a quebra de linha). */
   if(!MOBILE&&t._w){Array.prototype.forEach.call(document.querySelectorAll('[data-edit],[data-img]'),function(e){var k=e.getAttribute('data-edit')||e.getAttribute('data-img');if(k==='giftBar')return;if(t._w[k]){var pp=String(t._w[k]).split(' ');e.style.width=pp[0];e.style.maxWidth='none';if(e.hasAttribute('data-img')&&pp[1]){e.style.height=pp[1];e.style.objectFit='cover';}}});}   /* giftBar (fitinha) é full-width por design: largura livre a estoura num filete -> ignorada */   /* texto: só largura. imagem: "Wpx Hpx" -> largura E altura travada + cover (mexe SÓ na largura, não distorce nem empurra o resto) */
   /* ===== MOBILE: overrides ajustados no "Modo celular" (separados do desktop). Por enquanto só IMAGENS (tamanho/posição). ===== */
-  if(MOBILE&&t._posM){Array.prototype.forEach.call(document.querySelectorAll('[data-img],[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-img')||e.getAttribute('data-edit')||e.getAttribute('data-move');if(k==='giftBar')return;var p=t._posM[k];if(!_posReal(p))return;
+  if(MOBILE&&t._posM){Array.prototype.forEach.call(document.querySelectorAll('[data-img],[data-edit],[data-move]'),function(e){var k=e.getAttribute('data-img')||e.getAttribute('data-edit')||e.getAttribute('data-move');if(k==='giftBar'||k==='banner')return;var p=t._posM[k];if(!_posReal(p))return;   /* banner: nunca força-mostrar (faixa de urgência vazia virava fantasma vermelho no upsell) */
     if(e.hasAttribute('data-move')&&!e.hasAttribute('data-edit')&&!e.hasAttribute('data-img')){e.style.setProperty('position','relative','important');e.style.setProperty('left',(p.x||0)+'px','important');e.style.setProperty('top',(p.y||0)+'px','important');if(p.s&&p.s!=1){e.style.setProperty('transform','scale('+p.s+')','important');e.style.transformOrigin='top left';}}   /* CTA/cards: posição relativa (igual desktop) */
-    else{if(e.hasAttribute('data-edit'))e.style.setProperty('display','inline-block','important');e.style.setProperty('transform','translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')','important');e.style.transformOrigin='top left';}});}   /* !important: vence as regras mobile .art img/.bitem img que forçam transform:none/width */
+    else{if(e.hasAttribute('data-edit')&&k!=='dsAlertCta')e.style.setProperty('display','inline-block','important');e.style.setProperty('transform','translate('+(p.x||0)+'px,'+(p.y||0)+'px) scale('+(p.s||1)+')','important');e.style.transformOrigin='top left';}});}   /* !important: vence as regras mobile .art img/.bitem img que forçam transform:none/width */
   if(MOBILE&&t._wM){Array.prototype.forEach.call(document.querySelectorAll('[data-img],[data-edit]'),function(e){var k=e.getAttribute('data-img')||e.getAttribute('data-edit');if(k==='giftBar')return;if(t._wM[k]){e.style.setProperty('width',String(t._wM[k]).split(' ')[0],'important');e.style.setProperty('max-width','100%','important');if(e.hasAttribute('data-img'))e.style.setProperty('height','auto','important');}});}
   if(MOBILE&&t._fsM){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._fsM[k])e.style.setProperty('font-size',t._fsM[k],'important');});}   /* tamanho da fonte só no mobile */
   if(MOBILE&&t._taM){Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(e){var k=e.getAttribute('data-edit');if(t._taM[k]){e.style.setProperty('display','block','important');e.style.setProperty('text-align',t._taM[k],'important');}});}   /* alinhar só no mobile (display block p/ o text-align pegar) */
@@ -688,7 +750,7 @@
   if(!MOBILE&&t._pos){
     var _free=[];
     Array.prototype.forEach.call(document.querySelectorAll('[data-edit]'),function(E){
-      var k=E.getAttribute('data-edit');if(k==='giftBar')return;if(!_posReal(t._pos[k]))return;   /* fitinha (full-width) nunca vira "texto livre" -> não encolhe num filete */
+      var k=E.getAttribute('data-edit');if(k==='giftBar'||k==='banner')return;if(!_posReal(t._pos[k]))return;   /* fitinha (full-width) nunca vira "texto livre" -> não encolhe num filete */
       if(!/^(DIV|P|H[1-6])$/.test(E.tagName))return;   /* só TEXTO de bloco (empilhado) — spans inline (preços) não empurram vertical e bagunçam baseline */
       var pe=E.parentNode;if(!pe||(pe.getAttribute&&pe.getAttribute('data-free')==='1'))return;
       var w=E.offsetWidth,h=E.offsetHeight;if(!w||!h)return;

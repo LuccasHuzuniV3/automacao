@@ -5,6 +5,7 @@ node_modules/
 ebooks.js
 ebooks-upsell.js
 ebooks-downsell.js
+ebooks-downsell2.js
 ebooks.bak.js
 _chk.js
 *.log

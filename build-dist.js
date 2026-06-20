@@ -57,6 +57,7 @@ fs.mkdirSync(path.join(DIST, 'img'), { recursive: true });
 
 // index.html + vercel.json
 fs.copyFileSync(path.join(ROOT, 'index.html'), path.join(DIST, 'index.html'));
+if (fs.existsSync(path.join(ROOT, 'desconto.js'))) fs.copyFileSync(path.join(ROOT, 'desconto.js'), path.join(DIST, 'desconto.js'));   // helper do fluxo upsell->downsell
 if (fs.existsSync(path.join(ROOT, 'vercel.json'))) {
   fs.copyFileSync(path.join(ROOT, 'vercel.json'), path.join(DIST, 'vercel.json'));
 }
@@ -116,6 +117,7 @@ function buildWorkspace(sub, file, globalName) {
   const WDIST = path.join(DIST, sub);
   fs.mkdirSync(path.join(WDIST, 'img'), { recursive: true });
   fs.copyFileSync(path.join(ROOT, 'index.html'), path.join(WDIST, 'index.html'));   // mesmo template do Principal
+  if (fs.existsSync(path.join(ROOT, 'desconto.js'))) fs.copyFileSync(path.join(ROOT, 'desconto.js'), path.join(WDIST, 'desconto.js'));
   fs.writeFileSync(path.join(WDIST, 'ebooks.js'),
     '/* ' + sub.toUpperCase() + ' publicado em /' + sub + '. Gerado por build-dist.js. */\n' +
     'window.EBOOKS = ' + JSON.stringify(wOut, null, 2) + ';\n');
@@ -130,3 +132,4 @@ function buildWorkspace(sub, file, globalName) {
 }
 buildWorkspace('upsell', 'ebooks-upsell.js', 'EBOOKS_UPSELL');
 buildWorkspace('downsell', 'ebooks-downsell.js', 'EBOOKS_DOWNSELL');
+buildWorkspace('downsell2', 'ebooks-downsell2.js', 'EBOOKS_DOWNSELL2');

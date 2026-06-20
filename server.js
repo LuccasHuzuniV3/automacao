@@ -80,8 +80,8 @@ function backupDataFile(fname, stampSeed) {
 }
 function backupEbooks(stampSeed) { backupDataFile('ebooks.js', stampSeed); }   // compat (save-scope/save-ebook usam este)
 // Mapa workspace -> arquivo de dados + nome do global. FONTE UNICA (save, save-scope, save-ebook, share).
-const WS_FILE = { principal: 'ebooks.js', upsell: 'ebooks-upsell.js', downsell: 'ebooks-downsell.js' };
-const WS_GLOBAL = { principal: 'EBOOKS', upsell: 'EBOOKS_UPSELL', downsell: 'EBOOKS_DOWNSELL' };
+const WS_FILE = { principal: 'ebooks.js', upsell: 'ebooks-upsell.js', downsell: 'ebooks-downsell.js', downsell2: 'ebooks-downsell2.js' };
+const WS_GLOBAL = { principal: 'EBOOKS', upsell: 'EBOOKS_UPSELL', downsell: 'EBOOKS_DOWNSELL', downsell2: 'EBOOKS_DOWNSELL2' };
 function normWs(ws) { return WS_FILE[ws] ? ws : 'principal'; }   // valida; desconhecido -> principal
 // Le o arquivo de dados de UM workspace como OBJETO (avalia num sandbox isolado, igual o build-dist).
 function readWsObj(ws) {
@@ -397,7 +397,7 @@ const server = http.createServer(async function (req, res) {
       if (!/^https:\/\/raw\.githubusercontent\.com\/.+/i.test(rawBase)) {
         json(res, 200, { ok: false, error: 'Atualizacao ainda nao configurada. O criador precisa rodar o CONFIGURAR-SISTEMA-GIT.bat.' }); return;
       }
-      const NEVER = ['ebooks.js', 'ebooks-upsell.js', 'ebooks-downsell.js', 'sys-config.json', 'deploy-config.json', '.gitignore', 'share-config.json', 'tunnel-url.txt', 'start.bat'];   // nunca sobrescreve dados/config/launcher
+      const NEVER = ['ebooks.js', 'ebooks-upsell.js', 'ebooks-downsell.js', 'ebooks-downsell2.js', 'sys-config.json', 'deploy-config.json', '.gitignore', 'share-config.json', 'tunnel-url.txt', 'start.bat'];   // nunca sobrescreve dados/config/launcher
       const bust = '?t=' + Date.now();
       let man = null;
       try { man = await fetch(rawBase + '/manifest.json' + bust, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }); } catch (e) {}
@@ -489,8 +489,19 @@ const server = http.createServer(async function (req, res) {
     return;
   }
 
+  // ---- /upsell e /downsell LOCAIS: espelham o deploy (testar o fluxo upsell->downsell sem hospedar) ----
+  let servePath = p;
+  if (p === '/upsell' || p === '/downsell' || p === '/downsell2') { res.writeHead(302, { Location: p + '/' + (u.search || '') }); res.end(); return; }   // precisa da barra final senão os caminhos relativos (ebooks.js) resolvem pra raiz = Principal
+  const _wsm = /^\/(upsell|downsell2|downsell)\/(.*)$/.exec(p);   // downsell2 ANTES de downsell (senão /downsell pega o prefixo)
+  if (_wsm) {
+    const _sub = _wsm[1], _rest = _wsm[2];
+    if (_rest === '' || _rest === 'index.html') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(fs.readFileSync(path.join(ROOT, 'index.html'))); return; }
+    if (_rest === 'ebooks.js') { let _src = 'window.EBOOKS={};'; try { _src = fs.readFileSync(path.join(ROOT, 'ebooks-' + _sub + '.js'), 'utf8').replace('window.EBOOKS_' + _sub.toUpperCase(), 'window.EBOOKS'); } catch (e) {} res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(_src); return; }
+    servePath = '/' + _rest;   // desconto.js, img/.., css -> servidos da RAIZ
+  }
+
   // ---- arquivos estaticos ----
-  let rel = decodeURIComponent(p === '/' ? '/builder.html' : p);
+  let rel = decodeURIComponent(servePath === '/' ? '/builder.html' : servePath);
   let fp = path.join(ROOT, rel);
   if (!fp.startsWith(ROOT)) { json(res, 403, { error: 'forbidden' }); return; }
   fs.stat(fp, function (err, st) {
