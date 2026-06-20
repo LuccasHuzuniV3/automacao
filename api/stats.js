@@ -27,6 +27,7 @@ module.exports = async function (req, res) {
     const days = Math.min(Math.max(parseInt(q.days || '30', 10) || 30, 1), 365);
     const offset = Math.min(Math.max(parseInt(q.offset || '0', 10) || 0, 0), 3650); // p/ comparar c/ período anterior
     const fEbook = q.ebook || '', fVersao = q.versao || '', fRede = q.rede || '';
+    const fTrack = (q.track === 'nao' || q.track === 'all') ? q.track : 'sim';   // 'sim'=só rastreadas (padrão) | 'nao'=só NÃO rastreadas | 'all'=todas
     const verPor = ['pais', 'canal', 'versao', 'dispositivo'].indexOf(q.verPor) >= 0 ? q.verPor : 'pais';
 
     // datas (UTC): intervalo DE/ATÉ (from/to = YYYY-MM-DD) tem prioridade; senão, janela de N dias recuada por 'offset'.
@@ -80,6 +81,9 @@ module.exports = async function (req, res) {
         const field = flat[i], val = parseInt(flat[i + 1], 10) || 0;
         const p = String(field).split('|');                // ebook|versao|canal|pais|type(n|na|r)|[moeda]
         const ebook = p[0], versao = p[1], canal = p[2], pais = p[3], type = p[4];
+        const untracked = (ebook === '-');                                       // venda SEM rastreio (outro produto da conta Hotmart)
+        if (fTrack === 'sim' && untracked) continue;
+        if (fTrack === 'nao' && !untracked) continue;
         if (fEbook && ebook !== fEbook) continue;
         if (fVersao && versao !== fVersao) continue;
         if (fRede && canal !== fRede) continue;

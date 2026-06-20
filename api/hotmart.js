@@ -55,8 +55,9 @@ module.exports = async function (req, res) {
     const purchase = data.purchase || {};
     const price = (purchase.price && purchase.price.value) || (purchase.full_price && purchase.full_price.value) || data.price || 0;
     const tracking = purchase.tracking || data.tracking || {};
-    let src = tracking.source || tracking.src || data.src || q.src || '';
+    let src = (purchase.origin && purchase.origin.src) || tracking.source || tracking.src || data.src || q.src || '';
     if (!/^[a-z0-9]+_[a-z]{2,3}_/i.test(src)) { const f = findSrc(body); if (f) src = f; }   // acha o src em qualquer lugar do payload
+    const sckV = ((purchase.origin && purchase.origin.sck) || tracking.source_sck || tracking.sck || data.sck || q.sck || '');   // sck = o VÍDEO (src appendado). A Hotmart devolve em purchase.origin.sck (confirmado via ?raw=1)
     const buyer = data.buyer || {};
     const country = (buyer.address && (buyer.address.country_iso || buyer.address.country)) || buyer.country
       || (purchase.checkout_country && (purchase.checkout_country.iso || purchase.checkout_country.name))
@@ -99,7 +100,7 @@ module.exports = async function (req, res) {
       await redis(['HINCRBY', 'sales:' + date, baseK + '|ra|' + moeda, cents]);   // receita só de APROVADAS por moeda
     }
     // registro individual (p/ a lista de Vendas), no máximo 1000 por dia
-    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, p: pais, ts: Date.now() });
+    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, vid: slug(sckV), p: pais, ts: Date.now() });
     await redis(['LPUSH', 'salelog:' + date, rec]);
     await redis(['LTRIM', 'salelog:' + date, '0', '999']);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));

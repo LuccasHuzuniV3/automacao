@@ -482,7 +482,8 @@
   try{ if(new URLSearchParams(location.search).get('preview')==='1'){var pv=localStorage.getItem('EBOOKS_PREVIEW');if(pv)EB=JSON.parse(pv);} }catch(e){}
   function getParams(){var q=new URLSearchParams(location.search),pais=q.get('p')||q.get('pais'),ebook=q.get('ebook');
     if(location.protocol!=='file:'){var s=location.pathname.split('/').filter(function(x){return x&&!/\.html?$/i.test(x)});if(!pais&&s[0])pais=s[0];if(!ebook&&s[1])ebook=s[1];}
-    return {pais:pais,ebook:ebook,src:(q.get('s')||q.get('src')||''),q:q};}
+    var _sP=q.get('s'),_srcP=q.get('src');
+    return {pais:pais,ebook:ebook,src:(_sP||_srcP||''),vid:(_sP&&_srcP?_srcP:''),q:q};}   /* s = rede (canal); src appendado POR CIMA do s = o vídeo (vai no sck) */
   var p=getParams();
   var EDIT=(p.q.get('edit')==='1');
   if(EDIT)document.documentElement.classList.add('edit');   /* liga as marcações de edição do CSS */
@@ -713,7 +714,7 @@
 
   var base=cfg.hotmart||'#',finalSrc=ebook+'_'+pais+(p.src?'_'+p.src:'_direto'),url=base;   /* ebook_versao_canal_tema -> o webhook atribui a venda certinho */
   try{var u=new URL(/^https?:/i.test(base)?base:'https://'+base);u.searchParams.set('src',finalSrc);
-    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','sck'].forEach(function(k){var x=p.q.get(k);if(x)u.searchParams.set(k,x);});url=u.toString();}catch(e){}
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','sck'].forEach(function(k){var x=p.q.get(k);if(x)u.searchParams.set(k,x);});if(p.vid)u.searchParams.set('sck',p.vid);url=u.toString();}catch(e){}   /* o vídeo (src appendado) vai no sck -> a Hotmart devolve no webhook */
   Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.href=url;
     a.addEventListener('click',function(){try{if(window.__track)window.__track('click',window.__trackParams);}catch(e){}});
   });
@@ -880,7 +881,7 @@
   window.addEventListener('resize',function(){clearTimeout(window.__fitT);window.__fitT=setTimeout(fitText,200);});
 
   if(p.q.get('debug')==='1'){var box=document.getElementById('track');box.classList.add('show');
-    set('trkPais',pais+' ('+(cfg.nome||'')+')'+(autoDetect?' — detectado':' — do link'));set('trkSrc',p.src||'(nenhum)');set('trkFinal',finalSrc);set('trkUrl',url);
+    set('trkPais',pais+' ('+(cfg.nome||'')+')'+(autoDetect?' — detectado':' — do link'));set('trkSrc',(p.src||'(nenhum)')+(p.vid?'   |   vídeo (sck): '+p.vid:''));set('trkFinal',finalSrc);set('trkUrl',url);
     document.getElementById('trkToggle').onclick=function(){box.classList.toggle('min');this.textContent=box.classList.contains('min')?'mostrar':'ocultar';};}
 })();
 </script>

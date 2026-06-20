@@ -35,8 +35,9 @@ module.exports = async function (req, res) {
     }
     const results = await Promise.all(dates.map(dt => redis(['LRANGE', 'salelog:' + dt, '0', '-1']).catch(() => ({ result: [] }))));
 
-    const list = [];
-    results.forEach(day => {
+    const list = [], serie = [];
+    results.forEach((day, idx) => {                          // results[idx] <-> dates[idx] (mais novo primeiro)
+      let dVd = 0; const dR = {};
       (day && day.result || []).forEach(s => {
         let o; try { o = JSON.parse(s); } catch (e) { return; }
         if (fE && o.e !== fE) return;
@@ -44,8 +45,13 @@ module.exports = async function (req, res) {
         if (fT && o.t !== fT) return;
         if (fP && o.p !== fP) return;
         list.push(o);
+        const sg = o.st === 'estorno' ? -1 : 1, cur = (o.cur || 'BRL');
+        dVd += sg; dR[cur] = (dR[cur] || 0) + sg * (o.v || 0);  // vendas + receita do DIA (respeita os mesmos filtros)
       });
+      const rr = {}; Object.keys(dR).forEach(c => { rr[c] = dR[c] / 100; });
+      serie.push({ d: dates[idx], vd: dVd, r: rr });
     });
+    serie.reverse();                                          // mais antigo -> mais novo (p/ o gráfico)
     list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
     let totV = 0, totRcents = 0; const canais = {}, temas = {}, ebooks = {}, paises = {}, receitasCents = {};
@@ -56,7 +62,7 @@ module.exports = async function (req, res) {
     });
     const receitas = {}; Object.keys(receitasCents).forEach(c => { receitas[c] = receitasCents[c] / 100; });
     res.statusCode = 200;
-    res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, list: list.slice(0, 500),
+    res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, serie: serie, list: list.slice(0, 500),
       filtros: { ebooks: Object.keys(ebooks), canais: Object.keys(canais), temas: Object.keys(temas), paises: Object.keys(paises) } }));
   } catch (e) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: String(e).slice(0, 150) })); }
 };
