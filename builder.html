@@ -231,6 +231,16 @@
   #anChart{width:100%}
   .angrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
   .anbreak{background:rgba(13,22,38,.7);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+  .vdrk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
+  .vdrk:last-child{border-bottom:0;padding-bottom:0}
+  .vdrk-pos{width:18px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0;font-size:13px}
+  .vdrk-mid{flex:1;min-width:0}
+  .vdrk-nm{font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vdrk-bar{height:6px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-top:5px}
+  .vdrk-bar i{display:block;height:100%;background:linear-gradient(90deg,#5bd66b,#2fae3e);border-radius:4px}
+  .vdrk-v{text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
+  .vdrk-v b{font-size:14px;color:#5bd66b;display:block;line-height:1.15}
+  .vdrk-v span{font-size:10.5px;color:var(--muted);white-space:nowrap}
   .anbreak-h{font-size:13px;font-weight:700;color:var(--txt);margin-bottom:14px;display:flex;align-items:center;gap:7px}
   .anbreak-h small{color:var(--muted);font-weight:600;font-size:10.5px;margin-left:auto;display:inline-flex;gap:5px}
   .anbreak-h small i{font-style:normal}
@@ -263,6 +273,8 @@
   @media(max-width:720px){.anfun3{flex-direction:column}.anfun3-conn{flex:0 0 34px;width:100%}.anfun3-conn::before{left:50%;right:auto;top:0;bottom:0;width:2px;height:auto}}
   .anfun-arrow{color:#5b6675;font-size:13px}
   .anchart-delta{font-size:13px;color:var(--muted);margin:0 0 10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+  .vdtip{position:absolute;z-index:20;pointer-events:none;transform:translate(-50%,-130%);background:#0b1322;border:1px solid var(--line);border-radius:9px;padding:7px 11px;font-size:12px;color:var(--txt);box-shadow:0 8px 24px rgba(0,0,0,.5);white-space:nowrap;display:none;line-height:1.5}
+  .vdtip b{color:#2dd4bf;font-variant-numeric:tabular-nums}
   .anchart-delta b{color:#f2eee4;font-weight:800;font-size:15px}
   .depeb{font-weight:800;color:var(--txt);font-size:14px;margin:16px 0 9px;display:flex;align-items:center;gap:7px}
   .deprow{display:grid;grid-template-columns:140px 1fr auto auto;gap:8px;align-items:center;margin-bottom:7px}
@@ -357,8 +369,12 @@
       </div>
       <div class="ankpis" id="vdKpis"></div>
       <div class="anpanel">
-        <div class="anpanel-h"><span class="anpanel-t">Vendas &amp; receita no tempo</span><span class="anpanel-leg"><i class="andot" style="background:#2dd4bf"></i>Vendas<i class="andot" style="background:#f5c518;margin-left:12px"></i>Receita (R$ equiv.) &nbsp; <span id="vdChartRange"></span></span></div>
+        <div class="anpanel-h"><span class="anpanel-t">Receita no tempo</span><span class="anpanel-leg"><i class="andot" style="background:#f5c518"></i>Receita (R$ equiv.) &nbsp; <span id="vdChartRange"></span></span></div>
         <div id="vdChart"></div>
+      </div>
+      <div class="anpanel">
+        <div class="anpanel-h"><span class="anpanel-t">🏆 Rankings de vendas</span><span class="anpanel-leg">respeitam os filtros (escolha uma rede no Canal pra ver os tops dela)</span></div>
+        <div class="angrid" id="vdRanks"></div>
       </div>
       <div id="vdTable"></div>
     </div>
@@ -2375,14 +2391,13 @@ function anKpis(d,prev){
   var pac=prev?(prev.acessos||0):null, pcl=prev?(prev.cliques||0):null, pvd=prev?nn(prev.vendas):null;
   var conv=ac?(Math.round(vd/ac*1000)/10):0, pconv=(prev&&prev.acessos)?(Math.round((prev.vendas||0)/prev.acessos*1000)/10):null;
   var recMap=clampRec(fxConsolidate(d.receitas)), recCur=Object.keys(recMap).sort();
-  var recHTML;
-  if(recCur.length>1){recHTML='<span class="rec-multi">'+recCur.map(function(c){return '<span>'+fmtMoney(recMap[c],c)+'</span>';}).join('')+'</span>';}   /* multi-moeda LADO A LADO; quebra p/ 2 linhas só quando aperta */
-  else{recHTML=fmtMoney(recCur.length?recMap[recCur[0]]:0,recCur.length?recCur[0]:'BRL');}
+  var recBRL=recMap.BRL||0, recUSD=recMap.USD||0;   /* receita separada por moeda -> 2 bloquinhos (R$ e US$) */
   var cards=[
     {ic:'👁️',bg:'rgba(45,212,191,.16)',fg:'#2dd4bf',k:'Visitas únicas',v:ac.toLocaleString('pt-BR')+anPct(ac,pac)},
     {ic:'🖱️',bg:'rgba(245,197,24,.16)',fg:'#f5c518',k:'Intenção de compra',v:cl.toLocaleString('pt-BR')+anPct(cl,pcl)},
     {ic:'🛒',bg:'rgba(91,214,107,.16)',fg:'#5bd66b',k:'Vendas',v:vd.toLocaleString('pt-BR')+anPct(vd,pvd)},
-    {ic:'💰',bg:'rgba(91,214,107,.16)',fg:'#5bd66b',k:'Receita',v:recHTML,vc:'rec',wide:true},
+    {ic:'💰',bg:'rgba(91,214,107,.16)',fg:'#5bd66b',k:'Receita R$',v:fmtMoney(recBRL,'BRL')},
+    {ic:'💵',bg:'rgba(45,212,191,.16)',fg:'#2dd4bf',k:'Receita US$',v:fmtMoney(recUSD,'USD')},
     {ic:'📈',bg:'rgba(45,212,191,.16)',fg:'#2dd4bf',k:'Conversão',v:conv.toLocaleString('pt-BR')+'%'+anPts(conv,pconv)}
   ];
   var cb=$('anCards');if(cb){cb.innerHTML=cards.map(function(c){return '<div class="ankpi'+(c.wide?' ankpi-wide':'')+'"><div class="ankpi-ic" style="background:'+c.bg+';color:'+c.fg+'">'+c.ic+'</div><div><div class="ankpi-k">'+c.k+'</div><div class="ankpi-v '+(c.vc||'')+'">'+c.v+'</div></div></div>';}).join('');kpiFit(cb);}
@@ -2517,11 +2532,11 @@ function vdChart(serie){
   var n=serie.length;
   function recBRL(r){var t=0;Object.keys(r||{}).forEach(function(c){var v=Math.max(0,r[c]||0);var b=(c==='BRL')?v:fxTo(v,c,'BRL');t+=(b==null?0:b);});return t;}
   var vds=serie.map(function(s){return Math.max(0,s.vd||0);}), rcs=serie.map(function(s){return recBRL(s.r);});
-  var lastVd=vds[n-1], prevVd=n>1?vds[n-2]:null;
-  var deltaHTML=(prevVd!=null)?('<div class="anchart-delta">Último dia: <b>'+lastVd.toLocaleString('pt-BR')+'</b> vendas'+anPct(lastVd,prevVd)+' <small>vs o dia anterior</small></div>'):'';
+  var lastR=rcs[n-1], prevR=n>1?rcs[n-2]:null;
+  var deltaHTML=(prevR!=null)?('<div class="anchart-delta">Último dia: <b>'+fmtMoney(lastR,'BRL')+'</b>'+anPct(lastR,prevR)+' <small>vs o dia anterior (R$ equiv.)</small></div>'):'';
   function fmt(d){var p=String(d).split('-');return (p[2]||'')+'/'+(p[1]||'');}
   function niceMax(v){if(v<=5)return 5;var p=Math.pow(10,Math.floor(Math.log10(v)));var f=v/p;var nf=f<=1?1:f<=2?2:f<=5?5:10;return nf*p;}
-  var W=900,H=190,padL=38,padR=14,padT=14,padB=26;
+  var W=900,H=190,padL=50,padR=14,padT=14,padB=26;
   var maxV=1;vds.forEach(function(v){maxV=Math.max(maxV,v);});
   var maxR=1;rcs.forEach(function(v){maxR=Math.max(maxR,v);});
   var topV=niceMax(maxV), topR=maxR;                          // barras: escala redonda (vendas) | linha: própria escala (receita)
@@ -2529,13 +2544,13 @@ function vdChart(serie){
   function cx(i){return padL+slot*i+slot/2;}
   function lyR(v){return padT+ih-((v||0)/topR)*ih;}
   var grid='',ylab='';
-  [0,0.5,1].forEach(function(f){var y=padT+ih-f*ih;grid+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(255,255,255,.06)"/>';ylab+='<text x="'+(padL-7)+'" y="'+(y+3).toFixed(1)+'" fill="#5a6577" font-size="10.5" text-anchor="end">'+Math.round(f*topV).toLocaleString('pt-BR')+'</text>';});
-  var bars='',line='',dots='';
+  function rk(v){if(v>=1000)return 'R$ '+(Math.round(v/100)/10).toLocaleString('pt-BR')+'k';return 'R$ '+Math.round(v).toLocaleString('pt-BR');}
+  [0,0.5,1].forEach(function(f){var y=padT+ih-f*ih;grid+='<line x1="'+padL+'" y1="'+y.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y.toFixed(1)+'" stroke="rgba(255,255,255,.06)"/>';ylab+='<text x="'+(padL-7)+'" y="'+(y+3).toFixed(1)+'" fill="#5a6577" font-size="10" text-anchor="end">'+rk(f*topR)+'</text>';});
+  var line='',dots='';
   serie.forEach(function(s,i){
-    var x=cx(i),h=(vds[i]/topV)*ih,y=base-h;
-    bars+='<rect x="'+(x-bw/2).toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(.5,h).toFixed(1)+'" rx="3" fill="url(#vdbg)" opacity="'+(vds[i]?1:.12)+'"/>';
+    var x=cx(i);
     line+=(i?'L':'M')+x.toFixed(1)+' '+lyR(rcs[i]).toFixed(1)+' ';
-    if(rcs[i])dots+='<circle cx="'+x.toFixed(1)+'" cy="'+lyR(rcs[i]).toFixed(1)+'" r="2.6" fill="#f5c518"/>';
+    if(rcs[i])dots+='<circle cx="'+x.toFixed(1)+'" cy="'+lyR(rcs[i]).toFixed(1)+'" r="3.2" fill="#f5c518"/>';
   });
   var area='M'+cx(0).toFixed(1)+' '+base.toFixed(1)+' '+serie.map(function(s,i){return 'L'+cx(i).toFixed(1)+' '+lyR(rcs[i]).toFixed(1);}).join(' ')+' L'+cx(n-1).toFixed(1)+' '+base.toFixed(1)+' Z';
   var ticks=[];if(n<=8){for(var t=0;t<n;t++)ticks.push(t);}else{ticks=[0,Math.round(n*0.25),Math.round(n*0.5),Math.round(n*0.75),n-1];}
@@ -2544,18 +2559,53 @@ function vdChart(serie){
   svg+='<defs><linearGradient id="vdbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#15897a"/></linearGradient><linearGradient id="vdclf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5c518" stop-opacity=".26"/><stop offset="1" stop-color="#f5c518" stop-opacity="0"/></linearGradient></defs>';
   svg+=grid+ylab;
   svg+='<line x1="'+padL+'" y1="'+base.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+base.toFixed(1)+'" stroke="rgba(255,255,255,.14)"/>';
-  svg+=bars;
   svg+='<path d="'+area+'" fill="url(#vdclf)" stroke="none"/>';
   svg+='<path d="'+line+'" fill="none" stroke="#f5c518" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
+  svg+='<line class="vdguide" x1="0" y1="'+padT+'" x2="0" y2="'+base.toFixed(1)+'" stroke="rgba(255,255,255,.25)" stroke-width="1" style="display:none"/>';
   svg+=xlab+'</svg>';
   box.innerHTML=deltaHTML+svg;
   if(rg)rg.textContent=fmt(serie[0].d)+' — '+fmt(serie[n-1].d);
+  /* tooltip de hover: passa o mouse e vê vendas + receita do dia */
+  box.style.position='relative';
+  var tip=document.createElement('div');tip.className='vdtip';box.appendChild(tip);
+  var svgEl=box.querySelector('svg'), guide=svgEl?svgEl.querySelector('.vdguide'):null;
+  if(svgEl){
+    svgEl.addEventListener('mousemove',function(e){
+      var r=svgEl.getBoundingClientRect();if(!r.width)return;
+      var i=Math.round(((e.clientX-r.left)/r.width*W-padL-slot/2)/slot);if(i<0)i=0;if(i>n-1)i=n-1;
+      var s=serie[i],rm=clampRec(fxConsolidate(s.r||{}));   /* consolida tudo em R$ + US$ (mesmo esquema dos cards de Receita) */
+      var rstr=fmtMoney(rm.BRL||0,'BRL')+' · '+fmtMoney(rm.USD||0,'USD');
+      var vq=Math.max(0,s.vd||0);
+      tip.innerHTML='<b>'+fmt(s.d)+'</b> · '+vq.toLocaleString('pt-BR')+' venda'+(vq===1?'':'s')+'<br>'+rstr;
+      var bx=box.getBoundingClientRect();
+      tip.style.left=(e.clientX-bx.left)+'px';tip.style.top=(e.clientY-bx.top)+'px';tip.style.display='block';
+      if(guide){var gx=padL+slot*i+slot/2;guide.setAttribute('x1',gx.toFixed(1));guide.setAttribute('x2',gx.toFixed(1));guide.style.display='';}
+    });
+    svgEl.addEventListener('mouseleave',function(){tip.style.display='none';if(guide)guide.style.display='none';});
+  }
+}
+/* rankings de vendas (server-side): top por país / vídeo(src) / ebook — respeitam os filtros */
+function vdRanks(ranks){
+  var box=$('vdRanks');if(!box)return;
+  ranks=ranks||{};
+  function recStr(r){var m=clampRec(fxConsolidate(r||{})),p=[];if(m.BRL)p.push(fmtMoney(m.BRL,'BRL'));if(m.USD)p.push(fmtMoney(m.USD,'USD'));return p.join(' · ')||fmtMoney(0,'BRL');}
+  function card(titulo,icon,rows,nameFn){
+    rows=rows||[];var max=1;rows.forEach(function(r){max=Math.max(max,r.vd||0);});
+    var body=rows.length?rows.map(function(r,i){var pct=Math.round((r.vd||0)/max*100),nm=nameFn?nameFn(r.k):r.k;
+      return '<div class="vdrk"><span class="vdrk-pos">'+(i+1)+'</span><div class="vdrk-mid"><div class="vdrk-nm">'+nm+'</div><div class="vdrk-bar"><i style="width:'+pct+'%"></i></div></div><div class="vdrk-v"><b>'+(r.vd||0).toLocaleString('pt-BR')+'</b><span>'+recStr(r.r)+'</span></div></div>';
+    }).join(''):'<div class="anbreak-empty">Sem vendas ainda.</div>';
+    return '<div class="anbreak"><div class="anbreak-h">'+icon+' '+titulo+'<small>vendas · receita</small></div>'+body+'</div>';
+  }
+  box.innerHTML=card('Por país','🌍',ranks.pais,function(c){return (flagOf(c)?flagOf(c)+' ':'')+(paisNome(c)||c);})+
+    card('Por vídeo (src)','🎬',ranks.src,function(c){return c==='-'?'<span style="color:var(--muted)">(sem vídeo)</span>':c;})+
+    card('Por ebook','📚',ranks.ebook,null);
 }
 function vdPaint(d){
   var b=$('vdBanner');if(b){b.innerHTML='✅ <b>Vendas reais</b> (via webhook da Hotmart). Cada compra aparece aqui na hora. <span style="opacity:.8">Totais: <b>R$</b> (Brasil) + <b>US$</b> (resto, convertido pela cotação do dia).</span>';b.style.cssText='background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.4);color:#7defc9;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}
   var f=d.filtros||{};vdFillSelect('vdEbook',f.ebooks);vdFillSelect('vdCanal',f.canais);vdFillSelect('vdTema',f.temas);vdFillSelect('vdPais',f.paises,paisNome);
   if(window.vdSyncDrops)vdSyncDrops();
   vdChart(d.serie);
+  vdRanks(d.ranks);
   var list=d.list||[];
   vdGroups={};
   function recAdd(map,cur,cents){cur=(cur||'BRL');map[cur]=(map[cur]||0)+cents;}

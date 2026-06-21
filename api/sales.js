@@ -61,8 +61,21 @@ module.exports = async function (req, res) {
       if (o.c) canais[o.c] = 1; if (o.t) temas[o.t] = 1; if (o.e) ebooks[o.e] = 1; if (o.p) paises[o.p] = 1;
     });
     const receitas = {}; Object.keys(receitasCents).forEach(c => { receitas[c] = receitasCents[c] / 100; });
+    const ranks = rankSales(list);   // rankings (pais / src / ebook) sobre as vendas JÁ filtradas (respeita os filtros)
     res.statusCode = 200;
-    res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, serie: serie, list: list.slice(0, 500),
+    res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, serie: serie, ranks: ranks, list: list.slice(0, 500),
       filtros: { ebooks: Object.keys(ebooks), canais: Object.keys(canais), temas: Object.keys(temas), paises: Object.keys(paises) } }));
   } catch (e) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: String(e).slice(0, 150) })); }
 };
+
+// rankings de vendas (puro/testável): agrupa por país / src(vídeo) / ebook, soma vendas líquidas + receita por moeda,
+// filtra só os com venda > 0, ordena do que mais vende e pega o top 12. Valores em CENTAVOS viram unidade (/100).
+function rankSales(list) {
+  const P = {}, S = {}, E = {};
+  function bump(m, k, sg, cur, val) { if (k == null || k === '') k = '-'; if (!m[k]) m[k] = { vd: 0, r: {} }; m[k].vd += sg; m[k].r[cur] = (m[k].r[cur] || 0) + sg * val; }
+  (list || []).forEach(function (o) { const sg = o.st === 'estorno' ? -1 : 1, cur = (o.cur || 'BRL'), v = o.v || 0; bump(P, o.p, sg, cur, v); bump(S, o.vid, sg, cur, v); bump(E, o.e, sg, cur, v); });
+  function cents(rc) { const o = {}; Object.keys(rc).forEach(function (c) { o[c] = rc[c] / 100; }); return o; }
+  function top(m) { return Object.keys(m).map(function (k) { return { k: k, vd: m[k].vd, r: cents(m[k].r) }; }).filter(function (x) { return x.vd > 0; }).sort(function (a, b) { return b.vd - a.vd; }).slice(0, 12); }
+  return { pais: top(P), src: top(S), ebook: top(E) };
+}
+module.exports.rankSales = rankSales;

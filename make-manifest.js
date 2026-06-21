@@ -9,7 +9,7 @@ const path = require('path');
 const ROOT = __dirname;
 
 const BASE = [
-  'builder.html', 'painel.html', 'index.html', 'server.js', 'build-dist.js',
+  'builder.html', 'painel.html', 'index.html', 'server.js', 'build-dist.js', 'deploy-merge.js',
   'vercel.json', 'README.md', 'LEIA-ME.txt', 'COMECE-AQUI.bat', 'start.bat',
   'deploy.bat', 'login-vercel.bat', 'version.json'
 ];

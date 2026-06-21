@@ -1,12 +1,13 @@
 {
-  "version": 202,
-  "date": "2026-06-20T22:19:42.728Z",
+  "version": 203,
+  "date": "2026-06-21T05:33:28.054Z",
   "files": [
     "builder.html",
     "painel.html",
     "index.html",
     "server.js",
     "build-dist.js",
+    "deploy-merge.js",
     "vercel.json",
     "README.md",
     "LEIA-ME.txt",
