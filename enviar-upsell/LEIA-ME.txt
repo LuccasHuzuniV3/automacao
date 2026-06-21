@@ -1,0 +1,15 @@
+﻿COMO INSTALAR O UPSELL (sem perder o seu trabalho)
+======================================================
+
+1) Feche o painel/builder (pode fechar o start.bat).
+2) Copie TUDO de dentro desta pasta para a pasta do projeto
+   (a pasta onde ficam o start.bat e o index.html).
+3) Quando o Windows perguntar, mande SUBSTITUIR o "ebooks-upsell.js".
+   As imagens entram na pasta img/. Se ele perguntar sobre alguma
+   imagem que ja existe, pode pular - sao imagens do UPSELL.
+4) Abra o start.bat de novo e de Ctrl+Shift+R no painel.
+
+IMPORTANTE: isto NAO mexe no seu ebooks.js (PRINCIPAL) nem em nenhum
+outro workspace. So entra o "ebooks-upsell.js" e as imagens dele.
+
+Conteudo desta pasta: ebooks-upsell.js + 6 imagem(ns).
