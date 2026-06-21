@@ -1,10 +1,11 @@
 {
-  "version": 205,
-  "date": "2026-06-21T18:47:24.803Z",
+  "version": 206,
+  "date": "2026-06-21T18:58:18.785Z",
   "files": [
     "builder.html",
     "painel.html",
     "index.html",
+    "desconto.js",
     "server.js",
     "build-dist.js",
     "deploy-merge.js",

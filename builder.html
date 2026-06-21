@@ -1953,20 +1953,23 @@ function clonarDaPrincipal(){
   if(model[slug]&&!confirm('Já existe "'+slug+'" no '+WS_DEF.label+'. Sobrescrever com a cópia de '+srcLabel+'?'))return;
   undoPush(undoSnap());
   var copy=JSON.parse(JSON.stringify(prin[slug]));
-  var _pct=50;
-  if(WS_DEF.discount){   /* DOWNSELL/DOWNSELL 2 = desconto automático (pergunta a %, padrão 50): preço cheio vira o "De" riscado e o "por" cai pela %. descontoPct preserva R$/zł/US$. */
+  var _pct=50, _descOk=false;
+  if(WS_DEF.discount && typeof descontoPct==='function'){   /* DOWNSELL/DOWNSELL 2 = desconto automático (pergunta a %, padrão 50): preço cheio vira o "De" riscado e o "por" cai pela %. descontoPct preserva R$/zł/US$. GUARD: se faltar o desconto.js (update incompleto) NÃO quebra o clone — traz o ebook sem desconto e avisa. */
     _pct=Math.max(1,Math.min(99,parseInt((prompt('Desconto do '+WS_DEF.label+' em % (Enter = 50):','50')||'50'),10)||50));
     Object.keys(copy.paises||{}).forEach(function(c){var t=(copy.paises[c]||{}).t;if(!t)return;
       if(t.preco){t.precoDe=t.preco;t.preco=descontoPct(t.preco,_pct);}
       if(Array.isArray(t.bundle))t.bundle.forEach(function(b){if(b&&b.precoPor){b.precoDe=b.precoPor;b.precoPor=descontoPct(b.precoPor,_pct);}});
     });
+    _descOk=true;
   }
   model[slug]=copy;
   /* limpa o stub vazio "salomao" (placeholder do downsell/upsell novo), se ainda estiver lá e sem conteúdo */
   if(model.salomao&&slug!=='salomao'){var st=model.salomao,vazio=st&&st.paises&&Object.keys(st.paises).every(function(c){var tt=(st.paises[c]||{}).t||{};return !tt.h1a&&!tt.preco&&!tt.sub;});if(vazio)delete model.salomao;}
   curEbook=slug;curPais=Object.keys(model[slug].paises)[0];
   save();render();showView('editor');
-  toast(WS_DEF.discount?('Clonado com '+_pct+'% OFF aplicado ✓ — confira os preços em cada idioma.'):('Clonado de '+srcLabel+' ✓'));
+  if(WS_DEF.discount&&!_descOk){toast('Clonado, mas SEM desconto ⚠️ — rode "Atualizar sistema" (falta desconto.js) e clone de novo');}
+  else if(_descOk){toast('Clonado com '+_pct+'% OFF aplicado ✓ — confira os preços em cada idioma.');}
+  else{toast('Clonado de '+srcLabel+' ✓');}
 }
 function delEbook(){if(Object.keys(model).length<=1){toast('Precisa ter ao menos 1 ebook');return;}if(!confirm('Excluir o ebook "'+curEbook+'"?'))return;delete model[curEbook];curEbook=Object.keys(model)[0];curPais=Object.keys(model[curEbook].paises)[0];save();render();}
 function renomearEbook(oldSlug){
