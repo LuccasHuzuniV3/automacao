@@ -11,8 +11,7 @@ const ROOT = __dirname;
 const BASE = [
   'builder.html', 'painel.html', 'index.html', 'desconto.js', 'server.js', 'build-dist.js', 'deploy-merge.js',
   'vercel.json', 'README.md', 'LEIA-ME.txt', 'COMECE-AQUI.bat', 'start.bat',
-  'deploy.bat', 'login-vercel.bat', 'version.json',
-  'otimizar-imagens.js', 'OTIMIZAR-IMAGENS.bat'
+  'deploy.bat', 'login-vercel.bat', 'version.json'
 ];
 const files = [];
 BASE.forEach(function (f) { if (fs.existsSync(path.join(ROOT, f))) files.push(f); });

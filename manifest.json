@@ -1,6 +1,6 @@
 {
-  "version": 214,
-  "date": "2026-06-22T23:09:15.821Z",
+  "version": 215,
+  "date": "2026-06-22T23:39:40.602Z",
   "files": [
     "builder.html",
     "painel.html",
@@ -17,8 +17,6 @@
     "deploy.bat",
     "login-vercel.bat",
     "version.json",
-    "otimizar-imagens.js",
-    "OTIMIZAR-IMAGENS.bat",
     "api/hotmart.js",
     "api/reset.js",
     "api/sales.js",

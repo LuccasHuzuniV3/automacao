@@ -8,7 +8,7 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { exec, execFile, spawn } = require('child_process');
+const { exec, execFile, spawn, spawnSync } = require('child_process');
 const zlib = require('zlib');
 
 const ROOT = __dirname;
@@ -102,6 +102,15 @@ function backupEbooks(stampSeed) { backupDataFile('ebooks.js', stampSeed); }   /
 // Mapa workspace -> arquivo de dados + nome do global. FONTE UNICA (save, save-scope, save-ebook, share).
 const WS_FILE = { principal: 'ebooks.js', upsell: 'ebooks-upsell.js', downsell: 'ebooks-downsell.js', downsell2: 'ebooks-downsell2.js' };
 const WS_GLOBAL = { principal: 'EBOOKS', upsell: 'EBOOKS_UPSELL', downsell: 'EBOOKS_DOWNSELL', downsell2: 'EBOOKS_DOWNSELL2' };
+const REVWS = (function () { const m = {}; Object.keys(WS_FILE).forEach(function (w) { m[WS_FILE[w]] = w; }); return m; })();   // 'ebooks-upsell.js' -> 'upsell'
+// pega o token de share da requisicao (Referer ?share/?token, cookie sharetok, ou header) — usado pra entregar SO o ebook do link pro convidado
+function shareTok(req) {
+  const ref = String(req.headers.referer || req.headers.referrer || '');
+  let m = /[?&](?:share|token)=([^&#]+)/.exec(ref); if (m) { try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; } }
+  m = /(?:^|;\s*)sharetok=([^;]+)/.exec(String(req.headers.cookie || '')); if (m) { try { return decodeURIComponent(m[1]); } catch (e) { return m[1]; } }
+  if (req.headers['x-edit-token']) return String(req.headers['x-edit-token']);
+  return '';
+}
 function normWs(ws) { return WS_FILE[ws] ? ws : 'principal'; }   // valida; desconhecido -> principal
 // Le o arquivo de dados de UM workspace como OBJETO (avalia num sandbox isolado, igual o build-dist).
 function readWsObj(ws) {
@@ -137,6 +146,50 @@ function ensureCloudflared() {
   console.log('  Baixando o cloudflared (programa da Cloudflare, ~50MB, so na 1a vez)...');
   return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); })
     .then(function (ab) { fs.writeFileSync(exe, Buffer.from(ab)); return exe; });
+}
+/* ===== OTIMIZACAO AUTOMATICA DE IMAGENS (WebP) — acelera o "Compartilhar" ==========
+   Quando o app sobe, gera EM SEGUNDO PLANO uma versao .webp (bem menor) ao lado de cada
+   imagem da pasta img/. Usa o ffmpeg (se estiver no PATH) ou baixa o cwebp sozinho (~1MB,
+   so quando esta compartilhando). O server.js entrega a .webp pra quem aceita. Os arquivos
+   ORIGINAIS nunca sao alterados. Sem ferramenta e sem compartilhar -> simplesmente pula. */
+function detectFfmpeg() { try { const r = spawnSync('ffmpeg', ['-version'], { stdio: 'ignore' }); return !r.error && r.status === 0; } catch (e) { return false; } }
+let _webpTool = undefined;   // {cmd, args(src,out)} ja resolvido, ou null
+function ensureWebpTool(allowDownload) {
+  if (_webpTool !== undefined) return Promise.resolve(_webpTool);
+  if (detectFfmpeg()) { _webpTool = { cmd: 'ffmpeg', args: function (s, o) { return ['-y', '-i', s, '-c:v', 'libwebp', '-quality', '80', o]; } }; return Promise.resolve(_webpTool); }
+  const cw = path.join(ROOT, 'cwebp.exe');
+  if (fs.existsSync(cw)) { _webpTool = { cmd: cw, args: function (s, o) { return ['-q', '80', s, '-o', o]; } }; return Promise.resolve(_webpTool); }
+  if (!allowDownload) return Promise.resolve(null);
+  const ver = '1.4.0', url = 'https://storage.googleapis.com/downloads.webmproject.org/releases/webp/libwebp-' + ver + '-windows-x64.zip', zip = path.join(ROOT, 'libwebp.zip');
+  console.log('  (otimizacao de imagens) baixando o cwebp ~1MB, so na 1a vez...');
+  return fetch(url).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); }).then(function (ab) {
+    fs.writeFileSync(zip, Buffer.from(ab));
+    const ex = path.join(ROOT, 'libwebp-' + ver + '-windows-x64', 'bin', 'cwebp.exe');
+    try { spawnSync('tar', ['-xf', zip, '-C', ROOT], { stdio: 'ignore' }); } catch (e) {}
+    if (!fs.existsSync(ex)) { try { spawnSync('powershell', ['-NoProfile', '-Command', 'Expand-Archive -Force -LiteralPath "' + zip + '" -DestinationPath "' + ROOT + '"'], { stdio: 'ignore' }); } catch (e) {} }
+    try { if (fs.existsSync(ex)) fs.copyFileSync(ex, cw); } catch (e) {}
+    try { fs.unlinkSync(zip); } catch (e) {}
+    if (fs.existsSync(cw)) { _webpTool = { cmd: cw, args: function (s, o) { return ['-q', '80', s, '-o', o]; } }; return _webpTool; }
+    _webpTool = null; return null;
+  }).catch(function (e) { console.log('  (otimizacao de imagens indisponivel: ' + (e && e.message) + ')'); _webpTool = null; return null; });
+}
+let _webpBusy = false;
+function autoOptimizeImages(allowDownload) {
+  if (_webpBusy) return; _webpBusy = true;
+  ensureWebpTool(allowDownload).then(function (tool) {
+    if (!tool) { _webpBusy = false; return; }
+    const dir = path.join(ROOT, 'img'); let files = [];
+    try { files = fs.readdirSync(dir).filter(function (f) { return /\.(png|jpe?g)$/i.test(f); }); } catch (e) { _webpBusy = false; return; }
+    let i = 0, feitos = 0;
+    (function next() {
+      if (i >= files.length) { if (feitos) console.log('  (otimizacao) ' + feitos + ' imagem(ns) .webp prontas — o compartilhar vai mais rapido.'); _webpBusy = false; return; }
+      const f = files[i++], src = path.join(dir, f), out = src + '.webp';
+      try { if (fs.existsSync(out) && fs.statSync(out).mtimeMs >= fs.statSync(src).mtimeMs) { return next(); } } catch (e) {}
+      let pr; try { pr = spawn(tool.cmd, tool.args(src, out), { stdio: 'ignore' }); } catch (e) { return next(); }
+      pr.on('error', function () { next(); });
+      pr.on('exit', function () { try { if (fs.existsSync(out)) { if (fs.statSync(out).size >= fs.statSync(src).size) fs.unlinkSync(out); else feitos++; } } catch (e) {} next(); });
+    })();
+  }).catch(function () { _webpBusy = false; });
 }
 function stopTunnel() {
   try { if (tunnelProc) tunnelProc.kill(); } catch (e) {}
@@ -524,7 +577,21 @@ const server = http.createServer(async function (req, res) {
   let rel = decodeURIComponent(servePath === '/' ? '/builder.html' : servePath);
   let fp = path.join(ROOT, rel);
   if (!fp.startsWith(ROOT)) { json(res, 403, { error: 'forbidden' }); return; }
-  // WebP: se o cliente aceita E existe a versao .webp (gerada pelo OTIMIZAR-IMAGENS.bat), serve ela -> imagem ~90% menor, acelera MUITO o compartilhar. Originais e referencias NAO mudam.
+  // CONVIDADO (link de share, via tunel): entrega SO o ebook do link + vazio nos outros workspaces (economiza banda e processamento; o DONO no acesso local recebe tudo)
+  if (REVWS[path.basename(fp)] && !isLocalDirect(req)) {
+    const _sh = findShare(getCfg(), shareTok(req));
+    if (_sh && _sh.ebook) {
+      const _ws = REVWS[path.basename(fp)], _glob = WS_GLOBAL[_ws]; let _js;
+      if (_ws === normWs(_sh.ws)) {
+        let _full = {}; try { const _g = {}; (new Function('window', fs.readFileSync(fp, 'utf8')))(_g); _full = _g[_glob] || {}; } catch (e) {}
+        const _one = {}; if (_full[_sh.ebook]) _one[_sh.ebook] = _full[_sh.ebook];
+        _js = 'window.' + _glob + '=' + JSON.stringify(_one) + ';';   // so o ebook do link
+      } else { _js = 'window.' + _glob + '={};'; }                     // outros workspaces: vazio
+      endGz(req, res, 200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' }, _js);
+      return;
+    }
+  }
+  // WebP: se o cliente aceita E existe a versao .webp (gerada automaticamente quando o app sobe), serve ela -> imagem ~90% menor, acelera MUITO o compartilhar. Originais e referencias NAO mudam.
   if (/\.(png|jpe?g)$/i.test(fp) && /image\/webp/.test(String(req.headers.accept || '')) && fs.existsSync(fp + '.webp')) { fp = fp + '.webp'; }
   fs.stat(fp, function (err, st) {
     if (err || !st.isFile()) { res.writeHead(404); res.end('404'); return; }
@@ -567,4 +634,5 @@ server.listen(PORT, function () {
   if (!process.env.NO_OPEN) { try { exec('start "" "' + url + '"', function () {}); } catch (e) {} }
   try { fs.unlinkSync(path.join(ROOT, 'tunnel-url.txt')); } catch (e) {}   // zera URL de compartilhamento de sessao anterior
   if (process.env.TUNNEL === '1') { startTunnel(); }                       // start.bat liga o compartilhamento automatico
+  setTimeout(function () { autoOptimizeImages(process.env.TUNNEL === '1'); }, 1500);   // gera os .webp em 2o plano (acelera o compartilhar); baixa o cwebp sozinho SO quando esta compartilhando
 });
