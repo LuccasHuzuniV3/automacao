@@ -9,6 +9,7 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const { exec, execFile, spawn } = require('child_process');
+const zlib = require('zlib');
 
 const ROOT = __dirname;
 const PORT = parseInt(process.env.PORT, 10) || 4321;
@@ -24,6 +25,25 @@ const MIME = {
   '.mp4':  'video/mp4', '.webm': 'video/webm', '.ogg': 'video/ogg',
   '.ogv':  'video/ogg', '.mov': 'video/quicktime', '.m4v': 'video/x-m4v'
 };
+
+// envia o corpo COMPRIMIDO (gzip) quando o cliente aceita E o tipo e texto (html/js/json/css/svg) -> corta ~75%. Imagem/video nao passam por aqui (ficam em stream).
+function endGz(req, res, status, headers, body) {
+  const buf = Buffer.isBuffer(body) ? body : Buffer.from(String(body));
+  const type = String(headers['Content-Type'] || '');
+  if (/\bgzip\b/.test(String(req.headers['accept-encoding'] || '')) && /text\/|javascript|json|svg/.test(type)) {
+    const gz = zlib.gzipSync(buf);
+    headers['Content-Encoding'] = 'gzip';
+    headers['Vary'] = 'Accept-Encoding';
+    headers['Content-Length'] = gz.length;
+    delete headers['Accept-Ranges'];
+    res.writeHead(status, headers);
+    res.end(gz);
+  } else {
+    headers['Content-Length'] = buf.length;
+    res.writeHead(status, headers);
+    res.end(buf);
+  }
+}
 
 function readBody(req) {
   return new Promise(function (resolve) {
@@ -495,8 +515,8 @@ const server = http.createServer(async function (req, res) {
   const _wsm = /^\/(upsell|downsell2|downsell)\/(.*)$/.exec(p);   // downsell2 ANTES de downsell (senão /downsell pega o prefixo)
   if (_wsm) {
     const _sub = _wsm[1], _rest = _wsm[2];
-    if (_rest === '' || _rest === 'index.html') { res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(fs.readFileSync(path.join(ROOT, 'index.html'))); return; }
-    if (_rest === 'ebooks.js') { let _src = 'window.EBOOKS={};'; try { _src = fs.readFileSync(path.join(ROOT, 'ebooks-' + _sub + '.js'), 'utf8').replace('window.EBOOKS_' + _sub.toUpperCase(), 'window.EBOOKS'); } catch (e) {} res.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' }); res.end(_src); return; }
+    if (_rest === '' || _rest === 'index.html') { endGz(req, res, 200, { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' }, fs.readFileSync(path.join(ROOT, 'index.html'))); return; }
+    if (_rest === 'ebooks.js') { let _src = 'window.EBOOKS={};'; try { _src = fs.readFileSync(path.join(ROOT, 'ebooks-' + _sub + '.js'), 'utf8').replace('window.EBOOKS_' + _sub.toUpperCase(), 'window.EBOOKS'); } catch (e) {} endGz(req, res, 200, { 'Content-Type': 'text/javascript; charset=utf-8', 'Cache-Control': 'no-store' }, _src); return; }
     servePath = '/' + _rest;   // desconto.js, img/.., css -> servidos da RAIZ
   }
 
@@ -520,10 +540,12 @@ const server = http.createServer(async function (req, res) {
       h['Content-Length'] = (end - start + 1);
       res.writeHead(206, h);
       fs.createReadStream(fp, { start: start, end: end }).pipe(res);
+    } else if (/\bgzip\b/.test(String(req.headers['accept-encoding'] || '')) && /text\/|javascript|json|svg/.test(type)) {
+      fs.readFile(fp, function (e2, buf) { if (e2) { res.writeHead(500); res.end(); return; } endGz(req, res, 200, h, buf); });   // arquivos de TEXTO: comprime (builder.html, ebooks.js, desconto.js, css)
     } else {
       h['Content-Length'] = st.size;
       res.writeHead(200, h);
-      fs.createReadStream(fp).pipe(res);
+      fs.createReadStream(fp).pipe(res);   // imagem/video: stream normal (ja sao comprimidos)
     }
   });
 });
