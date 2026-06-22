@@ -1670,7 +1670,7 @@ function wireInlineEdit(){
         sbar.appendChild(up);sbar.appendChild(dn);
         var pc=sbtn('🎨','#8b5cf6','cor de FUNDO desta seção (sólida ou DEGRADÊ) — fica ATRÁS das decorações e do texto');
         function paintUnder(v){
-          var dv=el.querySelector('.divider');if(dv){dv.style.background=v;return;}
+          if(/^divisor/.test(sk)){var dv=el.querySelector('.divider');if(dv){dv.style.background=v;return;}}   /* SÓ seção divisor pinta o .divider; bônus/etc têm .divider decorativo -> cai no fundo da seção */
           el.style.background=v;   /* pinta o PRÓPRIO elemento (cobre fundo nativo, ex.: gradiente da trustbar) */
           var host=doc.getElementById('secbgs');
           if(!host){host=doc.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:0;pointer-events:none';doc.body.insertBefore(host,doc.body.firstChild);}

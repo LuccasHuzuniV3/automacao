@@ -816,8 +816,7 @@
         var all=Array.prototype.map.call(document.querySelectorAll('[data-sec]'),function(n){var rr=n.getBoundingClientRect();return {n:n,top:rr.top+sy};}).sort(function(a,b){return a.top-b.top;});
         keys.forEach(function(k){if(k==='gift')return;   /* a FAIXA (gift) tem o design próprio das fitas — fundo de seção atrás dela vira aquele "band cinza" feio; ignora de propósito */
         var n=document.querySelector('[data-sec="'+k+'"]');if(!n)return;
-        var dv=n.querySelector('.divider');
-        if(dv){dv.style.background=SBG[k];return;}
+        if(/^divisor/.test(k)){var dv=n.querySelector('.divider');if(dv){dv.style.background=SBG[k];return;}}   /* SÓ seção divisor pinta o .divider; outras (ex.: bônus) têm .divider decorativo -> pinta o fundo da seção */
         n.style.background=SBG[k];   /* pinta o PRÓPRIO elemento: cobre fundos nativos (ex.: gradiente da trustbar) */
         var r=n.getBoundingClientRect();var top=r.top+sy;
         var idx=-1;for(var j=0;j<all.length;j++){if(all[j].n===n){idx=j;break;}}
