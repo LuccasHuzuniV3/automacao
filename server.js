@@ -524,6 +524,8 @@ const server = http.createServer(async function (req, res) {
   let rel = decodeURIComponent(servePath === '/' ? '/builder.html' : servePath);
   let fp = path.join(ROOT, rel);
   if (!fp.startsWith(ROOT)) { json(res, 403, { error: 'forbidden' }); return; }
+  // WebP: se o cliente aceita E existe a versao .webp (gerada pelo OTIMIZAR-IMAGENS.bat), serve ela -> imagem ~90% menor, acelera MUITO o compartilhar. Originais e referencias NAO mudam.
+  if (/\.(png|jpe?g)$/i.test(fp) && /image\/webp/.test(String(req.headers.accept || '')) && fs.existsSync(fp + '.webp')) { fp = fp + '.webp'; }
   fs.stat(fp, function (err, st) {
     if (err || !st.isFile()) { res.writeHead(404); res.end('404'); return; }
     const type = MIME[path.extname(fp).toLowerCase()] || 'application/octet-stream';
