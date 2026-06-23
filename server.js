@@ -283,8 +283,8 @@ function geminiInvoke(model, promptInstr, inputData, cb) {
     child = spawn(exe, args, spawnOpts);   // spawn com args em ARRAY: nome de modelo com espaco/parentese passa intacto (sem shell)
   } catch (e) { finish(new Error('nao consegui iniciar o agy: ' + (e && e.message) + '. Instale: curl -fsSL https://antigravity.google/cli/install.sh | bash')); return; }
   child.on('error', function (e) { finish(new Error('agy nao encontrado/falhou (' + (e && e.message) + '). Instale: curl -fsSL https://antigravity.google/cli/install.sh | bash' + (process.platform === 'win32' && !usarWsl ? ' — no Windows use WSL: set USE_WSL_FOR_AGY=1 no start.bat' : ''))); });
-  if (child.stdout) child.stdout.on('data', function (d) { outBuf += d; });
-  if (child.stderr) child.stderr.on('data', function (d) { errBuf += d; });
+  if (child.stdout) { child.stdout.setEncoding('utf8'); child.stdout.on('data', function (d) { outBuf += d; }); }   // setEncoding('utf8'): StringDecoder junta os bytes de um caractere multibyte (cirilico, acento, emoji) que cai na divisao de chunks -> sem "?" / replacement char
+  if (child.stderr) { child.stderr.setEncoding('utf8'); child.stderr.on('data', function (d) { errBuf += d; }); }
   child.on('close', function () {
     if (done) return;
     const out = String(outBuf || '').trim();
@@ -387,6 +387,36 @@ const server = http.createServer(async function (req, res) {
       fs.writeFileSync(path.join(ROOT, 'img', name), Buffer.from(j.dataB64, 'base64'));
       json(res, 200, { ok: true, path: 'img/' + name });
     } catch (e) { json(res, 500, { ok: false, error: String(e) }); }
+    return;
+  }
+
+  // ---- PUXAR MOLDE: baixa os DADOS + as IMAGENS de um site publicado (link) pra editar local. Originais do link nao mudam; aqui sobrescreve/baixa. ----
+  if (p === '/api/pull-molde' && req.method === 'POST') {
+    if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
+    const body = await readBody(req);
+    let src = '';
+    try { src = String(JSON.parse(body.toString('utf8')).url || '').trim().replace(/\/+$/, ''); } catch (e) {}
+    if (!/^https?:\/\//i.test(src)) { json(res, 200, { ok: false, error: 'link invalido (precisa comecar com http)' }); return; }
+    try {
+      const r = await fetch(src + '/ebooks.js', { cache: 'no-store' });
+      if (!r.ok) { json(res, 200, { ok: false, error: 'nao achei o ebooks.js em ' + src + ' (esse link ja foi publicado?)' }); return; }
+      const txt = await r.text();
+      let data = {};
+      try { const g = {}; (new Function('window', txt))(g); data = g.EBOOKS || {}; } catch (e) {}
+      if (!data || !Object.keys(data).length) { json(res, 200, { ok: false, error: 'o link nao tem ebooks (ou nao consegui ler os dados)' }); return; }
+      const refs = Array.from(new Set((JSON.stringify(data).match(/img\/[A-Za-z0-9._\-\/]+\.(?:png|jpe?g|webp|gif|svg)/gi) || []).map(function (s) { return s.replace(/\\/g, '/'); })));
+      fs.mkdirSync(path.join(ROOT, 'img'), { recursive: true });
+      let okImg = 0, failImg = 0;
+      await Promise.all(refs.map(function (rel) {
+        const dst = path.join(ROOT, rel);
+        if (!dst.startsWith(ROOT)) { failImg++; return Promise.resolve(); }
+        return fetch(src + '/' + rel.split('/').map(encodeURIComponent).join('/'), { cache: 'no-store' })
+          .then(function (ir) { if (!ir.ok) throw new Error('http ' + ir.status); return ir.arrayBuffer(); })
+          .then(function (ab) { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.writeFileSync(dst, Buffer.from(ab)); okImg++; })
+          .catch(function () { failImg++; });
+      }));
+      json(res, 200, { ok: true, ebooks: data, ebooksCount: Object.keys(data).length, imgs: okImg, imgsFail: failImg });
+    } catch (e) { json(res, 200, { ok: false, error: String(e).slice(0, 200) }); }
     return;
   }
 

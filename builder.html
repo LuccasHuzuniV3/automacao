@@ -419,6 +419,7 @@
         <div class="side-h">Importar / Exportar</div>
         <div class="cfgbtns">
           <button class="btn" id="btnImport">Importar ebooks.js</button>
+          <button class="btn" id="btnPullMolde" title="Puxa um molde publicado (dados + imagens) de um LINK e mescla aqui pra editar">🔗 Puxar molde do link</button>
           <button class="btn" id="btnExport">⬇ Baixar ebooks.js</button>
           <button class="btn pri" id="btnZip">⬇ Baixar site (.zip)</button>
         </div>
@@ -958,7 +959,7 @@ function translatePais(srcCode,tgtCode,onStep){
     /* rotulos do selo de garantia (NAO estao no TXT, mas APARECEM pro cliente: "dias"/"Garantia") */
     ['garantiaDiasLbl','garantiaSelo'].forEach(function(k){ if(S.t[k]) tasks.push({set:function(v){T.t[k]=v;},val:S.t[k]}); });
     ['blocos','bonus'].forEach(function(list){
-      if(S.t[list]&&S.t[list].length){ T.t[list]=S.t[list].map(function(it){return {titulo:it.titulo,texto:it.texto,img:it.img,sz:it.sz,dx:it.dx,dy:it.dy};});
+      if(S.t[list]&&S.t[list].length){ T.t[list]=S.t[list].map(function(it){return {titulo:it.titulo,texto:it.texto,img:it.img,sz:it.sz,dx:it.dx,dy:it.dy,bg1:it.bg1,bg2:it.bg2};});   /* bg1/bg2 = cor do card do bônus -> puxa do BR (base) tb */
         S.t[list].forEach(function(it,idx){ if(it.titulo)tasks.push({set:function(v){T.t[list][idx].titulo=v;},val:it.titulo}); if(it.texto)tasks.push({set:function(v){T.t[list][idx].texto=v;},val:it.texto}); }); }
     });
     if(S.t.bundle&&S.t.bundle.length){ T.t.bundle=S.t.bundle.map(function(b){return {titulo:b.titulo,img:b.img,precoDe:b.precoDe,precoPor:b.precoPor,sz:b.sz,dx:b.dx,dy:b.dy};});
@@ -2071,6 +2072,23 @@ $('btnZip').onclick=function(){
 };
 
 $('btnImport').onclick=function(){$('impText').value='';$('modal').classList.add('on');};
+/* PUXAR MOLDE DO LINK: baixa dados + imagens de um site publicado e mescla aqui (ebook de mesmo nome = sobrescrito; outros ficam) */
+(function(){var _bpm=$('btnPullMolde');if(!_bpm)return;_bpm.onclick=function(){
+  var url=(prompt('Cole o LINK publicado do molde (ex.: https://seu-site.vercel.app):','')||'').trim();
+  if(!url)return;
+  if(!confirm('Puxar o molde de:\n'+url+'\n\nIsso baixa os DADOS + as IMAGENS e MESCLA aqui (ebooks com o MESMO nome são SOBRESCRITOS; os outros ficam). Dá pra desfazer com Ctrl+Z. Continuar?'))return;
+  _bpm.disabled=true;var _ol=_bpm.textContent;_bpm.textContent='Puxando...';toast('Puxando o molde do link...');
+  fetch('/api/pull-molde',{method:'POST',headers:shareHeaders({'Content-Type':'application/json'}),body:JSON.stringify({url:url})})
+    .then(function(r){return r.json();}).then(function(d){
+      _bpm.disabled=false;_bpm.textContent=_ol;
+      if(!d||!d.ok){toast('⚠️ '+((d&&d.error)||'não consegui puxar'));return;}
+      undoPush(undoSnap());
+      Object.keys(d.ebooks).forEach(function(k){model[k]=d.ebooks[k];});
+      var first=Object.keys(d.ebooks)[0];if(first){curEbook=first;if(model[curEbook]&&model[curEbook].paises)curPais=Object.keys(model[curEbook].paises)[0];}
+      save();render();renderEbooksHome();
+      toast('✓ Molde puxado: '+d.ebooksCount+' ebook(s) e '+d.imgs+' imagem(ns)'+(d.imgsFail?(' ('+d.imgsFail+' imagem não veio)'):'')+'. Revise e dê Deploy.');
+    }).catch(function(e){_bpm.disabled=false;_bpm.textContent=_ol;toast('⚠️ erro: '+(e&&e.message));});
+};})();
 $('impCancel').onclick=function(){$('modal').classList.remove('on');};
 $('impOk').onclick=function(){var code=$('impText').value;try{var fk={};(new Function('window',code))(fk);
   if(fk.EBOOKS&&Object.keys(fk.EBOOKS).length){model=fk.EBOOKS;curEbook=Object.keys(model)[0];curPais=Object.keys(model[curEbook].paises)[0];$('modal').classList.remove('on');save();render();toast('Importado!');}else toast('Não achei window.EBOOKS');}catch(e){toast('Erro: '+e.message);}};
