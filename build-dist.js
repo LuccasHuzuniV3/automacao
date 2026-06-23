@@ -156,4 +156,4 @@ async function writeSite(sub, localAll, onlyKeys, globalName) {
     if (!Object.keys(wAll).length) { console.log(w[0].toUpperCase() + ' vazio -> /' + w[0] + ' nao publicado'); continue; }
     await writeSite(w[0], wAll, [], w[2]);
   }
-})().catch(function (e) { console.error('Erro no build:', e && e.message || e); process.exit(1); });
+})().then(function () { process.exit(0); }).catch(function (e) { console.error('Erro no build:', e && e.message || e); process.exit(1); });   // exit explicito: o fetch (undici) deixa conexoes no pool e o processo nao encerra sozinho -> sem isso o deploy estourava o timeout e virava "falha" mesmo tendo montado certo

@@ -483,9 +483,21 @@ const server = http.createServer(async function (req, res) {
     }
 
     function buildThenDeploy() {
-      execFile('node', ['build-dist.js'].concat(ebooks), { cwd: ROOT, shell: true, timeout: 60000, maxBuffer: 1024 * 1024 * 30 },
+      execFile('node', ['build-dist.js'].concat(ebooks), { cwd: ROOT, shell: true, timeout: 120000, maxBuffer: 1024 * 1024 * 30 },
         function (berr, bout, bstderr) {
-          if (berr) { finish(false, '', 'Falha ao montar a dist limpa.', String(bout || '') + String(bstderr || '')); return; }
+          if (berr) {
+            const blog = String(bout || '') + '\n' + String(bstderr || '');
+            // extrai o MOTIVO real do build (senao o usuario so ve "Falha ao montar a dist limpa")
+            let motivo = '';
+            if (berr.killed) { motivo = 'o build passou do tempo limite (rede lenta baixando imagens do ar). Tente de novo.'; }
+            if (!motivo) { const can = blog.match(/DEPLOY CANCELADO[\s\S]*?(?=\n\s*\n|$)/); if (can) motivo = can[0].replace(/>>>/g, '').replace(/[ \t]+/g, ' ').replace(/\s*\n\s*/g, ' ').trim(); }
+            if (!motivo) { const eb = blog.match(/Erro no build:[^\n]*/); if (eb) motivo = eb[0].trim(); }
+            if (!motivo) { const nv = blog.match(/Nenhum ebook valido[^\n]*/); if (nv) motivo = nv[0].trim(); }
+            // fallback: ultima linha REAL de erro (ignora linhas de sucesso OK/INFO/AVISO pra nao mostrar "OK ->" como se fosse o erro)
+            if (!motivo) { const ls = blog.split('\n').map(function (s) { return s.trim(); }).filter(function (s) { return s && !/^OK ->|^INFO:|^AVISO/.test(s); }); motivo = ls[ls.length - 1] || ''; }
+            finish(false, '', 'Falha ao montar a dist limpa.' + (motivo ? ' Motivo: ' + motivo : ' (sem detalhe — veja o log)'), blog);
+            return;
+          }
           deployNow();
         });
     }
