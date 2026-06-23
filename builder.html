@@ -1119,6 +1119,11 @@ function wireInlineEdit(){
         if(r.width<10||r.height<10)return;
         if(Math.abs(r.left-selfRect.left)<3&&Math.abs(r.top-selfRect.top)<3&&Math.abs(r.width-selfRect.width)<3)return;   /* é o próprio card sendo arrastado */
         xs[Math.round(r.left+r.width/2)]=1;ys[Math.round(r.top+r.height/2)]=1;});
+      /* ALINHAR TEXTO COM TEXTO: o centro X de cada texto vira âncora de linha VERTICAL (mesmo eixo) — ajuda a centralizar os textos entre si (ex.: seção "últimas cópias"). Só X, pra não travar o empilhamento na vertical. */
+      Array.prototype.forEach.call(doc.querySelectorAll('[data-edit]'),function(n){var r=n.getBoundingClientRect();
+        if(r.width<6||r.height<6)return;
+        if(Math.abs(r.left-selfRect.left)<3&&Math.abs(r.top-selfRect.top)<3&&Math.abs(r.width-selfRect.width)<3)return;   /* é o próprio texto sendo arrastado */
+        xs[Math.round(r.left+r.width/2)]=1;});
       return {xs:Object.keys(xs).map(Number),ys:Object.keys(ys).map(Number)};}
     /* recebe o rect (viewport) do elemento arrastado; mostra a(s) linha(s) e devolve {dx,dy} pra encaixar no centro mais próximo (tela ou card) */
     function cgSnap(rect){_cgEnsure();var ecx=rect.left+rect.width/2,ecy=rect.top+rect.height/2;var A=cgAnchors(rect),TH=8,dx=0,dy=0,gx=null,gy=null,bx=99,by=99;
@@ -2086,7 +2091,7 @@ $('btnImport').onclick=function(){$('impText').value='';$('modal').classList.add
       Object.keys(d.ebooks).forEach(function(k){model[k]=d.ebooks[k];});
       var first=Object.keys(d.ebooks)[0];if(first){curEbook=first;if(model[curEbook]&&model[curEbook].paises)curPais=Object.keys(model[curEbook].paises)[0];}
       save();render();renderEbooksHome();
-      toast('✓ Molde puxado: '+d.ebooksCount+' ebook(s) e '+d.imgs+' imagem(ns)'+(d.imgsFail?(' ('+d.imgsFail+' imagem não veio)'):'')+'. Revise e dê Deploy.');
+      toast('✓ Molde puxado: '+Object.keys(d.ebooks).join(', ')+' — '+d.imgs+' imagem(ns)'+(d.imgsFail?(' ('+d.imgsFail+' não veio)'):'')+'. Revise e dê Deploy.');
     }).catch(function(e){_bpm.disabled=false;_bpm.textContent=_ol;toast('⚠️ erro: '+(e&&e.message));});
 };})();
 $('impCancel').onclick=function(){$('modal').classList.remove('on');};
@@ -2255,7 +2260,8 @@ function showDeployResult(prodUrl,onlyEbook){
 (function(){var b=$('btnLinks');if(b)b.onclick=function(){fetch('/deploy-config.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(c){showDeployResult((c&&c.prodUrl)||'');}).catch(function(){showDeployResult('');});};})();
 function openMulti(){
   var ps=model[curEbook].paises;$('mList').innerHTML='';
-  PAISES.forEach(function(P){
+  var paisesOrd=PAISES.slice().sort(function(a,b){if(a.c==='br')return -1;if(b.c==='br')return 1;return (a.nome||'').localeCompare(b.nome||'','pt');});   /* Brasil (fonte) sempre no topo; o resto em ordem alfabética */
+  paisesOrd.forEach(function(P){
     var has=ps[P.c];
     var row=document.createElement('div');row.style.cssText='display:grid;grid-template-columns:24px 140px 1fr;gap:8px;align-items:center;margin-bottom:6px';
     var cb=document.createElement('input');cb.type='checkbox';cb.checked=!!has||P.c==='br';

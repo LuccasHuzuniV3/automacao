@@ -394,16 +394,23 @@ const server = http.createServer(async function (req, res) {
   if (p === '/api/pull-molde' && req.method === 'POST') {
     if (!canWrite(req)) { json(res, 403, { ok: false, error: 'sem permissao de edicao' }); return; }
     const body = await readBody(req);
-    let src = '';
-    try { src = String(JSON.parse(body.toString('utf8')).url || '').trim().replace(/\/+$/, ''); } catch (e) {}
-    if (!/^https?:\/\//i.test(src)) { json(res, 200, { ok: false, error: 'link invalido (precisa comecar com http)' }); return; }
+    let raw = '';
+    try { raw = String(JSON.parse(body.toString('utf8')).url || '').trim(); } catch (e) {}
+    if (raw && !/^https?:\/\//i.test(raw)) raw = 'https://' + raw;   // aceita colar sem o https://
+    let src = '', wantEbook = '';
+    try { const _u = new URL(raw); src = _u.origin; wantEbook = (_u.searchParams.get('ebook') || '').trim(); } catch (e) {}   // src = dominio; wantEbook = o ebook que o link aponta (?ebook=) -> puxa SO ele
+    if (!src) { json(res, 200, { ok: false, error: 'link invalido — cole a URL do site publicado (ex.: https://seu-projeto.vercel.app)' }); return; }
     try {
       const r = await fetch(src + '/ebooks.js', { cache: 'no-store' });
       if (!r.ok) { json(res, 200, { ok: false, error: 'nao achei o ebooks.js em ' + src + ' (esse link ja foi publicado?)' }); return; }
       const txt = await r.text();
       let data = {};
       try { const g = {}; (new Function('window', txt))(g); data = g.EBOOKS || {}; } catch (e) {}
-      if (!data || !Object.keys(data).length) { json(res, 200, { ok: false, error: 'o link nao tem ebooks (ou nao consegui ler os dados)' }); return; }
+      if (!data || !Object.keys(data).length) { json(res, 200, { ok: false, error: 'nao li ebooks em ' + src + '/ebooks.js (confira se e a URL do site publicado)' }); return; }
+      if (wantEbook) {   // o link aponta um ebook especifico (?ebook=) -> puxa SO ele
+        if (data[wantEbook]) { const _one = {}; _one[wantEbook] = data[wantEbook]; data = _one; }
+        else { json(res, 200, { ok: false, error: 'o ebook "' + wantEbook + '" nao esta nos dados desse link. La tem: ' + Object.keys(data).join(', ') }); return; }
+      }
       const refs = Array.from(new Set((JSON.stringify(data).match(/img\/[A-Za-z0-9._\-\/]+\.(?:png|jpe?g|webp|gif|svg)/gi) || []).map(function (s) { return s.replace(/\\/g, '/'); })));
       fs.mkdirSync(path.join(ROOT, 'img'), { recursive: true });
       let okImg = 0, failImg = 0;
