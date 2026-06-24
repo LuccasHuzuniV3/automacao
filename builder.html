@@ -1108,8 +1108,8 @@ function wireInlineEdit(){
     /* ===== Guias de CENTRO estilo Canva: linha rosa aparece ao arrastar e o elemento ENCAIXA no centro (horizontal e vertical da tela) ===== */
     var _cgV=null,_cgH=null;
     function _cgEnsure(){
-      if(!_cgV){_cgV=doc.createElement('div');_cgV.style.cssText='position:absolute;z-index:99998;top:0;width:2px;margin-left:-1px;background:#ff2d9b;box-shadow:0 0 8px rgba(255,45,155,.95);pointer-events:none;display:none';doc.body.appendChild(_cgV);}
-      if(!_cgH){_cgH=doc.createElement('div');_cgH.style.cssText='position:absolute;z-index:99998;left:0;height:2px;margin-top:-1px;background:#ff2d9b;box-shadow:0 0 8px rgba(255,45,155,.95);pointer-events:none;display:none';doc.body.appendChild(_cgH);}
+      if(!_cgV){_cgV=doc.createElement('div');_cgV.style.cssText='position:absolute;z-index:99998;top:0;width:2px;margin-left:-1px;background:rgba(34,211,238,.95);box-shadow:0 0 8px rgba(34,211,238,.7);pointer-events:none;display:none';doc.body.appendChild(_cgV);}
+      if(!_cgH){_cgH=doc.createElement('div');_cgH.style.cssText='position:absolute;z-index:99998;left:0;height:2px;margin-top:-1px;background:rgba(34,211,238,.95);box-shadow:0 0 8px rgba(34,211,238,.7);pointer-events:none;display:none';doc.body.appendChild(_cgH);}
     }
     function cgHide(){if(_cgV)_cgV.style.display='none';if(_cgH)_cgH.style.display='none';}
     /* junta os pontos de encaixe: centro da TELA + centro de cada CARD/SEÇÃO (menos o próprio elemento) */
@@ -1126,15 +1126,19 @@ function wireInlineEdit(){
         xs[Math.round(r.left+r.width/2)]=1;});
       return {xs:Object.keys(xs).map(Number),ys:Object.keys(ys).map(Number)};}
     /* recebe o rect (viewport) do elemento arrastado; mostra a(s) linha(s) e devolve {dx,dy} pra encaixar no centro mais próximo (tela ou card) */
-    function cgSnap(rect){_cgEnsure();var ecx=rect.left+rect.width/2,ecy=rect.top+rect.height/2;var A=cgAnchors(rect),TH=12,dx=0,dy=0,gx=null,gy=null,bx=99,by=99;
-      A.xs.forEach(function(x){var d=Math.abs(ecx-x);if(d<=TH&&d<bx){bx=d;dx=x-ecx;gx=x;}});
-      A.ys.forEach(function(y){var d=Math.abs(ecy-y);if(d<=TH&&d<by){by=d;dy=y-ecy;gy=y;}});
-      /* POSIÇÃO igual às alças (position:absolute + coordenada de PÁGINA): position:fixed quebra dentro do iframe/mobile -> a linha sumia no celular. Agora atravessa a página inteira no eixo do encaixe. */
-      var sL=doc.documentElement.scrollLeft||doc.body.scrollLeft||0,sT=doc.documentElement.scrollTop||doc.body.scrollTop||0;
-      var dH=Math.max(doc.documentElement.scrollHeight,doc.body.scrollHeight||0),dW=Math.max(doc.documentElement.scrollWidth,doc.body.scrollWidth||0);
-      if(gx!=null){_cgV.style.left=(gx+sL)+'px';_cgV.style.height=dH+'px';_cgV.style.display='block';}else _cgV.style.display='none';
-      if(gy!=null){_cgH.style.top=(gy+sT)+'px';_cgH.style.width=dW+'px';_cgH.style.display='block';}else _cgH.style.display='none';
-      return {dx:Math.round(dx),dy:Math.round(dy)};}
+    /* CRUZ DINAMICA ao arrastar (os 7 handlers chamam cgSnap no mousemove e cgHide no mouseup):
+       - linha VERTICAL fixa no centro da LARGURA da tela (+ encaixa o item nela quando chega perto) -> centraliza horizontal;
+       - linha HORIZONTAL ACOMPANHA o item arrastado (passa pelo centro dele) -> marca onde o item esta. */
+    function cgSnap(rect){_cgEnsure();
+      var de=doc.documentElement,sL=de.scrollLeft||doc.body.scrollLeft||0,sT=de.scrollTop||doc.body.scrollTop||0;
+      var pH=Math.max(de.scrollHeight,doc.body.scrollHeight||0),pW=Math.max(de.scrollWidth,doc.body.scrollWidth||0);
+      var ax=Math.round((de.clientWidth||0)/2);          /* centro X da TELA (ja sem a barra de rolagem) */
+      var iy=Math.round(rect.top+rect.height/2);          /* centro Y do ITEM arrastado (viewport) */
+      _cgV.style.left=(sL+ax)+'px';_cgV.style.height=pH+'px';_cgV.style.display='block';   /* VERTICAL no centro da largura */
+      _cgH.style.top=(sT+iy)+'px';_cgH.style.width=pW+'px';_cgH.style.display='block';     /* HORIZONTAL acompanha o ITEM */
+      var TH=10,dx=0,ecx=rect.left+rect.width/2;
+      if(Math.abs(ecx-ax)<=TH)dx=Math.round(ax-ecx);     /* encaixa no centro horizontal quando perto */
+      return {dx:dx,dy:0};}
     /* Desfazer: snapshot ao começar a arrastar; confirma no soltar se mudou algo */
     doc.addEventListener('mousedown',function(){_undoPre=undoSnap();},true);
     doc.addEventListener('mouseup',function(){try{if(_undoPre&&_undoPre!==undoSnap())undoPush(_undoPre);}catch(e){}_undoPre=null;},true);
