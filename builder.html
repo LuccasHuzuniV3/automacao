@@ -1292,8 +1292,8 @@ function wireInlineEdit(){
         function mm(ev){var dx=ev.clientX-sx0,dy=ev.clientY-sy0;
           if(!moved&&(Math.abs(dx)+Math.abs(dy))<4)return;     /* tolerância: clique não vira arrasto */
           if(!moved){moved=true;tdrag=true;}
-          var p={x:Math.round(p0.x+dx),y:Math.round(p0.y+dy),s:p0.s};applyTP(p);saveTP(p);tlayout();}
-        function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);
+          var p={x:Math.round(p0.x+dx),y:Math.round(p0.y+dy),s:p0.s};applyTP(p);var sn=cgSnap(el.getBoundingClientRect());if(sn.dx||sn.dy){p.x+=sn.dx;p.y+=sn.dy;applyTP(p);}saveTP(p);tlayout();}   /* guia de centro (linha rosa) tb no arraste DIRETO do texto, nao so na alça ✛ */
+        function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);cgHide();
           if(moved){tdrag=false;save();}
           else{el.focus();}                          /* foi só um clique: entra na edição do texto */
         }
