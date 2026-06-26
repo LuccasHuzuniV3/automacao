@@ -33,12 +33,15 @@
 
   /* Monta a URL do downsell a partir do caminho/query atuais, preservando a query (atribuição).
      Pura (recebe pathname/search) p/ dar pra testar sem o browser.
-     FUNIL: UPSELL -> /downsell2 (clone do upsell); PRINCIPAL (ou qualquer outro) -> /downsell (clone do principal).
+     FUNIL: UPSELL 2 -> /downsell3; UPSELL (1) -> /downsell2; PRINCIPAL (ou qualquer outro) -> /downsell.
+       downsellURLFrom("/upsell2","?ebook=x&p=pl") -> "/downsell3?ebook=x&p=pl"
        downsellURLFrom("/upsell", "?ebook=x&p=pl") -> "/downsell2?ebook=x&p=pl"
        downsellURLFrom("/",       "?ebook=x&p=pl") -> "/downsell?ebook=x&p=pl" */
   function downsellURLFrom(pathname, search) {
     var path = String(pathname || '/');
-    var target = /\/upsell(\/index\.html)?\/?$/i.test(path) ? '/downsell2' : '/downsell';
+    var target = '/downsell';                                                    // PRINCIPAL (ou qualquer outro) -> /downsell
+    if (/\/upsell2(\/index\.html)?\/?$/i.test(path)) target = '/downsell3';       // UPSELL 2 -> /downsell3 (clone do upsell 2)
+    else if (/\/upsell(\/index\.html)?\/?$/i.test(path)) target = '/downsell2';   // UPSELL (1) -> /downsell2 (clone do upsell 1)
     return target + (search || '');
   }
 

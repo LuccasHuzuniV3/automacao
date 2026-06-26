@@ -310,6 +310,8 @@
     <button class="railb" id="navUpsell"><i>⬆️</i><span>UPSELL</span></button>
     <button class="railb" id="navDownsell"><i>⬇️</i><span>DOWNSELL</span></button>
     <button class="railb" id="navDownsell2"><i>⏬</i><span>DOWNSELL 2</span></button>
+    <button class="railb" id="navUpsell2"><i>⏫</i><span>UPSELL 2</span></button>
+    <button class="railb" id="navDownsell3"><i>🔻</i><span>DOWNSELL 3</span></button>
     <button class="railb" data-view="analytics"><i>📊</i><span>Analytics</span></button>
     <button class="railb" data-view="vendas"><i>💰</i><span>Vendas</span></button>
     <button class="railb" data-view="config"><i>⚙️</i><span>Config</span></button>
@@ -455,6 +457,8 @@
 <script src="ebooks-upsell.js"></script>
 <script src="ebooks-downsell.js"></script>
 <script src="ebooks-downsell2.js"></script>
+<script src="ebooks-upsell2.js"></script>
+<script src="ebooks-downsell3.js"></script>
 <script src="desconto.js"></script>
 <script>
 /* ---------- IndexedDB p/ guardar as imagens escolhidas do PC ---------- */
@@ -504,7 +508,9 @@ var WS_DEFS={
   principal:{global:'EBOOKS',          src:function(){return window.EBOOKS||{};},           qs:'',             key:'',          label:'Principal',icon:'✏️'},
   upsell:   {global:'EBOOKS_UPSELL',   src:function(){return window.EBOOKS_UPSELL||{};},    qs:'?ws=upsell',   key:'_upsell',   label:'UPSELL',   icon:'⬆️'},
   downsell: {global:'EBOOKS_DOWNSELL', src:function(){return window.EBOOKS_DOWNSELL||{};},  qs:'?ws=downsell', key:'_downsell', label:'DOWNSELL', icon:'⬇️', cloneFrom:'principal', discount:true},
-  downsell2:{global:'EBOOKS_DOWNSELL2',src:function(){return window.EBOOKS_DOWNSELL2||{};}, qs:'?ws=downsell2',key:'_downsell2',label:'DOWNSELL 2',icon:'⏬', cloneFrom:'upsell',    discount:true}
+  downsell2:{global:'EBOOKS_DOWNSELL2',src:function(){return window.EBOOKS_DOWNSELL2||{};}, qs:'?ws=downsell2',key:'_downsell2',label:'DOWNSELL 2',icon:'⏬', cloneFrom:'upsell',    discount:true},
+  upsell2:  {global:'EBOOKS_UPSELL2',   src:function(){return window.EBOOKS_UPSELL2||{};},   qs:'?ws=upsell2',  key:'_upsell2',  label:'UPSELL 2', icon:'⏫', cloneFrom:'upsell'},
+  downsell3:{global:'EBOOKS_DOWNSELL3', src:function(){return window.EBOOKS_DOWNSELL3||{};}, qs:'?ws=downsell3',key:'_downsell3',label:'DOWNSELL 3',icon:'🔻', cloneFrom:'upsell2',   discount:true}
 };
 var WS=(function(){try{var w=new URLSearchParams(location.search).get('ws');return WS_DEFS[w]?w:'principal';}catch(e){return 'principal';}})();
 var WS_DEF=WS_DEFS[WS]||WS_DEFS.principal;
@@ -575,7 +581,7 @@ var TEMA_GRUPOS=[
   {h:'📣 Faixa de bônus',items:['giftBg']},
   {h:'💰 Preços',items:['priceNow','priceOld']}
 ];
-var META=[{k:'nome',label:'Nome do país',ph:'Brasil'},{k:'flag',label:'Sigla do botão',ph:'BR',small:true},{k:'idioma',label:'Idioma (html lang)',ph:'pt-BR',small:true},{k:'hotmart',label:'Link do checkout Hotmart (deste país)',ph:'https://pay.hotmart.com/XXXX?off=brl'}];
+var META=[{k:'nome',label:'Nome do país',ph:'Brasil'},{k:'flag',label:'Sigla do botão',ph:'BR',small:true},{k:'idioma',label:'Idioma (html lang)',ph:'pt-BR',small:true},{k:'hotmart',label:'Link do checkout Hotmart (deste país)',ph:'https://pay.hotmart.com/XXXX?off=brl'},{k:'hotWidget',label:'🛒 WIDGET HOTMART (1-clique) — cola o código aqui; SUBSTITUI o botão EU QUERO na página publicada e desliga o alerta de saída',area:true,ph:'Cole o trecho que o Hotmart dá no funil (1-clique). Pode ter <script>.'}];
 /* campos de imagem agora sao montados direto no renderForm */
 var REDES=[{k:'instagram',label:'Instagram (URL)'},{k:'facebook',label:'Facebook (URL)'},{k:'whatsapp',label:'WhatsApp (link wa.me/55...)'}];
 var TXT=[
@@ -2776,7 +2782,7 @@ function renderEbooksHome(){
 Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.onclick=function(){showView(b.getAttribute('data-view'));};});
 // ---- WORKSPACE: Principal (ebooks.js -> /), UPSELL (ebooks-upsell.js -> /upsell), DOWNSELL (ebooks-downsell.js -> /downsell). Trocar = recarregar com ?ws. ----
 (function(){
-  var btns={principal:document.getElementById('navPrincipal'),upsell:document.getElementById('navUpsell'),downsell:document.getElementById('navDownsell'),downsell2:document.getElementById('navDownsell2')};
+  var btns={principal:document.getElementById('navPrincipal'),upsell:document.getElementById('navUpsell'),downsell:document.getElementById('navDownsell'),downsell2:document.getElementById('navDownsell2'),upsell2:document.getElementById('navUpsell2'),downsell3:document.getElementById('navDownsell3')};
   Object.keys(WS_DEFS).forEach(function(ws){
     var b=btns[ws]; if(!b)return;
     b.onclick=function(){ if(WS!==ws){location.href='builder.html'+(ws==='principal'?'?go=editor':WS_DEFS[ws].qs+'&go=editor');}else{showView('editor');} };

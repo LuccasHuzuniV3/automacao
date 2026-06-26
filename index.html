@@ -660,7 +660,7 @@
   set('ultimaTit',t.ultimaTit);set('ultimaSub',t.ultimaSub);set('ultimaCtaTxt',t.cta);
   set('ultPrecoDe',t.precoDe);set('ultPrecoLbl',t.precoLbl);set('ultPreco',t.preco);show('ultimaPrice',!!(t.precoDe||t.preco));
   set('recusarTxt',t.recusarTxt);show('recusarBtn',!!t.recusarTxt);
-  /* ===== FUNIL: alerta de 50% OFF antes de sair. PRINCIPAL (recusar OU voltar/sair) -> DownSell 1 (/downsell). UPSELL (recusar OU voltar/sair) -> DownSell 2 (/downsell2). Roda nos SOURCES publicados (/ e /upsell), não nas páginas de downsell nem no editor. ===== */
+  /* ===== FUNIL: alerta de 50% OFF antes de sair. PRINCIPAL -> DownSell 1 (/downsell). UPSELL 1 -> DownSell 2 (/downsell2). UPSELL 2 -> DownSell 3 (/downsell3). Roda nos SOURCES publicados (/, /upsell, /upsell2), não nas páginas de downsell nem no editor. ===== */
   var DS_I18N={
     pt:{tit:'ESPERA! 🎁',msg:'Você acabou de ganhar {pct}% DE DESCONTO!',val:'Só agora, por apenas',cta:'QUERO APROVEITAR!',no:'Não, sair sem o desconto'},
     en:{tit:'WAIT! 🎁',msg:'You just got {pct}% OFF!',val:'Only now, for just',cta:'I WANT IT!',no:'No, leave without the discount'},
@@ -676,6 +676,7 @@
     var dsEdit=EDIT&&/[?&]dsalert=1/.test(location.search);   // EDITOR: modo "ver/editar o alerta" (botão do painel liga via ?dsalert=1)
     if(EDIT&&!dsEdit)return;                                   // editor normal -> não mexe no alerta
     if(!EDIT&&/\/downsell/.test(location.pathname.toLowerCase()))return;   // publicado: alerta nos SOURCES (Principal "/" e Upsell "/upsell"); NÃO nas páginas de downsell (que são o destino)
+    if(!EDIT&&paises[pais]&&String((paises[pais].hotWidget||'')).trim())return;   // página com widget do Hotmart: o "Não obrigado" DELE já faz o downsell -> não mostra o alerta do app (pra não brigar)
     var btn=document.getElementById('recusarBtn'),al=document.getElementById('dsAlert');
     if(!al||typeof descontoPct!=='function')return;
     var lng=String((paises[pais]&&paises[pais].idioma)||pais||'en').slice(0,2).toLowerCase();
@@ -718,6 +719,17 @@
   Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.href=url;
     a.addEventListener('click',function(){try{if(window.__track)window.__track('click',window.__trackParams);}catch(e){}});
   });
+  /* WIDGET HOTMART (1-clique): se o país tem código, ele SUBSTITUI o(s) botão(ões) EU QUERO na página PUBLICADA. No editor mostra só um aviso (mantém o botão editável). innerHTML NÃO roda <script> -> re-cria os scripts pra executar. */
+  (function(){ var wcode=String((cfg.hotWidget||'')).trim(); if(!wcode)return;
+    var ctas=document.querySelectorAll('.ctaLink'); if(!ctas.length)return;
+    var first=ctas[0];
+    if(EDIT){ var n=document.createElement('div'); n.style.cssText='text-align:center;margin:8px auto;font:700 12px system-ui,Segoe UI,Arial;color:#2dd4bf;background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.45);border-radius:8px;padding:6px 10px;max-width:520px'; n.textContent='▣ Widget Hotmart ativo neste idioma — vira o botão na página PUBLICADA'; first.parentNode.insertBefore(n,first); return; }
+    var host=document.createElement('div'); host.className='hotWidget'; host.style.cssText='text-align:center;margin:18px auto 0;max-width:520px';
+    first.parentNode.insertBefore(host,first);
+    Array.prototype.forEach.call(ctas,function(a){a.style.display='none';});   // esconde os "EU QUERO" (o widget vira o CTA)
+    host.innerHTML=wcode;
+    Array.prototype.forEach.call(host.querySelectorAll('script'),function(old){var s=document.createElement('script');Array.prototype.forEach.call(old.attributes,function(at){s.setAttribute(at.name,at.value);});s.textContent=old.textContent;old.parentNode.replaceChild(s,old);});
+  })();
 
   var lang=document.getElementById('lang');
   if(EDIT){Object.keys(paises).forEach(function(k){var b=document.createElement('button');b.textContent=paises[k].flag||k.toUpperCase();if(k===pais)b.className='on';

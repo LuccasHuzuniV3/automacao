@@ -3,7 +3,7 @@
    APENAS as imagens que ele usa) numa pasta  enviar-<ws>/  pra mandar
    pro colega, SEM tocar em nenhum outro workspace (principal etc.).
 
-   Uso:  node enviar-ws.js upsell      (ou: principal | downsell | downsell2)
+   Uso:  node enviar-ws.js upsell      (ou: principal | downsell | downsell2 | upsell2 | downsell3)
    Normalmente você chama pelo ENVIAR-UPSELL.bat (dois cliques).
    ===================================================================== */
 const fs   = require('fs');
@@ -14,7 +14,9 @@ const WS = {
   principal: { file: 'ebooks.js',            label: 'PRINCIPAL'  },
   upsell:    { file: 'ebooks-upsell.js',      label: 'UPSELL'     },
   downsell:  { file: 'ebooks-downsell.js',    label: 'DOWNSELL'   },
-  downsell2: { file: 'ebooks-downsell2.js',   label: 'DOWNSELL 2' }
+  downsell2: { file: 'ebooks-downsell2.js',   label: 'DOWNSELL 2' },
+  upsell2:   { file: 'ebooks-upsell2.js',     label: 'UPSELL 2'   },
+  downsell3: { file: 'ebooks-downsell3.js',   label: 'DOWNSELL 3' }
 };
 
 const ws  = String(process.argv[2] || 'upsell').toLowerCase();

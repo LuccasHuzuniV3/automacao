@@ -100,8 +100,8 @@ function backupDataFile(fname, stampSeed) {
 }
 function backupEbooks(stampSeed) { backupDataFile('ebooks.js', stampSeed); }   // compat (save-scope/save-ebook usam este)
 // Mapa workspace -> arquivo de dados + nome do global. FONTE UNICA (save, save-scope, save-ebook, share).
-const WS_FILE = { principal: 'ebooks.js', upsell: 'ebooks-upsell.js', downsell: 'ebooks-downsell.js', downsell2: 'ebooks-downsell2.js' };
-const WS_GLOBAL = { principal: 'EBOOKS', upsell: 'EBOOKS_UPSELL', downsell: 'EBOOKS_DOWNSELL', downsell2: 'EBOOKS_DOWNSELL2' };
+const WS_FILE = { principal: 'ebooks.js', upsell: 'ebooks-upsell.js', downsell: 'ebooks-downsell.js', downsell2: 'ebooks-downsell2.js', upsell2: 'ebooks-upsell2.js', downsell3: 'ebooks-downsell3.js' };
+const WS_GLOBAL = { principal: 'EBOOKS', upsell: 'EBOOKS_UPSELL', downsell: 'EBOOKS_DOWNSELL', downsell2: 'EBOOKS_DOWNSELL2', upsell2: 'EBOOKS_UPSELL2', downsell3: 'EBOOKS_DOWNSELL3' };
 const REVWS = (function () { const m = {}; Object.keys(WS_FILE).forEach(function (w) { m[WS_FILE[w]] = w; }); return m; })();   // 'ebooks-upsell.js' -> 'upsell'
 // pega o token de share da requisicao (Referer ?share/?token, cookie sharetok, ou header) — usado pra entregar SO o ebook do link pro convidado
 function shareTok(req) {
@@ -519,7 +519,7 @@ const server = http.createServer(async function (req, res) {
       if (!/^https:\/\/raw\.githubusercontent\.com\/.+/i.test(rawBase)) {
         json(res, 200, { ok: false, error: 'Atualizacao ainda nao configurada. O criador precisa rodar o CONFIGURAR-SISTEMA-GIT.bat.' }); return;
       }
-      const NEVER = ['ebooks.js', 'ebooks-upsell.js', 'ebooks-downsell.js', 'ebooks-downsell2.js', 'sys-config.json', 'deploy-config.json', '.gitignore', 'share-config.json', 'tunnel-url.txt', 'start.bat'];   // nunca sobrescreve dados/config/launcher
+      const NEVER = ['ebooks.js', 'ebooks-upsell.js', 'ebooks-downsell.js', 'ebooks-downsell2.js', 'ebooks-upsell2.js', 'ebooks-downsell3.js', 'sys-config.json', 'deploy-config.json', '.gitignore', 'share-config.json', 'tunnel-url.txt', 'start.bat'];   // nunca sobrescreve dados/config/launcher
       const bust = '?t=' + Date.now();
       let man = null;
       try { man = await fetch(rawBase + '/manifest.json' + bust, { cache: 'no-store' }).then(function (r) { return r.ok ? r.json() : null; }); } catch (e) {}

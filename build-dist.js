@@ -148,7 +148,7 @@ async function writeSite(sub, localAll, onlyKeys, globalName) {
   if (!fs.existsSync(DIST)) fs.mkdirSync(DIST, { recursive: true });
   await writeSite('', all, only, 'EBOOKS');                          // PRINCIPAL (respeita 'only')
   // workspaces: publicam todos os locais SEMPRE preservando o ar (only=[] -> não dependem do 'only' do principal)
-  for (const w of [['upsell', 'ebooks-upsell.js', 'EBOOKS_UPSELL'], ['downsell', 'ebooks-downsell.js', 'EBOOKS_DOWNSELL'], ['downsell2', 'ebooks-downsell2.js', 'EBOOKS_DOWNSELL2']]) {
+  for (const w of [['upsell', 'ebooks-upsell.js', 'EBOOKS_UPSELL'], ['downsell', 'ebooks-downsell.js', 'EBOOKS_DOWNSELL'], ['downsell2', 'ebooks-downsell2.js', 'EBOOKS_DOWNSELL2'], ['upsell2', 'ebooks-upsell2.js', 'EBOOKS_UPSELL2'], ['downsell3', 'ebooks-downsell3.js', 'EBOOKS_DOWNSELL3']]) {
     const wPath = path.join(ROOT, w[1]);
     if (!fs.existsSync(wPath)) continue;
     try { require(wPath); } catch (e) { console.log('AVISO ' + w[0] + ' (nao carregou): ' + e.message); continue; }

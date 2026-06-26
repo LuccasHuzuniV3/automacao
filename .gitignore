@@ -6,6 +6,8 @@ ebooks.js
 ebooks-upsell.js
 ebooks-downsell.js
 ebooks-downsell2.js
+ebooks-upsell2.js
+ebooks-downsell3.js
 ebooks.bak.js
 _chk.js
 # versoes .webp das imagens (geradas pelo OTIMIZAR-IMAGENS.bat) — LOCAIS, nao versionar (nao vao pro manifest nem pro colega)
