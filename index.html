@@ -715,7 +715,7 @@
 
   var base=cfg.hotmart||'#',finalSrc=ebook+'_'+pais+(p.src?'_'+p.src:'_direto'),url=base;   /* ebook_versao_canal_tema -> o webhook atribui a venda certinho */
   try{var u=new URL(/^https?:/i.test(base)?base:'https://'+base);u.searchParams.set('src',finalSrc);
-    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','sck'].forEach(function(k){var x=p.q.get(k);if(x)u.searchParams.set(k,x);});if(p.vid)u.searchParams.set('sck',p.vid);url=u.toString();}catch(e){}   /* o vídeo (src appendado) vai no sck -> a Hotmart devolve no webhook */
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){var x=p.q.get(k);if(x)u.searchParams.set(k,x);});u.searchParams.set('sck',finalSrc+(p.vid?'~'+p.vid:''));url=u.toString();}catch(e){}   /* a Hotmart SÓ devolve o 'sck' de forma confiável (sem 'off' o 'src' se perde) -> manda a ATRIBUIÇÃO no sck tb, com o vídeo depois do ~. O 'src' continua indo (funciona quando tem 'off'). */
   Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.href=url;
     a.addEventListener('click',function(){try{if(window.__track)window.__track('click',window.__trackParams);}catch(e){}});
   });

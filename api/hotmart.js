@@ -55,9 +55,15 @@ module.exports = async function (req, res) {
     const purchase = data.purchase || {};
     const price = (purchase.price && purchase.price.value) || (purchase.full_price && purchase.full_price.value) || data.price || 0;
     const tracking = purchase.tracking || data.tracking || {};
-    let src = (purchase.origin && purchase.origin.src) || tracking.source || tracking.src || data.src || q.src || '';
-    if (!/^[a-z0-9]+_[a-z]{2,3}_/i.test(src)) { const f = findSrc(body); if (f) src = f; }   // acha o src em qualquer lugar do payload
-    const sckV = ((purchase.origin && purchase.origin.sck) || tracking.source_sck || tracking.sck || data.sck || q.sck || '');   // sck = o VÍDEO (src appendado). A Hotmart devolve em purchase.origin.sck (confirmado via ?raw=1)
+    const src = (purchase.origin && purchase.origin.src) || tracking.source || tracking.src || data.src || q.src || '';
+    const sckRaw = ((purchase.origin && purchase.origin.sck) || tracking.source_sck || tracking.sck || data.sck || q.sck || '');
+    // A Hotmart so devolve o 'sck' de forma confiavel (sem 'off' o 'src' nao volta). Por isso a landing manda a ATRIBUICAO no sck: <ebook_pais_pessoa_rede>~<video>.
+    const isAttr = function (s) { return /^[a-z0-9]+_[a-z]{2,3}_/i.test(String(s)); };
+    const _sk = String(sckRaw).split('~'); const sckAttr = _sk[0] || '', sckVid = (_sk.length > 1 ? _sk.slice(1).join('~') : '');
+    let track = '', vidRaw = '';
+    if (isAttr(src)) { track = src; vidRaw = sckVid || (isAttr(sckRaw) ? '' : sckRaw); }            // COM 'off': a Hotmart devolveu o 'src'
+    else if (isAttr(sckAttr)) { track = sckAttr; vidRaw = sckVid; }                                  // SEM 'off': a atribuicao veio no 'sck'
+    else { const f = findSrc(body); track = f || ''; vidRaw = (isAttr(sckRaw) ? '' : sckRaw); }      // direto / fallback (acha o src em qualquer lugar do payload)
     const buyer = data.buyer || {};
     const country = (buyer.address && (buyer.address.country_iso || buyer.address.country)) || buyer.country
       || (purchase.checkout_country && (purchase.checkout_country.iso || purchase.checkout_country.name))
@@ -82,8 +88,8 @@ module.exports = async function (req, res) {
       if (!dr || dr.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'duplicado:' + tx })); return; }
     }
 
-    // src esperado: ebook_versao_canal_tema  (ex.: arcturianos_br_jazzlofi_ansiedade)
-    const parts = String(src).split('_');
+    // track = ebook_versao_canal_tema (ex.: arcturianos_br_luccas_deusdisse) — vem do 'src' (com off) OU do 'sck' (sem off)
+    const parts = String(track).split('_');
     const ebook = slug(parts[0]) || '-';
     const versao = slug(parts[1]) || '-';
     const canalSo = slug(parts[2]) || 'direto';                            // canal sozinho (ex.: luccas)
@@ -100,7 +106,7 @@ module.exports = async function (req, res) {
       await redis(['HINCRBY', 'sales:' + date, baseK + '|ra|' + moeda, cents]);   // receita só de APROVADAS por moeda
     }
     // registro individual (p/ a lista de Vendas), no máximo 1000 por dia
-    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, vid: slug(sckV), p: pais, ts: Date.now() });
+    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, vid: slug(vidRaw), p: pais, ts: Date.now() });
     await redis(['LPUSH', 'salelog:' + date, rec]);
     await redis(['LTRIM', 'salelog:' + date, '0', '999']);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));
