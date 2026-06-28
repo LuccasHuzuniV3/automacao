@@ -378,6 +378,7 @@
         <input type="hidden" id="vdPeriodo" value="30"><input type="hidden" id="vdFrom"><input type="hidden" id="vdTo">
       </div>
       <div class="ankpis" id="vdKpis"></div>
+      <div id="vdComm" style="margin-top:10px"></div>
       <div class="anpanel">
         <div class="anpanel-h"><span class="anpanel-t">Receita no tempo</span><span class="anpanel-leg"><span class="vdcur-tog"><button type="button" class="vdcur-b on" data-cur="BRL" onclick="vdSetChartCur('BRL')">R$</button><button type="button" class="vdcur-b" data-cur="USD" onclick="vdSetChartCur('USD')">US$</button></span> &nbsp; <span id="vdChartRange"></span></span></div>
         <div id="vdChart"></div>
@@ -2321,7 +2322,7 @@ function showView(v){
   else if(_sb)_sb.classList.remove('efull');
   if(v==='ebooks')renderEbooksHome();
   if(v==='analytics')renderAnalytics();
-  if(v==='vendas')renderVendas();
+  if(v==='vendas'){vdNav={canal:'',tema:''};renderVendas();}   /* clicar em Vendas SEMPRE volta pra raiz (Todos), não fica preso na pasta */
 }
 var PAIS_NOMES={
   BR:'Brasil',US:'EUA',PT:'Portugal',ES:'Espanha',FR:'França',DE:'Alemanha',IT:'Itália',GB:'Reino Unido',IE:'Irlanda',NL:'Holanda',BE:'Bélgica',LU:'Luxemburgo',CH:'Suíça',AT:'Áustria',
@@ -2575,6 +2576,30 @@ function vdDt(ts){var dt=new Date(ts||0);if(isNaN(dt.getTime()))return '—';ret
 function vdSetKpis(v,rec){var k=$('vdKpis');if(!k)return;v=nn(v);var rc=clampRec(fxConsolidate(rec)),rBRL=(rc.BRL||0)/100,rUSD=(rc.USD||0)/100;k.innerHTML='<div class="ankpi"><div class="ankpi-ic" style="background:rgba(91,214,107,.16);color:#5bd66b">🛒</div><div><div class="ankpi-k">Vendas</div><div class="ankpi-v">'+v+'</div></div></div>'+
   '<div class="ankpi"><div class="ankpi-ic" style="background:rgba(91,214,107,.16);color:#5bd66b">💰</div><div><div class="ankpi-k">Receita R$</div><div class="ankpi-v">'+fmtMoney(rBRL,'BRL')+'</div></div></div>'+
   '<div class="ankpi"><div class="ankpi-ic" style="background:rgba(45,212,191,.16);color:#2dd4bf">💵</div><div><div class="ankpi-k">Receita US$</div><div class="ankpi-v">'+fmtMoney(rUSD,'USD')+'</div></div></div>';kpiFit(k);}
+/* ===== COMISSÃO: afiliado (canal) leva a %, os 2 sócios dividem o resto 50/50. Reflete a pasta/filtro atual. ===== */
+var VD_SOCIOS=['junin','theuzim'];   // 2 sócios fixos
+function vdCommLoad(){try{return JSON.parse(localStorage.getItem('VD_COMM')||'{}')||{};}catch(e){return {};}}
+var VD_COMM=vdCommLoad();
+function vdCommSave(){try{localStorage.setItem('VD_COMM',JSON.stringify(VD_COMM));}catch(e){}}
+function vdCommOf(canal){var v=parseFloat(VD_COMM[canal]);return (isFinite(v)&&v>=0&&v<=100)?v:10;}   // % do afiliado, padrão 10
+function vdSetComm(){
+  var box=$('vdComm'); if(!box) return;
+  var afi={}, soc={}, label='Afiliados', line='';
+  function addRec(dst,r,f){Object.keys(r||{}).forEach(function(c){dst[c]=(dst[c]||0)+(r[c]||0)*f;});}
+  if(vdNav.canal){
+    var pc=vdNav.canal, cp=vdCommOf(pc), comm=cp/100;
+    var rec=vdNav.tema?((((vdGroups[pc]||{}).temas||{})[vdNav.tema]||{}).rec):((vdGroups[pc]||{}).rec); rec=rec||{};
+    addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2); label=pc;
+    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px">Comissão do <b style="color:#2dd4bf">'+pc+'</b>: <input id="vdCommInp" type="number" min="0" max="100" step="1" value="'+cp+'" style="width:58px;background:#000;border:1px solid var(--line);color:#f2eee4;border-radius:6px;padding:3px 6px;font-size:12px"> % &nbsp;<small>(o resto '+(100-cp)+'% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+')</small></div>';
+  } else {
+    Object.keys(vdGroups).forEach(function(c){var comm=vdCommOf(c)/100, rec=vdGroups[c].rec||{}; addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2);});
+    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Comissão por canal (padrão 10%) — entre numa pasta de canal pra ajustar a %.</div>';
+  }
+  function money(m){var rc=clampRec(fxConsolidate(m)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100,p=[];if(b)p.push(fmtMoney(b,'BRL'));if(u)p.push(fmtMoney(u,'USD'));return p.join(' · ')||fmtMoney(0,'BRL');}
+  function card(nm,ic,col,val){return '<div class="ankpi"><div class="ankpi-ic" style="background:'+col+'26;color:'+col+'">'+ic+'</div><div><div class="ankpi-k">'+nm+'</div><div class="ankpi-v" style="font-size:16px">'+money(val)+'</div></div></div>';}
+  box.innerHTML=line+'<div class="ankpis">'+card(VD_SOCIOS[0],'👤','#b06bff',soc)+card(VD_SOCIOS[1],'👤','#9b5cff',soc)+card(label,'🎯','#2dd4bf',afi)+'</div>';
+  var inp=$('vdCommInp'); if(inp)inp.onchange=function(){var v=Math.max(0,Math.min(100,parseFloat(this.value)||0));VD_COMM[vdNav.canal]=v;vdCommSave();vdSetComm();};
+}
 var vdChartCur='BRL', vdLastSerie=null;   /* moeda do gráfico do Vendas (botões R$/US$) */
 function vdSetChartCur(c){vdChartCur=(c==='USD')?'USD':'BRL';var bs=document.querySelectorAll('.vdcur-b');[].forEach.call(bs,function(b){b.classList.toggle('on',b.getAttribute('data-cur')===vdChartCur);});if(vdLastSerie)vdChart(vdLastSerie);}
 /* gráfico do Vendas: linha = receita/dia na MOEDA escolhida (R$ ou US$, mesmo bucket dos cards Receita R$/US$), + delta + tooltip */
@@ -2629,7 +2654,7 @@ function vdChart(serie){
       var i=Math.round(((e.clientX-r.left)/r.width*W-padL-slot/2)/slot);if(i<0)i=0;if(i>n-1)i=n-1;
       var s=serie[i],rm=clampRec(fxConsolidate(s.r||{}));   /* só a moeda escolhida (igual o gráfico) */
       var rstr=fmtMoney(rm[cur]||0,cur);
-      var vq=Math.max(0,s.vd||0);
+      var vq=(s.vdc&&typeof s.vdc[cur]==='number')?s.vdc[cur]:Math.max(0,s.vd||0);   /* conta POR MOEDA (R$ = vendas BR, US$ = internacionais) quando a série tem isso (dentro de uma pasta) */
       tip.innerHTML='<b>'+fmt(s.d)+'</b> · '+vq.toLocaleString('pt-BR')+' venda'+(vq===1?'':'s')+'<br>'+rstr;
       var bx=box.getBoundingClientRect();
       tip.style.left=(e.clientX-bx.left)+'px';tip.style.top=(e.clientY-bx.top)+'px';tip.style.display='block';
@@ -2678,15 +2703,15 @@ function vdPaint(d){
 /* recalcula a série (gráfico) + rankings a partir de uma lista de vendas — p/ filtrar pela PASTA selecionada */
 function vdComputeView(list){
   var byDay={};
-  list.forEach(function(o){ if(o.st==='estorno')return; var day=''; try{day=(new Date(o.ts)).toISOString().slice(0,10);}catch(e){} if(!day)return; if(!byDay[day])byDay[day]={vd:0,r:{}}; byDay[day].vd++; var cu=o.cur||'BRL'; byDay[day].r[cu]=(byDay[day].r[cu]||0)+((o.v||0)/100); });   /* v vem em CENTAVOS -> /100 (gráfico/rankings usam reais/dólares, igual o servidor) */
-  var serie=(vdAllSerie||[]).map(function(s){var dd=byDay[s.d]||{vd:0,r:{}};return {d:s.d,vd:dd.vd,r:dd.r};});
+  list.forEach(function(o){ if(o.st==='estorno')return; var day=''; try{day=(new Date(o.ts)).toISOString().slice(0,10);}catch(e){} if(!day)return; if(!byDay[day])byDay[day]={vd:0,vdc:{},r:{}}; byDay[day].vd++; var cu=o.cur||'BRL', bk=(cu==='BRL'?'BRL':'USD'); byDay[day].vdc[bk]=(byDay[day].vdc[bk]||0)+1; byDay[day].r[cu]=(byDay[day].r[cu]||0)+((o.v||0)/100); });   /* v vem em CENTAVOS -> /100 (gráfico/rankings usam reais/dólares, igual o servidor) */
+  var serie=(vdAllSerie||[]).map(function(s){var dd=byDay[s.d]||{vd:0,vdc:{},r:{}};return {d:s.d,vd:dd.vd,vdc:dd.vdc,r:dd.r};});
   function rank(keyFn){var m={};list.forEach(function(o){if(o.st==='estorno')return;var k=keyFn(o)||'-';if(!m[k])m[k]={k:k,vd:0,r:{}};m[k].vd++;var cu=o.cur||'BRL';m[k].r[cu]=(m[k].r[cu]||0)+((o.v||0)/100);});return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return (b.vd||0)-(a.vd||0);});}
   return {serie:serie, ranks:{pais:rank(function(o){return o.p;}), src:rank(function(o){return o.vid;}), ebook:rank(function(o){return o.e;})}};
 }
 function vdRenderNav(){
   var t=$('vdTable');if(!t)return;
   var keys=Object.keys(vdGroups);
-  if(!keys.length){vdSetKpis(0,{});vdChart([]);vdRanks({});t.innerHTML='<div style="color:var(--muted);font-size:13px;padding:14px 0">Nenhuma venda nesse filtro ainda. Quando vender, aparece aqui na hora.</div>';return;}
+  if(!keys.length){vdSetKpis(0,{});vdChart([]);vdRanks({});vdSetComm();t.innerHTML='<div style="color:var(--muted);font-size:13px;padding:14px 0">Nenhuma venda nesse filtro ainda. Quando vender, aparece aqui na hora.</div>';return;}
   /* KPIs refletem a PASTA atual (receita somada POR MOEDA) */
   var curV=0,curR={};
   function recMerge(dst,src){Object.keys(src||{}).forEach(function(c){dst[c]=(dst[c]||0)+src[c];});}
@@ -2697,6 +2722,7 @@ function vdRenderNav(){
   /* GRÁFICO + RANKINGS refletem a PASTA atual: raiz = agregado do servidor; dentro da pasta = recalculado da lista filtrada */
   if(!vdNav.canal){ vdChart(vdAllSerie); vdRanks(vdAllRanks); }
   else { var _fl=vdAllList.filter(function(o){ return (o.c||'direto')===vdNav.canal && (!vdNav.tema || (o.t||'-')===vdNav.tema); }); var _v=vdComputeView(_fl); vdChart(_v.serie); vdRanks(_v.ranks); }
+  vdSetComm();
   var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-nav="home">📂 Todos</span>';
   if(vdNav.canal)crumb+='<span class="vdcrumb-s">›</span><span class="'+(vdNav.tema?'vdcrumb-a':'vdcrumb-cur')+'" data-nav="canal">👤 '+vdNav.canal+'</span>';
   if(vdNav.tema)crumb+='<span class="vdcrumb-s">›</span><span class="vdcrumb-cur">📁 '+vdNav.tema+'</span>';
