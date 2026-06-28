@@ -2561,7 +2561,7 @@ function renderAnalytics(){
 }
 function vdFillSelect(id,vals,lbl){var s=$(id);if(!s)return;var cur=s.value;s.innerHTML='<option value="">todos</option>'+(vals||[]).map(function(x){return '<option value="'+x+'">'+(lbl?lbl(x):x)+'</option>';}).join('');if(cur)s.value=cur;}
 function vdEmpty(msg){var b=$('vdBanner');if(b){b.innerHTML='⚠️ '+msg;b.style.cssText='background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4);color:#f5d77a;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}var t=$('vdTable');if(t)t.innerHTML='';var k=$('vdKpis');if(k)k.innerHTML='';}
-var vdGroups={}, vdNav={canal:'',tema:''};
+var vdGroups={}, vdNav={canal:'',tema:''}, vdAllList=[], vdAllSerie=[], vdAllRanks={};
 /* formata na MOEDA real da venda (BRL=R$, USD=US$, EUR=€, CLP, etc.) */
 function fmtMoney(v,cur){cur=String(cur||'BRL').toUpperCase();if(cur.length!==3)cur='BRL';try{return (v||0).toLocaleString('pt-BR',{style:'currency',currency:cur});}catch(e){return cur+' '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}}
 function vdMoney(cents,cur){return fmtMoney((cents||0)/100,cur);}
@@ -2660,9 +2660,8 @@ function vdPaint(d){
   var b=$('vdBanner');if(b){b.innerHTML='✅ <b>Vendas reais</b> (via webhook da Hotmart). Cada compra aparece aqui na hora. <span style="opacity:.8">Totais: <b>R$</b> (Brasil) + <b>US$</b> (resto, convertido pela cotação do dia).</span>';b.style.cssText='background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.4);color:#7defc9;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}
   var f=d.filtros||{};vdFillSelect('vdEbook',f.ebooks);vdFillSelect('vdCanal',f.canais);vdFillSelect('vdTema',f.temas);vdFillSelect('vdPais',f.paises,paisNome);
   if(window.vdSyncDrops)vdSyncDrops();
-  vdChart(d.serie);
-  vdRanks(d.ranks);
-  var list=d.list||[];
+  vdAllSerie=d.serie||[]; vdAllRanks=d.ranks||{};   // guarda o do servidor (a RAIZ usa o agregado preciso)
+  var list=d.list||[]; vdAllList=list;              // lista individual -> gráfico+rankings filtram por pasta (no vdRenderNav)
   vdGroups={};
   function recAdd(map,cur,cents){cur=(cur||'BRL');map[cur]=(map[cur]||0)+cents;}
   list.forEach(function(o){
@@ -2676,10 +2675,18 @@ function vdPaint(d){
   else if(vdNav.tema&&(!vdGroups[vdNav.canal]||!vdGroups[vdNav.canal].temas[vdNav.tema]))vdNav.tema='';
   vdRenderNav();
 }
+/* recalcula a série (gráfico) + rankings a partir de uma lista de vendas — p/ filtrar pela PASTA selecionada */
+function vdComputeView(list){
+  var byDay={};
+  list.forEach(function(o){ if(o.st==='estorno')return; var day=''; try{day=(new Date(o.ts)).toISOString().slice(0,10);}catch(e){} if(!day)return; if(!byDay[day])byDay[day]={vd:0,r:{}}; byDay[day].vd++; var cu=o.cur||'BRL'; byDay[day].r[cu]=(byDay[day].r[cu]||0)+(o.v||0); });
+  var serie=(vdAllSerie||[]).map(function(s){var dd=byDay[s.d]||{vd:0,r:{}};return {d:s.d,vd:dd.vd,r:dd.r};});
+  function rank(keyFn){var m={};list.forEach(function(o){if(o.st==='estorno')return;var k=keyFn(o)||'-';if(!m[k])m[k]={k:k,vd:0,r:{}};m[k].vd++;var cu=o.cur||'BRL';m[k].r[cu]=(m[k].r[cu]||0)+(o.v||0);});return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return (b.vd||0)-(a.vd||0);});}
+  return {serie:serie, ranks:{pais:rank(function(o){return o.p;}), src:rank(function(o){return o.vid;}), ebook:rank(function(o){return o.e;})}};
+}
 function vdRenderNav(){
   var t=$('vdTable');if(!t)return;
   var keys=Object.keys(vdGroups);
-  if(!keys.length){vdSetKpis(0,{});t.innerHTML='<div style="color:var(--muted);font-size:13px;padding:14px 0">Nenhuma venda nesse filtro ainda. Quando vender, aparece aqui na hora.</div>';return;}
+  if(!keys.length){vdSetKpis(0,{});vdChart([]);vdRanks({});t.innerHTML='<div style="color:var(--muted);font-size:13px;padding:14px 0">Nenhuma venda nesse filtro ainda. Quando vender, aparece aqui na hora.</div>';return;}
   /* KPIs refletem a PASTA atual (receita somada POR MOEDA) */
   var curV=0,curR={};
   function recMerge(dst,src){Object.keys(src||{}).forEach(function(c){dst[c]=(dst[c]||0)+src[c];});}
@@ -2687,6 +2694,9 @@ function vdRenderNav(){
   else if(!vdNav.tema){var _cd=vdGroups[vdNav.canal]||{tot:0,rec:{}};curV=_cd.tot;recMerge(curR,_cd.rec);}
   else{var _td=(vdGroups[vdNav.canal]&&vdGroups[vdNav.canal].temas[vdNav.tema])||{tot:0,rec:{}};curV=_td.tot;recMerge(curR,_td.rec);}
   vdSetKpis(curV,curR);
+  /* GRÁFICO + RANKINGS refletem a PASTA atual: raiz = agregado do servidor; dentro da pasta = recalculado da lista filtrada */
+  if(!vdNav.canal){ vdChart(vdAllSerie); vdRanks(vdAllRanks); }
+  else { var _fl=vdAllList.filter(function(o){ return (o.c||'direto')===vdNav.canal && (!vdNav.tema || (o.t||'-')===vdNav.tema); }); var _v=vdComputeView(_fl); vdChart(_v.serie); vdRanks(_v.ranks); }
   var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-nav="home">📂 Todos</span>';
   if(vdNav.canal)crumb+='<span class="vdcrumb-s">›</span><span class="'+(vdNav.tema?'vdcrumb-a':'vdcrumb-cur')+'" data-nav="canal">👤 '+vdNav.canal+'</span>';
   if(vdNav.tema)crumb+='<span class="vdcrumb-s">›</span><span class="vdcrumb-cur">📁 '+vdNav.tema+'</span>';
