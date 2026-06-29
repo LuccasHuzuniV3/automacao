@@ -2243,12 +2243,14 @@ function showDeployResult(prodUrl,onlyEbook){
       '<span style="font-size:12px;color:var(--txt);font-weight:700">🎯 Rastrear canal (opcional)</span>'+
       '<input id="depCanal" placeholder="canal (ex.: jazzlofi)" style="background:#000;border:1px solid var(--line);color:#f2eee4;border-radius:6px;padding:6px 8px;font-size:12px;width:160px">'+
       '<input id="depTema" placeholder="tema (ex.: ansiedade)" style="background:#000;border:1px solid var(--line);color:#f2eee4;border-radius:6px;padding:6px 8px;font-size:12px;width:160px">'+
+      '<input id="depTitulo" placeholder="🏷️ título (só nas Vendas)" title="Etiqueta livre da campanha/anúncio — aparece como coluna Título na tela de Vendas" style="background:#000;border:1px solid rgba(201,139,255,.5);color:#f2eee4;border-radius:6px;padding:6px 8px;font-size:12px;width:190px">'+
       '<span style="font-size:11px;color:var(--muted)">preenche que entra no link de TODOS os idiomas</span>'+
     '</div>'+
     '<div id="depLinks"></div>';
   function buildDepLinks(){
-    var canal=slugify(($('depCanal')||{}).value||''),tema=slugify(($('depTema')||{}).value||'');
-    var srcQ=canal?('&s='+canal+(tema?'_'+tema:'')):'';
+    var canal=slugify(($('depCanal')||{}).value||''),tema=slugify(($('depTema')||{}).value||''),titulo=slugify(($('depTitulo')||{}).value||'');
+    var sVal='';if(canal){sVal=canal;if(tema)sVal+='_'+tema;if(titulo){if(!tema)sVal+='_-';sVal+='_'+titulo;}}   /* s = canal_tema_titulo (titulo = 4o pedaco, so aparece nas Vendas); '-' segura a posicao do tema se faltar */
+    var srcQ=sVal?('&s='+sVal):'';
     var box=$('depLinks');if(!box)return;var h='';
     eks.forEach(function(ek){
       if(!model[ek])return;var ps=model[ek].paises||{};
@@ -2268,6 +2270,7 @@ function showDeployResult(prodUrl,onlyEbook){
   buildDepLinks();
   if($('depCanal'))$('depCanal').oninput=buildDepLinks;
   if($('depTema'))$('depTema').oninput=buildDepLinks;
+  if($('depTitulo'))$('depTitulo').oninput=buildDepLinks;
   $('depModal').classList.add('on');
 }
 (function(){var c=$('depClose');if(c)c.onclick=function(){$('depModal').classList.remove('on');};var dm=$('depModal');if(dm)dm.onclick=function(e){if(e.target===dm)dm.classList.remove('on');};})();
@@ -2375,9 +2378,26 @@ function anChart(serie){
   svg+='<path d="'+aArea+'" fill="url(#anaf)" stroke="none"/>';
   svg+='<path d="'+aLine+'" fill="none" stroke="#2dd4bf" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+aDots;
   svg+='<path d="'+line+'" fill="none" stroke="#f5c518" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
+  svg+='<line class="vdguide" x1="0" y1="'+padT+'" x2="0" y2="'+base.toFixed(1)+'" stroke="rgba(255,255,255,.25)" stroke-width="1" style="display:none"/>';
   svg+=xlab+'</svg>';
   box.innerHTML=deltaHTML+svg;
   if(rg)rg.textContent=fmt(serie[0].d)+' — '+fmt(serie[n-1].d);
+  /* tooltip de hover: passa o mouse e vê acessos + cliques do dia (igual o gráfico de Vendas) */
+  box.style.position='relative';
+  var tip=document.createElement('div');tip.className='vdtip';box.appendChild(tip);
+  var svgEl=box.querySelector('svg'), guide=svgEl?svgEl.querySelector('.vdguide'):null;
+  if(svgEl){
+    svgEl.addEventListener('mousemove',function(e){
+      var r=svgEl.getBoundingClientRect();if(!r.width)return;
+      var i=Math.round(((e.clientX-r.left)/r.width*W-padL-slot/2)/slot);if(i<0)i=0;if(i>n-1)i=n-1;
+      var s=serie[i],vac=s.ac||0,vcl=s.cl||0;
+      tip.innerHTML='<b>'+fmt(s.d)+'</b><br>'+vac.toLocaleString('pt-BR')+' acesso'+(vac===1?'':'s')+' · '+vcl.toLocaleString('pt-BR')+' clique'+(vcl===1?'':'s');
+      var bx=box.getBoundingClientRect();
+      tip.style.left=(e.clientX-bx.left)+'px';tip.style.top=(e.clientY-bx.top)+'px';tip.style.display='block';
+      if(guide){var gx=padL+slot*i+slot/2;guide.setAttribute('x1',gx.toFixed(1));guide.setAttribute('x2',gx.toFixed(1));guide.style.display='';}
+    });
+    svgEl.addEventListener('mouseleave',function(){tip.style.display='none';if(guide)guide.style.display='none';});
+  }
 }
 /* ===== Conversão de moeda: consolida em R$ (Brasil) + US$ (internacional) ===== */
 /* taxas = quantas unidades da moeda valem 1 USD (fallback aprox.; substituído por cotação ao vivo) */
@@ -2735,8 +2755,8 @@ function vdRenderNav(){
     body=Object.keys(cd.temas).sort().map(function(tm){var td=cd.temas[tm],t=nn(td.tot);return '<div class="vdfolder" data-tema="'+tm+'"><span class="vdfi">📁</span><span class="vdfn">'+tm+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(td.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
   } else {
     var td=(vdGroups[vdNav.canal]&&vdGroups[vdNav.canal].temas[vdNav.tema])||{sales:[]};
-    body='<table class="vdtbl"><thead><tr><th>Data</th><th>Valor</th><th>Ebook · versão</th><th>Src</th><th>País</th><th>Status</th></tr></thead><tbody>'+
-      td.sales.map(function(o){var est=o.st==='estorno';return '<tr'+(est?' style="opacity:.5"':'')+'><td>'+vdDt(o.ts)+'</td><td>'+vdRowMoney(o.v||0,o.cur)+'</td><td>'+(o.e||'-')+' · '+String(o.vs||'-').toUpperCase()+'</td><td>'+(o.vid?'<b style="color:#2dd4bf">'+o.vid+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+paisNome(o.p||'')+'</td><td><span style="color:'+(est?'#ff8f8f':'#5bd66b')+'">'+(est?'estorno':'aprovada')+'</span></td></tr>';}).join('')+'</tbody></table>';
+    body='<table class="vdtbl"><thead><tr><th>Data</th><th>Valor</th><th>Ebook · versão</th><th>Src</th><th>Título</th><th>País</th><th>Status</th></tr></thead><tbody>'+
+      td.sales.map(function(o){var est=o.st==='estorno';return '<tr'+(est?' style="opacity:.5"':'')+'><td>'+vdDt(o.ts)+'</td><td>'+vdRowMoney(o.v||0,o.cur)+'</td><td>'+(o.e||'-')+' · '+String(o.vs||'-').toUpperCase()+'</td><td>'+(o.vid?'<b style="color:#2dd4bf">'+o.vid+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+(o.tit?'<b style="color:#c98bff">'+o.tit+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+paisNome(o.p||'')+'</td><td><span style="color:'+(est?'#ff8f8f':'#5bd66b')+'">'+(est?'estorno':'aprovada')+'</span></td></tr>';}).join('')+'</tbody></table>';
   }
   t.innerHTML=crumb+body;
   Array.prototype.forEach.call(t.querySelectorAll('[data-canal]'),function(el){el.onclick=function(){vdNav={canal:el.getAttribute('data-canal'),tema:''};vdRenderNav();};});

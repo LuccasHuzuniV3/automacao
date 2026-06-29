@@ -94,7 +94,8 @@ module.exports = async function (req, res) {
     const versao = slug(parts[1]) || '-';
     const canalSo = slug(parts[2]) || 'direto';                            // canal sozinho (ex.: luccas)
     const tema = slug(parts[3]) || '-';                                    // nicho/tema (ex.: teste)
-    const canal = (parts.slice(2).join('_').replace(/[^a-zA-Z0-9._-]/g, '')) || 'direto'; // combinado (p/ o dashboard)
+    const titulo = slug(parts[4]) || '';                                   // titulo da campanha/link (4o pedaco, opcional) — so aparece nas Vendas
+    const canal = (parts.slice(2, 4).join('_').replace(/[^a-zA-Z0-9._-]/g, '')) || 'direto'; // combinado canal_tema (p/ o dashboard); o titulo NAO entra na chave agregada
     const pais = clean(country, 4).toUpperCase() || '??';
     const cents = Math.round((parseFloat(price) || 0) * 100);
     const date = new Date().toISOString().slice(0, 10);
@@ -106,7 +107,7 @@ module.exports = async function (req, res) {
       await redis(['HINCRBY', 'sales:' + date, baseK + '|ra|' + moeda, cents]);   // receita só de APROVADAS por moeda
     }
     // registro individual (p/ a lista de Vendas), no máximo 1000 por dia
-    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, vid: slug(vidRaw), p: pais, ts: Date.now() });
+    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, vid: slug(vidRaw), p: pais, ts: Date.now() });
     await redis(['LPUSH', 'salelog:' + date, rec]);
     await redis(['LTRIM', 'salelog:' + date, '0', '999']);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));
