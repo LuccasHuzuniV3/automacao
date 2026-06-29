@@ -380,7 +380,7 @@
       <div class="ankpis" id="vdKpis"></div>
       <div id="vdComm" style="margin-top:10px"></div>
       <div class="anpanel">
-        <div class="anpanel-h"><span class="anpanel-t">Receita no tempo</span><span class="anpanel-leg"><span class="vdcur-tog"><button type="button" class="vdcur-b on" data-cur="BRL" onclick="vdSetChartCur('BRL')">R$</button><button type="button" class="vdcur-b" data-cur="USD" onclick="vdSetChartCur('USD')">US$</button></span> &nbsp; <span id="vdChartRange"></span></span></div>
+        <div class="anpanel-h"><span class="anpanel-t" id="vdChartTitle">Receita no tempo</span><span class="anpanel-leg"><span class="vdcur-tog"><button type="button" class="vdcur-b on" data-cur="BRL" onclick="vdSetChartCur('BRL')">R$</button><button type="button" class="vdcur-b" data-cur="USD" onclick="vdSetChartCur('USD')">US$</button></span> &nbsp; <span id="vdChartRange"></span></span></div>
         <div id="vdChart"></div>
       </div>
       <div class="anpanel">
@@ -2225,7 +2225,7 @@ $('btnDeploy').onclick=function(){
   toast('Publicando na Vercel... pode levar ~1 min');
   apiSave().then(function(){return apiDeploy();}).then(function(r){
     if(r&&r.ok&&r.url){try{localStorage.setItem('LAST_DEPLOY',JSON.stringify({ebooks:[curEbook],url:r.url,at:Date.now()}));}catch(e){}toast('✓ Publicado na Vercel!');renderEbooksHome();showDeployResult(r.url,curEbook);}   /* tela de links mostra SÓ o ebook que foi publicado */
-    else if(r&&r.hint){alert(r.hint);toast(r.hint);}
+    else if(r&&r.hint){if(r&&r.log)console.log('[DEPLOY LOG VERCEL]\n'+r.log);var _tail=(r&&r.log)?String(r.log).split('\n').filter(function(s){return s.trim();}).slice(-8).join('\n'):'';alert(r.hint+(_tail?'\n\n— log da Vercel (fim) —\n'+_tail:''));toast(r.hint);}
     else{toast('Deploy falhou — veja a janela preta do app');if(r&&r.log)console.log(r.log);}
   });
 };
@@ -2325,7 +2325,7 @@ function showView(v){
   else if(_sb)_sb.classList.remove('efull');
   if(v==='ebooks')renderEbooksHome();
   if(v==='analytics')renderAnalytics();
-  if(v==='vendas'){vdNav={canal:'',tema:''};renderVendas();}   /* clicar em Vendas SEMPRE volta pra raiz (Todos), não fica preso na pasta */
+  if(v==='vendas'){vdNav={canal:'',tema:''};vdPerson=null;renderVendas();}   /* clicar em Vendas SEMPRE volta pra raiz (Todos), não fica preso na pasta */
 }
 var PAIS_NOMES={
   BR:'Brasil',US:'EUA',PT:'Portugal',ES:'Espanha',FR:'França',DE:'Alemanha',IT:'Itália',GB:'Reino Unido',IE:'Irlanda',NL:'Holanda',BE:'Bélgica',LU:'Luxemburgo',CH:'Suíça',AT:'Áustria',
@@ -2583,6 +2583,7 @@ function renderAnalytics(){
 function vdFillSelect(id,vals,lbl){var s=$(id);if(!s)return;var cur=s.value;s.innerHTML='<option value="">todos</option>'+(vals||[]).map(function(x){return '<option value="'+x+'">'+(lbl?lbl(x):x)+'</option>';}).join('');if(cur)s.value=cur;}
 function vdEmpty(msg){var b=$('vdBanner');if(b){b.innerHTML='⚠️ '+msg;b.style.cssText='background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4);color:#f5d77a;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}var t=$('vdTable');if(t)t.innerHTML='';var k=$('vdKpis');if(k)k.innerHTML='';}
 var vdGroups={}, vdNav={canal:'',tema:''}, vdAllList=[], vdAllSerie=[], vdAllRanks={};
+var vdPerson=null;   /* #3: filtro do gráfico por pessoa (clica no card junin/theuzim/afiliado) -> {kind,name} ou null */
 /* formata na MOEDA real da venda (BRL=R$, USD=US$, EUR=€, CLP, etc.) */
 function fmtMoney(v,cur){cur=String(cur||'BRL').toUpperCase();if(cur.length!==3)cur='BRL';try{return (v||0).toLocaleString('pt-BR',{style:'currency',currency:cur});}catch(e){return cur+' '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}}
 function vdMoney(cents,cur){return fmtMoney((cents||0)/100,cur);}
@@ -2602,23 +2603,47 @@ function vdCommLoad(){try{return JSON.parse(localStorage.getItem('VD_COMM')||'{}
 var VD_COMM=vdCommLoad();
 function vdCommSave(){try{localStorage.setItem('VD_COMM',JSON.stringify(VD_COMM));}catch(e){}}
 function vdCommOf(canal){var v=parseFloat(VD_COMM[canal]);return (isFinite(v)&&v>=0&&v<=100)?v:10;}   // % do afiliado, padrão 10
+function vdCommOffLoad(){try{return JSON.parse(localStorage.getItem('VD_COMMOFF')||'{}')||{};}catch(e){return {};}}
+var VD_COMMOFF=vdCommOffLoad();
+function vdCommOffSave(){try{localStorage.setItem('VD_COMMOFF',JSON.stringify(VD_COMMOFF));}catch(e){}}
+function vdCommOff(canal){return !!VD_COMMOFF[canal];}   // true = rede NAO ganha comissao (afiliado 0%, 100% divide entre os socios)
 function vdSetComm(){
   var box=$('vdComm'); if(!box) return;
   var afi={}, soc={}, label='Afiliados', line='';
   function addRec(dst,r,f){Object.keys(r||{}).forEach(function(c){dst[c]=(dst[c]||0)+(r[c]||0)*f;});}
   if(vdNav.canal){
-    var pc=vdNav.canal, cp=vdCommOf(pc), comm=cp/100;
+    var pc=vdNav.canal, off=vdCommOff(pc), cp=off?0:vdCommOf(pc), comm=cp/100;
     var rec=vdNav.tema?((((vdGroups[pc]||{}).temas||{})[vdNav.tema]||{}).rec):((vdGroups[pc]||{}).rec); rec=rec||{};
     addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2); label=pc;
-    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px">Comissão do <b style="color:#2dd4bf">'+pc+'</b>: <input id="vdCommInp" type="number" min="0" max="100" step="1" value="'+cp+'" style="width:58px;background:#000;border:1px solid var(--line);color:#f2eee4;border-radius:6px;padding:3px 6px;font-size:12px"> % &nbsp;<small>(o resto '+(100-cp)+'% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+')</small></div>';
+    var chk='<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--txt)"><input type="checkbox" id="vdCommChk"'+(off?'':' checked')+' style="width:14px;height:14px"> esta rede ganha comissão</label>';
+    var pctUi=off?('<small style="color:#f5c518">sem comissão → 100% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+'</small>'):('Comissão do <b style="color:#2dd4bf">'+pc+'</b>: <input id="vdCommInp" type="number" min="0" max="100" step="1" value="'+cp+'" style="width:58px;background:#000;border:1px solid var(--line);color:#f2eee4;border-radius:6px;padding:3px 6px;font-size:12px"> % &nbsp;<small>(o resto '+(100-cp)+'% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+')</small>');
+    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">'+chk+'<span>'+pctUi+'</span></div>';
   } else {
-    Object.keys(vdGroups).forEach(function(c){var comm=vdCommOf(c)/100, rec=vdGroups[c].rec||{}; addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2);});
+    Object.keys(vdGroups).forEach(function(c){var comm=(vdCommOff(c)?0:vdCommOf(c))/100, rec=vdGroups[c].rec||{}; addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2);});
     line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Comissão por canal (padrão 10%) — entre numa pasta de canal pra ajustar a %.</div>';
   }
   function money(m){var rc=clampRec(fxConsolidate(m)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100,p=[];if(b)p.push(fmtMoney(b,'BRL'));if(u)p.push(fmtMoney(u,'USD'));return p.join(' · ')||fmtMoney(0,'BRL');}
-  function card(nm,ic,col,val){return '<div class="ankpi"><div class="ankpi-ic" style="background:'+col+'26;color:'+col+'">'+ic+'</div><div><div class="ankpi-k">'+nm+'</div><div class="ankpi-v" style="font-size:16px">'+money(val)+'</div></div></div>';}
-  box.innerHTML=line+'<div class="ankpis">'+card(VD_SOCIOS[0],'👤','#b06bff',soc)+card(VD_SOCIOS[1],'👤','#9b5cff',soc)+card(label,'🎯','#2dd4bf',afi)+'</div>';
+  function card(nm,ic,col,val,kind){var act=(vdPerson&&vdPerson.kind===kind&&vdPerson.name===nm);return '<div class="ankpi" data-kind="'+kind+'" data-person="'+nm+'" style="cursor:pointer'+(act?';outline:2px solid '+col+';outline-offset:-1px;background:'+col+'14':'')+'" title="Clique pra filtrar o gráfico pelos ganhos de '+nm+'"><div class="ankpi-ic" style="background:'+col+'26;color:'+col+'">'+ic+'</div><div><div class="ankpi-k">'+nm+(act?' ✕':' ›')+'</div><div class="ankpi-v" style="font-size:16px">'+money(val)+'</div></div></div>';}
+  box.innerHTML=line+'<div class="ankpis">'+card(VD_SOCIOS[0],'👤','#b06bff',soc,'socio')+card(VD_SOCIOS[1],'👤','#9b5cff',soc,'socio')+card(label,'🎯','#2dd4bf',afi,'afiliado')+'</div>';
   var inp=$('vdCommInp'); if(inp)inp.onchange=function(){var v=Math.max(0,Math.min(100,parseFloat(this.value)||0));VD_COMM[vdNav.canal]=v;vdCommSave();vdSetComm();};
+  var chk=$('vdCommChk'); if(chk)chk.onchange=function(){if(this.checked){delete VD_COMMOFF[vdNav.canal];}else{VD_COMMOFF[vdNav.canal]=true;}vdCommOffSave();vdSetComm();};
+  Array.prototype.forEach.call(box.querySelectorAll('[data-kind]'),function(el){el.onclick=function(){var k=el.getAttribute('data-kind'),nm=el.getAttribute('data-person');if(vdPerson&&vdPerson.kind===k&&vdPerson.name===nm){vdPerson=null;}else{vdPerson={kind:k,name:nm};}vdRenderNav();};});
+}
+/* #3: série do gráfico filtrada por pessoa — só a RECEITA vira o quinhão da pessoa (junin/theuzim = sócio; afiliado = comissão).
+   A CONTAGEM de vendas fica IGUAL à do gráfico sem filtro: a MESMA venda rende pro junin E pro theuzim E pro afiliado ao mesmo
+   tempo, então a contagem NÃO particiona (não dá pra somar). Quem soma é a receita: junin + theuzim + afiliado = total. */
+function vdPersonSerie(list,kind,baseSerie){
+  var isAfi=(kind==='afiliado'), byDay={};
+  (list||[]).forEach(function(o){
+    if(o.st==='estorno')return;
+    var canal=o.c||'direto', off=vdCommOff(canal), comm=(off?0:vdCommOf(canal))/100, frac=isAfi?comm:(1-comm)/2;
+    var day=''; try{day=(new Date(o.ts)).toISOString().slice(0,10);}catch(e){}
+    if(!day)return;
+    if(!byDay[day])byDay[day]={};
+    var cu=o.cur||'BRL';
+    byDay[day][cu]=(byDay[day][cu]||0)+(o.v||0)*frac/100;   // ganho da pessoa por moeda (em unidades)
+  });
+  return (baseSerie||vdAllSerie||[]).map(function(s){return {d:s.d, vd:s.vd, vdc:s.vdc, r:byDay[s.d]||{}};});   // mantém vd/vdc (contagem) do gráfico sem filtro; troca só a receita
 }
 var vdChartCur='BRL', vdLastSerie=null;   /* moeda do gráfico do Vendas (botões R$/US$) */
 function vdSetChartCur(c){vdChartCur=(c==='USD')?'USD':'BRL';var bs=document.querySelectorAll('.vdcur-b');[].forEach.call(bs,function(b){b.classList.toggle('on',b.getAttribute('data-cur')===vdChartCur);});if(vdLastSerie)vdChart(vdLastSerie);}
@@ -2728,6 +2753,7 @@ function vdComputeView(list){
   function rank(keyFn){var m={};list.forEach(function(o){if(o.st==='estorno')return;var k=keyFn(o)||'-';if(!m[k])m[k]={k:k,vd:0,r:{}};m[k].vd++;var cu=o.cur||'BRL';m[k].r[cu]=(m[k].r[cu]||0)+((o.v||0)/100);});return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return (b.vd||0)-(a.vd||0);});}
   return {serie:serie, ranks:{pais:rank(function(o){return o.p;}), src:rank(function(o){return o.vid;}), ebook:rank(function(o){return o.e;})}};
 }
+function vdFunil(ws){var m={upsell:'⬆️ Upsell',downsell:'⬇️ Downsell',downsell2:'⏬ Downsell 2',upsell2:'⏫ Upsell 2',downsell3:'🔻 Downsell 3'};return '<span style="color:'+(m[ws]?'#9fb0d0':'var(--muted)')+'">'+(m[ws]||'Principal')+'</span>';}   /* etapa do funil (vendas antigas sem ws = Principal) */
 function vdRenderNav(){
   var t=$('vdTable');if(!t)return;
   var keys=Object.keys(vdGroups);
@@ -2740,8 +2766,13 @@ function vdRenderNav(){
   else{var _td=(vdGroups[vdNav.canal]&&vdGroups[vdNav.canal].temas[vdNav.tema])||{tot:0,rec:{}};curV=_td.tot;recMerge(curR,_td.rec);}
   vdSetKpis(curV,curR);
   /* GRÁFICO + RANKINGS refletem a PASTA atual: raiz = agregado do servidor; dentro da pasta = recalculado da lista filtrada */
-  if(!vdNav.canal){ vdChart(vdAllSerie); vdRanks(vdAllRanks); }
-  else { var _fl=vdAllList.filter(function(o){ return (o.c||'direto')===vdNav.canal && (!vdNav.tema || (o.t||'-')===vdNav.tema); }); var _v=vdComputeView(_fl); vdChart(_v.serie); vdRanks(_v.ranks); }
+  var _fl=vdNav.canal?vdAllList.filter(function(o){ return (o.c||'direto')===vdNav.canal && (!vdNav.tema || (o.t||'-')===vdNav.tema); }):vdAllList;
+  var _cv=vdNav.canal?vdComputeView(_fl):null;
+  var _baseSerie=vdNav.canal?_cv.serie:vdAllSerie;                            // o que o gráfico SEM filtro mostraria (mantém a contagem de vendas)
+  vdRanks(vdNav.canal?_cv.ranks:vdAllRanks);                                  // rankings seguem a pasta (não a pessoa)
+  if(vdPerson){ vdChart(vdPersonSerie(_fl,vdPerson.kind,_baseSerie)); }       // filtra só a RECEITA pro quinhão da pessoa; contagem fica igual ao sem filtro
+  else { vdChart(_baseSerie); }
+  var _ttl=$('vdChartTitle'); if(_ttl)_ttl.innerHTML=vdPerson?('Receita no tempo — '+(vdPerson.kind==='afiliado'?'🎯':'👤')+' '+vdPerson.name+' <span style="color:#f5c518;font-weight:600">· filtrado (clique no card pra limpar)</span>'):'Receita no tempo';
   vdSetComm();
   var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-nav="home">📂 Todos</span>';
   if(vdNav.canal)crumb+='<span class="vdcrumb-s">›</span><span class="'+(vdNav.tema?'vdcrumb-a':'vdcrumb-cur')+'" data-nav="canal">👤 '+vdNav.canal+'</span>';
@@ -2755,13 +2786,13 @@ function vdRenderNav(){
     body=Object.keys(cd.temas).sort().map(function(tm){var td=cd.temas[tm],t=nn(td.tot);return '<div class="vdfolder" data-tema="'+tm+'"><span class="vdfi">📁</span><span class="vdfn">'+tm+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(td.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
   } else {
     var td=(vdGroups[vdNav.canal]&&vdGroups[vdNav.canal].temas[vdNav.tema])||{sales:[]};
-    body='<table class="vdtbl"><thead><tr><th>Data</th><th>Valor</th><th>Ebook · versão</th><th>Src</th><th>Título</th><th>País</th><th>Status</th></tr></thead><tbody>'+
-      td.sales.map(function(o){var est=o.st==='estorno';return '<tr'+(est?' style="opacity:.5"':'')+'><td>'+vdDt(o.ts)+'</td><td>'+vdRowMoney(o.v||0,o.cur)+'</td><td>'+(o.e||'-')+' · '+String(o.vs||'-').toUpperCase()+'</td><td>'+(o.vid?'<b style="color:#2dd4bf">'+o.vid+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+(o.tit?'<b style="color:#c98bff">'+o.tit+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+paisNome(o.p||'')+'</td><td><span style="color:'+(est?'#ff8f8f':'#5bd66b')+'">'+(est?'estorno':'aprovada')+'</span></td></tr>';}).join('')+'</tbody></table>';
+    body='<table class="vdtbl"><thead><tr><th>Data</th><th>Valor</th><th>Ebook · versão</th><th>Funil</th><th>Src</th><th>Título</th><th>País</th><th>Status</th></tr></thead><tbody>'+
+      td.sales.map(function(o){var est=o.st==='estorno';return '<tr'+(est?' style="opacity:.5"':'')+'><td>'+vdDt(o.ts)+'</td><td>'+vdRowMoney(o.v||0,o.cur)+'</td><td>'+(o.e||'-')+' · '+String(o.vs||'-').toUpperCase()+'</td><td>'+vdFunil(o.ws)+'</td><td>'+(o.vid?'<b style="color:#2dd4bf">'+o.vid+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+(o.tit?'<b style="color:#c98bff">'+o.tit+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+paisNome(o.p||'')+'</td><td><span style="color:'+(est?'#ff8f8f':'#5bd66b')+'">'+(est?'estorno':'aprovada')+'</span></td></tr>';}).join('')+'</tbody></table>';
   }
   t.innerHTML=crumb+body;
-  Array.prototype.forEach.call(t.querySelectorAll('[data-canal]'),function(el){el.onclick=function(){vdNav={canal:el.getAttribute('data-canal'),tema:''};vdRenderNav();};});
-  Array.prototype.forEach.call(t.querySelectorAll('[data-tema]'),function(el){el.onclick=function(){vdNav.tema=el.getAttribute('data-tema');vdRenderNav();};});
-  Array.prototype.forEach.call(t.querySelectorAll('[data-nav]'),function(el){el.onclick=function(){var n=el.getAttribute('data-nav');if(n==='home')vdNav={canal:'',tema:''};else if(n==='canal')vdNav.tema='';vdRenderNav();};});
+  Array.prototype.forEach.call(t.querySelectorAll('[data-canal]'),function(el){el.onclick=function(){vdPerson=null;vdNav={canal:el.getAttribute('data-canal'),tema:''};vdRenderNav();};});
+  Array.prototype.forEach.call(t.querySelectorAll('[data-tema]'),function(el){el.onclick=function(){vdPerson=null;vdNav.tema=el.getAttribute('data-tema');vdRenderNav();};});
+  Array.prototype.forEach.call(t.querySelectorAll('[data-nav]'),function(el){el.onclick=function(){vdPerson=null;var n=el.getAttribute('data-nav');if(n==='home')vdNav={canal:'',tema:''};else if(n==='canal')vdNav.tema='';vdRenderNav();};});
 }
 function renderVendas(){
   var ebk=$('vdEbook')?$('vdEbook').value:'',cnl=$('vdCanal')?$('vdCanal').value:'',tma=$('vdTema')?$('vdTema').value:'',pa=$('vdPais')?$('vdPais').value:'',per=$('vdPeriodo')?$('vdPeriodo').value:'30';

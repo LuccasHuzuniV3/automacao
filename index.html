@@ -713,9 +713,14 @@
   if(t.footerRedes||t.footerCopy||soc.length){set('footerRedes',t.footerRedes);document.getElementById('social').innerHTML=soc.join('');set('footerCopy',t.footerCopy);show('footer',true);
     if(t.contato||redes.whatsapp){set('contatoTxt',t.contato||'Contato');document.getElementById('chat').href=redes.whatsapp||'#';if(img.atendente)document.getElementById('atend').innerHTML='<img src="'+esc(img.atendente)+'"'+' data-img="img.atendente"'+styAttr('img.atendente','')+' alt="">';show('contact',true);}}
 
+  /* FUNIL: etapa = 1o segmento do caminho (/upsell, /downsell2...). So' workspaces conhecidos contam; o resto = principal */
+  var _seg=(location.pathname.toLowerCase().split('/').filter(function(x){return x;})[0]||'');
+  var wsStage=({upsell:1,downsell:1,downsell2:1,upsell2:1,downsell3:1}[_seg])?_seg:'principal';
   var base=cfg.hotmart||'#',finalSrc=ebook+'_'+pais+(p.src?'_'+p.src:'_direto'),url=base;   /* ebook_versao_canal_tema -> o webhook atribui a venda certinho */
   try{var u=new URL(/^https?:/i.test(base)?base:'https://'+base);u.searchParams.set('src',finalSrc);
-    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){var x=p.q.get(k);if(x)u.searchParams.set(k,x);});u.searchParams.set('sck',finalSrc+(p.vid?'~'+p.vid:''));url=u.toString();}catch(e){}   /* a Hotmart SÓ devolve o 'sck' de forma confiável (sem 'off' o 'src' se perde) -> manda a ATRIBUIÇÃO no sck tb, com o vídeo depois do ~. O 'src' continua indo (funciona quando tem 'off'). */
+    ['utm_source','utm_medium','utm_campaign','utm_content','utm_term'].forEach(function(k){var x=p.q.get(k);if(x)u.searchParams.set(k,x);});
+    var _sck=finalSrc+(p.vid?'~'+p.vid:'');if(wsStage!=='principal')_sck+=(p.vid?'':'~')+'~'+wsStage;   /* sck = atribuicao~video[~funil]; PRINCIPAL fica IGUAL a hoje (sem ~funil) -> nao mexe no rastreamento que funciona */
+    u.searchParams.set('sck',_sck);url=u.toString();}catch(e){}   /* a Hotmart SÓ devolve o 'sck' de forma confiável (sem 'off' o 'src' se perde) -> manda a ATRIBUIÇÃO no sck tb, com o vídeo depois do ~. O 'src' continua indo (funciona quando tem 'off'). */
   Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.href=url;
     a.addEventListener('click',function(){try{if(window.__track)window.__track('click',window.__trackParams);}catch(e){}});
   });

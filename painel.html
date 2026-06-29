@@ -516,6 +516,7 @@ function vdComputeView(list){
   function rank(keyFn){var m={};list.forEach(function(o){if(o.st==='estorno')return;var k=keyFn(o)||'-';if(!m[k])m[k]={k:k,vd:0,r:{}};m[k].vd++;var cu=o.cur||'BRL';m[k].r[cu]=(m[k].r[cu]||0)+((o.v||0)/100);});return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return (b.vd||0)-(a.vd||0);});}
   return {serie:serie, ranks:{pais:rank(function(o){return o.p;}), src:rank(function(o){return o.vid;}), ebook:rank(function(o){return o.e;})}};
 }
+function vdFunil(ws){var m={upsell:'⬆️ Upsell',downsell:'⬇️ Downsell',downsell2:'⏬ Downsell 2',upsell2:'⏫ Upsell 2',downsell3:'🔻 Downsell 3'};return '<span style="color:'+(m[ws]?'#9fb0d0':'var(--muted)')+'">'+(m[ws]||'Principal')+'</span>';}   /* etapa do funil (vendas antigas sem ws = Principal) */
 function vdRenderNav(){
   var t=$('vdTable');if(!t)return;
   var keys=Object.keys(vdGroups);
@@ -541,8 +542,8 @@ function vdRenderNav(){
     body=Object.keys(cd.temas).sort().map(function(tm){var td=cd.temas[tm],t=nn(td.tot);return '<div class="vdfolder" data-tema="'+tm+'"><span class="vdfi">📁</span><span class="vdfn">'+tm+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(td.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
   } else {
     var td=(vdGroups[vdNav.canal]&&vdGroups[vdNav.canal].temas[vdNav.tema])||{sales:[]};
-    body='<table class="vdtbl"><thead><tr><th>Data</th><th>Valor</th><th>Ebook · versão</th><th>Src</th><th>Título</th><th>País</th><th>Status</th></tr></thead><tbody>'+
-      td.sales.map(function(o){var est=o.st==='estorno';return '<tr'+(est?' style="opacity:.5"':'')+'><td>'+vdDt(o.ts)+'</td><td>'+vdRowMoney(o.v||0,o.cur)+'</td><td>'+(o.e||'-')+' · '+String(o.vs||'-').toUpperCase()+'</td><td>'+(o.vid?'<b style="color:#2dd4bf">'+o.vid+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+(o.tit?'<b style="color:#c98bff">'+o.tit+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+paisNome(o.p||'')+'</td><td><span style="color:'+(est?'#ff8f8f':'#5bd66b')+'">'+(est?'estorno':'aprovada')+'</span></td></tr>';}).join('')+'</tbody></table>';
+    body='<table class="vdtbl"><thead><tr><th>Data</th><th>Valor</th><th>Ebook · versão</th><th>Funil</th><th>Src</th><th>Título</th><th>País</th><th>Status</th></tr></thead><tbody>'+
+      td.sales.map(function(o){var est=o.st==='estorno';return '<tr'+(est?' style="opacity:.5"':'')+'><td>'+vdDt(o.ts)+'</td><td>'+vdRowMoney(o.v||0,o.cur)+'</td><td>'+(o.e||'-')+' · '+String(o.vs||'-').toUpperCase()+'</td><td>'+vdFunil(o.ws)+'</td><td>'+(o.vid?'<b style="color:#2dd4bf">'+o.vid+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+(o.tit?'<b style="color:#c98bff">'+o.tit+'</b>':'<span style="color:var(--muted)">—</span>')+'</td><td>'+paisNome(o.p||'')+'</td><td><span style="color:'+(est?'#ff8f8f':'#5bd66b')+'">'+(est?'estorno':'aprovada')+'</span></td></tr>';}).join('')+'</tbody></table>';
   }
   t.innerHTML=crumb+body;
   Array.prototype.forEach.call(t.querySelectorAll('[data-canal]'),function(el){el.onclick=function(){vdNav={canal:el.getAttribute('data-canal'),tema:''};vdRenderNav();};});

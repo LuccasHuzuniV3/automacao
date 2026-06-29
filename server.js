@@ -483,7 +483,7 @@ const server = http.createServer(async function (req, res) {
     }
 
     function buildThenDeploy() {
-      execFile('node', ['build-dist.js'].concat(ebooks), { cwd: ROOT, shell: true, timeout: 120000, maxBuffer: 1024 * 1024 * 30 },
+      execFile('node', ['build-dist.js'].concat(ebooks), { cwd: ROOT, shell: true, timeout: 300000, maxBuffer: 1024 * 1024 * 30 },
         function (berr, bout, bstderr) {
           if (berr) {
             const blog = String(bout || '') + '\n' + String(bstderr || '');

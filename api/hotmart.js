@@ -59,7 +59,12 @@ module.exports = async function (req, res) {
     const sckRaw = ((purchase.origin && purchase.origin.sck) || tracking.source_sck || tracking.sck || data.sck || q.sck || '');
     // A Hotmart so devolve o 'sck' de forma confiavel (sem 'off' o 'src' nao volta). Por isso a landing manda a ATRIBUICAO no sck: <ebook_pais_pessoa_rede>~<video>.
     const isAttr = function (s) { return /^[a-z0-9]+_[a-z]{2,3}_/i.test(String(s)); };
-    const _sk = String(sckRaw).split('~'); const sckAttr = _sk[0] || '', sckVid = (_sk.length > 1 ? _sk.slice(1).join('~') : '');
+    const KNOWN_WS = { upsell: 1, downsell: 1, downsell2: 1, upsell2: 1, downsell3: 1, principal: 1 };   // etapas do funil
+    const _sk = String(sckRaw).split('~'); const sckAttr = _sk[0] || '';
+    let sckVid = '', sckStage = '';
+    // sck = atribuicao~video[~funil]. So' le o funil se o ULTIMO pedaco for um workspace CONHECIDO; senao mantem o parsing ANTIGO (nao quebra o rastreamento atual)
+    if (_sk.length >= 3 && KNOWN_WS[String(_sk[_sk.length - 1] || '').toLowerCase()]) { sckStage = _sk[_sk.length - 1]; sckVid = _sk.slice(1, _sk.length - 1).join('~'); }
+    else { sckVid = (_sk.length > 1 ? _sk.slice(1).join('~') : ''); }
     let track = '', vidRaw = '';
     if (isAttr(src)) { track = src; vidRaw = sckVid || (isAttr(sckRaw) ? '' : sckRaw); }            // COM 'off': a Hotmart devolveu o 'src'
     else if (isAttr(sckAttr)) { track = sckAttr; vidRaw = sckVid; }                                  // SEM 'off': a atribuicao veio no 'sck'
@@ -107,7 +112,7 @@ module.exports = async function (req, res) {
       await redis(['HINCRBY', 'sales:' + date, baseK + '|ra|' + moeda, cents]);   // receita só de APROVADAS por moeda
     }
     // registro individual (p/ a lista de Vendas), no máximo 1000 por dia
-    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, vid: slug(vidRaw), p: pais, ts: Date.now() });
+    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, ws: (slug(sckStage) || 'principal'), vid: slug(vidRaw), p: pais, ts: Date.now() });
     await redis(['LPUSH', 'salelog:' + date, rec]);
     await redis(['LTRIM', 'salelog:' + date, '0', '999']);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));
