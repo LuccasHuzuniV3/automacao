@@ -26,7 +26,7 @@ module.exports = async function (req, res) {
     if (VIEW && String(q.token || '') !== String(VIEW)) { res.statusCode = 401; res.end(JSON.stringify({ ok: false, auth: true, error: 'token' })); return; }
     const days = Math.min(Math.max(parseInt(q.days || '30', 10) || 30, 1), 365);
     const offset = Math.min(Math.max(parseInt(q.offset || '0', 10) || 0, 0), 3650); // p/ comparar c/ período anterior
-    const fEbook = q.ebook || '', fVersao = q.versao || '', fRede = q.rede || '';
+    const fEbook = q.ebook || '', fVersao = q.versao || '', fRede = q.rede || '', fCanal = q.canal || '', fTema = q.tema || '';
     const fTrack = (q.track === 'nao' || q.track === 'all') ? q.track : 'sim';   // 'sim'=só rastreadas (padrão) | 'nao'=só NÃO rastreadas | 'all'=todas
     const verPor = ['pais', 'canal', 'versao', 'dispositivo'].indexOf(q.verPor) >= 0 ? q.verPor : 'pais';
 
@@ -45,9 +45,11 @@ module.exports = async function (req, res) {
     // lê os hashes dos dias em paralelo
     const results = await Promise.all(dates.map(dt => redis(['HGETALL', 'stats:' + dt]).catch(() => ({ result: [] }))));
 
-    let totView = 0, totClick = 0; const serie = [];
+    let totView = 0, totClick = 0, totRead = 0; const serie = [];
     const aggs = { pais: {}, canal: {}, versao: {}, dispositivo: {} };
     function bump(map, key, type, cnt) { if (!map[key]) map[key] = { ac: 0, cl: 0 }; if (type === 'view') map[key].ac += cnt; else if (type === 'click') map[key].cl += cnt; }
+    const tree = {};   // arvore canal -> { ac, cl, temas: { tema: { ac, cl } } } p/ a navegacao em pastas; SEMPRE acumula tudo (ignora o filtro de canal/tema, p/ a nav nao sumir)
+    function bumpTree(canal, tema, type, cnt) { const k = (type === 'view') ? 'ac' : (type === 'click') ? 'cl' : ''; if (!k) return; if (!tree[canal]) tree[canal] = { ac: 0, cl: 0, temas: {} }; if (!tree[canal].temas[tema]) tree[canal].temas[tema] = { ac: 0, cl: 0 }; tree[canal][k] += cnt; tree[canal].temas[tema][k] += cnt; }
     results.forEach((day, idx) => {                        // results[idx] <-> dates[idx] (mais novo primeiro)
       let dac = 0, dcl = 0;
       const flat = (day && day.result) || [];
@@ -60,7 +62,11 @@ module.exports = async function (req, res) {
         if (fEbook && ebook !== fEbook) continue;
         if (fVersao && versao !== fVersao) continue;
         if (fRede && rede !== fRede) continue;
-        if (type === 'view') { totView += cnt; dac += cnt; } else if (type === 'click') { totClick += cnt; dcl += cnt; }
+        const _rp = String(rede).split('_'), cCanal = _rp[0] || 'direto', cTema = _rp[1] || '-';   // rede = canal_tema(_titulo)
+        bumpTree(cCanal, cTema, type, cnt);                       // arvore (navegacao): SEMPRE acumula
+        if (fCanal && cCanal !== fCanal) continue;                // filtro por pasta (canal)
+        if (fTema && cTema !== fTema) continue;                   // filtro por pasta (tema)
+        if (type === 'view') { totView += cnt; dac += cnt; } else if (type === 'click') { totClick += cnt; dcl += cnt; } else if (type === 'read') { totRead += cnt; }   // 'read' = retenção (não entra no gráfico/breakdowns)
         bump(aggs.pais, pais, type, cnt);
         bump(aggs.canal, rede, type, cnt);
         bump(aggs.versao, versao, type, cnt);
@@ -87,6 +93,9 @@ module.exports = async function (req, res) {
         if (fEbook && ebook !== fEbook) continue;
         if (fVersao && versao !== fVersao) continue;
         if (fRede && canal !== fRede) continue;
+        const _cp = String(canal).split('_');
+        if (fCanal && (_cp[0] || 'direto') !== fCanal) continue;   // filtro por pasta (canal) nas vendas
+        if (fTema && (_cp[1] || '-') !== fTema) continue;          // filtro por pasta (tema) nas vendas
         if (type === 'na') { totVendas += val; vAgg.pais[pais] = (vAgg.pais[pais] || 0) + val; vAgg.canal[canal] = (vAgg.canal[canal] || 0) + val; vAgg.versao[versao] = (vAgg.versao[versao] || 0) + val; } // só APROVADAS
         else if (type === 'ra') { const cur = (p[5] || 'BRL'); totReceitaCents += val; receitasCents[cur] = (receitasCents[cur] || 0) + val; } // receita só de APROVADAS
       }
@@ -96,6 +105,6 @@ module.exports = async function (req, res) {
     function toRows(map, vmap) { return Object.keys(map).map(k => ({ p: k, ac: map[k].ac, cl: map[k].cl, vd: (vmap && vmap[k]) || 0 })).sort((a, b) => b.ac - a.ac).slice(0, 8); }
     const breakdowns = { pais: toRows(aggs.pais, vAgg.pais), canal: toRows(aggs.canal, vAgg.canal), versao: toRows(aggs.versao, vAgg.versao), dispositivo: toRows(aggs.dispositivo, null) };
     res.statusCode = 200;
-    res.end(JSON.stringify({ ok: true, acessos: totView, cliques: totClick, vendas: totVendas, receita: totReceitaCents / 100, receitas: receitas, serie: serie, breakdowns: breakdowns, days: dates.length }));
+    res.end(JSON.stringify({ ok: true, acessos: totView, cliques: totClick, retencao: totRead, vendas: totVendas, receita: totReceitaCents / 100, receitas: receitas, serie: serie, breakdowns: breakdowns, tree: tree, days: dates.length }));
   } catch (e) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: String(e).slice(0, 200) })); }
 };

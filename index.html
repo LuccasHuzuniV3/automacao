@@ -500,6 +500,8 @@
   var cfg=paises[pais],t=cfg.t||{},img=cfg.img||{},redes=cfg.redes||{},tema=EB[ebook].tema||{};
   window.__trackParams={ebook:ebook,versao:pais,rede:(p.src||'direto')};   /* ebook/versao RESOLVIDOS (nao o cru da URL) */
   try{if(window.__track)window.__track('view',window.__trackParams);}catch(e){}
+  /* RETENÇÃO (#3 nível 1): dispara 'read' UMA vez quando o visitante rola >= 50% da página (= "leitor"). Aditivo; o __track já é gateado (só na publicada). */
+  (function(){var fired=false;function chk(){if(fired)return;var h=document.documentElement,sc=h.scrollHeight||document.body.scrollHeight||0,vh=window.innerHeight||h.clientHeight||0,stp=window.pageYOffset||h.scrollTop||0;if(sc<=0)return;if((stp+vh)/sc>=0.5){fired=true;try{if(window.__track)window.__track('read',window.__trackParams);}catch(e){}try{window.removeEventListener('scroll',chk);}catch(e){}}}window.addEventListener('scroll',chk,{passive:true});setTimeout(chk,1200);})();
   var R=document.documentElement.style;
   ['bg1','bg2','accent','accent2','btn1','btn2','btnTxt','giftBg','giftTxt','hl1','hl2','priceNow','priceOld','divColor','divColor2','bcardScale','titleFont','szTitle','szHero','szBlocos','szBlocosW','szSeal','szAtend'].forEach(function(k){if(tema[k])R.setProperty('--'+k,tema[k]);});
   function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}

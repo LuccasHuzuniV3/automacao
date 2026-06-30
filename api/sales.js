@@ -20,7 +20,7 @@ module.exports = async function (req, res) {
     const q = parse(req.url, true).query || {};
     if (VIEW && String(q.token || '') !== String(VIEW)) { res.statusCode = 401; res.end(JSON.stringify({ ok: false, auth: true, error: 'token' })); return; }
     const days = Math.min(Math.max(parseInt(q.days || '30', 10) || 30, 1), 365);
-    const fE = q.ebook || '', fC = q.canal || '', fT = q.tema || '', fP = q.pais || '';
+    const fE = q.ebook || '', fC = q.canal || '', fT = q.tema || '', fP = q.pais || '', fW = q.ws || q.funil || '';
 
     // datas (UTC): intervalo DE/ATÉ (from/to = YYYY-MM-DD) tem prioridade; senão, janela de N dias.
     const reDt = /^\d{4}-\d{2}-\d{2}$/, dates = [];
@@ -44,6 +44,7 @@ module.exports = async function (req, res) {
         if (fC && o.c !== fC) return;
         if (fT && o.t !== fT) return;
         if (fP && o.p !== fP) return;
+        if (fW && (o.ws || 'principal') !== fW) return;   // filtro por etapa do funil (venda antiga sem ws = principal)
         list.push(o);
         const sg = o.st === 'estorno' ? -1 : 1, cur = (o.cur || 'BRL');
         dVd += sg; dR[cur] = (dR[cur] || 0) + sg * (o.v || 0);  // vendas + receita do DIA (respeita os mesmos filtros)
@@ -54,17 +55,17 @@ module.exports = async function (req, res) {
     serie.reverse();                                          // mais antigo -> mais novo (p/ o gráfico)
     list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 
-    let totV = 0, totRcents = 0; const canais = {}, temas = {}, ebooks = {}, paises = {}, receitasCents = {};
+    let totV = 0, totRcents = 0; const canais = {}, temas = {}, ebooks = {}, paises = {}, funis = {}, receitasCents = {};
     list.forEach(o => {
       const sg = o.st === 'estorno' ? -1 : 1, cur = (o.cur || 'BRL');
       totV += sg; totRcents += sg * (o.v || 0); receitasCents[cur] = (receitasCents[cur] || 0) + sg * (o.v || 0);
-      if (o.c) canais[o.c] = 1; if (o.t) temas[o.t] = 1; if (o.e) ebooks[o.e] = 1; if (o.p) paises[o.p] = 1;
+      if (o.c) canais[o.c] = 1; if (o.t) temas[o.t] = 1; if (o.e) ebooks[o.e] = 1; if (o.p) paises[o.p] = 1; funis[(o.ws || 'principal')] = 1;
     });
     const receitas = {}; Object.keys(receitasCents).forEach(c => { receitas[c] = receitasCents[c] / 100; });
     const ranks = rankSales(list);   // rankings (pais / src / ebook) sobre as vendas JÁ filtradas (respeita os filtros)
     res.statusCode = 200;
     res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, serie: serie, ranks: ranks, list: list.slice(0, 5000),
-      filtros: { ebooks: Object.keys(ebooks), canais: Object.keys(canais), temas: Object.keys(temas), paises: Object.keys(paises) } }));
+      filtros: { ebooks: Object.keys(ebooks), canais: Object.keys(canais), temas: Object.keys(temas), paises: Object.keys(paises), funis: Object.keys(funis) } }));
   } catch (e) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: String(e).slice(0, 150) })); }
 };
 

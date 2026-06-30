@@ -363,6 +363,7 @@
         <div id="anChart"></div>
       </div>
       <div class="angrid" id="anGrid"></div>
+      <div id="anFolders" style="margin:14px 0 4px"></div>
     </div>
   </div>
   <div id="view-vendas" class="view">
@@ -2324,7 +2325,7 @@ function showView(v){
   if(v==='editor'){var me=$('view-editor');if(me)me.classList.add('focus');if(_sb)_sb.classList.add('efull');var bf=$('btnFocus');if(bf){bf.classList.add('on');bf.textContent='✕ Mostrar painel de campos';}}   /* editor abre em TELA CHEIA por padrão (janela inteira) */
   else if(_sb)_sb.classList.remove('efull');
   if(v==='ebooks')renderEbooksHome();
-  if(v==='analytics')renderAnalytics();
+  if(v==='analytics'){anNav={canal:'',tema:''};renderAnalytics();}
   if(v==='vendas'){vdNav={canal:'',tema:''};vdPerson=null;renderVendas();}   /* clicar em Vendas SEMPRE volta pra raiz (Todos), não fica preso na pasta */
 }
 var PAIS_NOMES={
@@ -2477,16 +2478,17 @@ function anKpis(d,prev){
 /* Funil de vendas estilo Mercado Livre: barrões que vão DIMINUINDO (Visitas -> Intenção -> Vendas) + a % de conversão entre cada etapa */
 function anFunnel(d){
   var box=$('anFunnel');if(!box)return;
-  var ac=d.acessos||0, cl=d.cliques||0, vd=nn(d.vendas);
-  var c1=ac?(Math.round(cl/ac*1000)/10):0, c2=cl?(Math.round(vd/cl*1000)/10):0;
+  var ac=d.acessos||0, ret=nn(d.retencao||0), cl=d.cliques||0, vd=nn(d.vendas);
+  var cRet=ac?(Math.round(ret/ac*1000)/10):0, c1=ac?(Math.round(cl/ac*1000)/10):0, c2=cl?(Math.round(vd/cl*1000)/10):0;
   var recMap=clampRec(fxConsolidate(d.receitas)), recCur=Object.keys(recMap).sort();
   var recStr=recCur.length?recCur.map(function(c){return fmtMoney(recMap[c],c);}).join(' · '):fmtMoney(0,'BRL');
   var st=[
     {ic:'👁️',cor:'#4f8cff',bg:'rgba(79,140,255,.15)',bd:'rgba(79,140,255,.55)',k:'Visitas únicas',v:ac,sub:'topo do funil'},
+    {ic:'📖',cor:'#f59e0b',bg:'rgba(245,158,11,.15)',bd:'rgba(245,158,11,.55)',k:'Retenção de página',v:ret,sub:cRet.toLocaleString('pt-BR')+'% leram (rolaram 50%+)'},
     {ic:'🖱️',cor:'#a855f7',bg:'rgba(168,85,247,.15)',bd:'rgba(168,85,247,.55)',k:'Intenção de compra',v:cl,sub:'demonstraram interesse'},
     {ic:'🛒',cor:'#22c55e',bg:'rgba(34,197,94,.15)',bd:'rgba(34,197,94,.55)',k:'Vendas',v:vd,sub:recStr}
   ];
-  var conv=[null,c1,c2];
+  var conv=[null,cRet,c1,c2];
   var h='<div class="anfun3">';
   st.forEach(function(s,i){
     if(i>0)h+='<div class="anfun3-conn"><span>▸ '+conv[i].toLocaleString('pt-BR')+'%</span></div>';
@@ -2510,14 +2512,55 @@ function anBreak(titulo,icon,rows,fmtName,iconFn){
   }).join(''):'<div class="anbreak-empty">Sem dados ainda.</div>';
   return '<div class="anbreak"><div class="anbreak-h">'+icon+' '+titulo+'<small><i class="lg-ac">acessos</i> · <i class="lg-cl">cliq</i> · <i class="lg-vd">vendas</i></small></div>'+body+'</div>';
 }
+/* donut (rosca) de tráfego por dispositivo — substitui a lista "Por dispositivo" */
+function anDonut(rows){
+  rows=(rows||[]).filter(function(r){return (r.ac||0)>0;}).sort(function(a,b){return (b.ac||0)-(a.ac||0);});
+  var head='<div class="anbreak-h">📱 Tráfego por dispositivo<small>acessos</small></div>';
+  var tot=0;rows.forEach(function(r){tot+=r.ac||0;});
+  if(!tot)return '<div class="anbreak">'+head+'<div class="anbreak-empty">Sem dados ainda.</div></div>';
+  var COL={celular:'#2dd4bf',computador:'#f5c518',tablet:'#a855f7','?':'#6b7280'},IC={celular:'📱',computador:'💻',tablet:'📋','?':'📟'};
+  var R=52,C=2*Math.PI*R,off=0,segs='',leg='';
+  rows.forEach(function(r){
+    var ac=r.ac||0,f=ac/tot,len=f*C,col=COL[r.p]||'#6b7280',pct=Math.round(f*100);
+    segs+='<circle cx="70" cy="70" r="'+R+'" fill="none" stroke="'+col+'" stroke-width="20" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 70 70)"/>';
+    off+=len;
+    leg+='<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:6px 0"><span style="width:10px;height:10px;border-radius:3px;background:'+col+';flex:0 0 auto"></span><span style="flex:1;color:var(--txt)">'+(IC[r.p]||'📟')+' '+(DISP_NOMES[r.p]||r.p)+'</span><b style="color:var(--txt)">'+ac.toLocaleString('pt-BR')+'</b><span style="color:var(--muted);font-size:11px;width:36px;text-align:right">'+pct+'%</span></div>';
+  });
+  var svg='<svg viewBox="0 0 140 140" width="124" height="124" style="flex:0 0 auto">'+segs+'<text x="70" y="66" text-anchor="middle" style="fill:var(--txt);font-size:22px;font-weight:800">'+tot.toLocaleString('pt-BR')+'</text><text x="70" y="84" text-anchor="middle" style="fill:var(--muted);font-size:11px">acessos</text></svg>';
+  return '<div class="anbreak">'+head+'<div style="display:flex;gap:16px;align-items:center;padding:6px 2px">'+svg+'<div style="flex:1;min-width:0">'+leg+'</div></div></div>';
+}
 function anBreakdowns(b){
   b=b||{};var grid=$('anGrid');if(!grid)return;
   function devIc(c){c=String(c).toLowerCase();if(/cel|phone|mobile|android|iphone/.test(c))return '📱';if(/comp|desk|pc|windows|mac/.test(c))return '💻';if(/tab|ipad/.test(c))return '📋';return '📟';}
   grid.innerHTML=
     anBreak('Por país','🌍',b.pais,paisNome,flagOf)+
-    anBreak('Por dispositivo','📱',b.dispositivo,function(c){return DISP_NOMES[c]||c;},devIc)+
+    anDonut(b.dispositivo)+
     anBreak('Por canal / fonte','🔗',b.canal,null,null)+
     anBreak('Por versão','🌐',b.versao,function(c){return String(c).toUpperCase();},flagOf);
+}
+/* #2: navegação em pastas (canal -> tema) no Analytics, igual o Vendas. Clica -> filtra TUDO acima (re-busca no /api/stats). */
+var anNav={canal:'',tema:''};
+function anFolders(tree){
+  var box=$('anFolders'); if(!box) return;
+  tree=tree||{};
+  if(!Object.keys(tree).length && !anNav.canal){box.innerHTML='';return;}
+  function n(x){return (x||0).toLocaleString('pt-BR');}
+  var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-anav="home">📂 Todos</span>';
+  if(anNav.canal)crumb+='<span class="vdcrumb-s">›</span><span class="'+(anNav.tema?'vdcrumb-a':'vdcrumb-cur')+'" data-anav="canal">👤 '+anNav.canal+'</span>';
+  if(anNav.tema)crumb+='<span class="vdcrumb-s">›</span><span class="vdcrumb-cur">📁 '+anNav.tema+'</span>';
+  crumb+='</div>';
+  var body='';
+  if(!anNav.canal){
+    var ks=Object.keys(tree).sort(function(a,b){return (tree[b].ac||0)-(tree[a].ac||0);});
+    body=ks.length?ks.map(function(c){var cd=tree[c];return '<div class="vdfolder" data-acanal="'+c+'"><span class="vdfi">👤</span><span class="vdfn">'+c+'</span><span class="vdft">'+n(cd.ac)+' acessos · '+n(cd.cl)+' cliques</span><span class="vdfa">›</span></div>';}).join(''):'<div style="color:var(--muted);font-size:13px;padding:10px 0">Sem dados de canal no período.</div>';
+  } else {
+    var cd=tree[anNav.canal]||{temas:{}}; var tks=Object.keys(cd.temas||{}).sort(function(a,b){return (cd.temas[b].ac||0)-(cd.temas[a].ac||0);});
+    body=tks.length?tks.map(function(tm){var td=cd.temas[tm];return '<div class="vdfolder" data-atema="'+tm+'"><span class="vdfi">📁</span><span class="vdfn">'+tm+'</span><span class="vdft">'+n(td.ac)+' acessos · '+n(td.cl)+' cliques</span><span class="vdfa">›</span></div>';}).join(''):'<div style="color:var(--muted);font-size:13px;padding:10px 0">Sem temas neste canal.</div>';
+  }
+  box.innerHTML='<div class="anpanel" style="padding:14px 16px"><div class="anpanel-h"><span class="anpanel-t">📂 Navegar por canal / tema</span><span class="anpanel-leg">clique pra filtrar os números acima ↑</span></div>'+crumb+body+'</div>';
+  Array.prototype.forEach.call(box.querySelectorAll('[data-acanal]'),function(el){el.onclick=function(){anNav={canal:el.getAttribute('data-acanal'),tema:''};renderAnalytics();};});
+  Array.prototype.forEach.call(box.querySelectorAll('[data-atema]'),function(el){el.onclick=function(){anNav.tema=el.getAttribute('data-atema');renderAnalytics();};});
+  Array.prototype.forEach.call(box.querySelectorAll('[data-anav]'),function(el){el.onclick=function(){var nv=el.getAttribute('data-anav');if(nv==='home')anNav={canal:'',tema:''};else if(nv==='canal')anNav.tema='';renderAnalytics();};});
 }
 function anSample(){
   return {acessos:4640,cliques:612,vendas:41,receita:816.50,
@@ -2540,6 +2583,7 @@ function anPaint(d,prev,real){
   anFunnel(d);
   anChart(d.serie);
   anBreakdowns(d.breakdowns);
+  anFolders(d.tree);
 }
 function renderAnalytics(){
   var eb=$('anEbook');
@@ -2551,7 +2595,7 @@ function renderAnalytics(){
   var ver=vs?vs.value:'', rede=$('anRede')?$('anRede').value:'', per=$('anPeriodo')?$('anPeriodo').value:'30';
   var rw=$('anRangeWrap');if(rw)rw.style.display=(per==='custom')?'':'none';
   var trk=$('anTrack')?$('anTrack').value:'sim';
-  var qsBase='&ebook='+encodeURIComponent(ebk)+'&versao='+encodeURIComponent(ver)+'&rede='+encodeURIComponent(rede)+'&track='+encodeURIComponent(trk)+bTokQS();
+  var qsBase='&ebook='+encodeURIComponent(ebk)+'&versao='+encodeURIComponent(ver)+'&rede='+encodeURIComponent(rede)+'&canal='+encodeURIComponent(anNav.canal)+'&tema='+encodeURIComponent(anNav.tema)+'&track='+encodeURIComponent(trk)+bTokQS();
   var qs, qsPrev;
   if(per==='custom'){
     var fI=$('anFrom'), tI=$('anTo');
@@ -2623,7 +2667,8 @@ function vdSetComm(){
     line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Comissão por canal (padrão 10%) — entre numa pasta de canal pra ajustar a %.</div>';
   }
   function money(m){var rc=clampRec(fxConsolidate(m)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100,p=[];if(b)p.push(fmtMoney(b,'BRL'));if(u)p.push(fmtMoney(u,'USD'));return p.join(' · ')||fmtMoney(0,'BRL');}
-  function card(nm,ic,col,val,kind){var act=(vdPerson&&vdPerson.kind===kind&&vdPerson.name===nm);return '<div class="ankpi" data-kind="'+kind+'" data-person="'+nm+'" style="cursor:pointer'+(act?';outline:2px solid '+col+';outline-offset:-1px;background:'+col+'14':'')+'" title="Clique pra filtrar o gráfico pelos ganhos de '+nm+'"><div class="ankpi-ic" style="background:'+col+'26;color:'+col+'">'+ic+'</div><div><div class="ankpi-k">'+nm+(act?' ✕':' ›')+'</div><div class="ankpi-v" style="font-size:16px">'+money(val)+'</div></div></div>';}
+  function moneyBoxes(m){var rc=clampRec(fxConsolidate(m)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100;function bx(lbl,num,cur,col){var c=num>0?col:'var(--muted)';return '<span style="display:inline-flex;flex-direction:column;gap:1px;background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:8px;padding:4px 9px"><span style="font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">'+lbl+'</span><span style="font-size:13.5px;font-weight:800;color:'+c+';white-space:nowrap">'+fmtMoney(num,cur)+'</span></span>';}return '<div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">'+bx('Real',b,'BRL','#5bd66b')+bx('Dólar',u,'USD','#2dd4bf')+'</div>';}
+  function card(nm,ic,col,val,kind){var act=(vdPerson&&vdPerson.kind===kind&&vdPerson.name===nm);return '<div class="ankpi" data-kind="'+kind+'" data-person="'+nm+'" style="cursor:pointer'+(act?';outline:2px solid '+col+';outline-offset:-1px;background:'+col+'14':'')+'" title="Clique pra filtrar o gráfico pelos ganhos de '+nm+'"><div class="ankpi-ic" style="background:'+col+'26;color:'+col+'">'+ic+'</div><div style="min-width:0"><div class="ankpi-k">'+nm+(act?' ✕':' ›')+'</div>'+moneyBoxes(val)+'</div></div>';}
   box.innerHTML=line+'<div class="ankpis">'+card(VD_SOCIOS[0],'👤','#b06bff',soc,'socio')+card(VD_SOCIOS[1],'👤','#9b5cff',soc,'socio')+card(label,'🎯','#2dd4bf',afi,'afiliado')+'</div>';
   var inp=$('vdCommInp'); if(inp)inp.onchange=function(){var v=Math.max(0,Math.min(100,parseFloat(this.value)||0));VD_COMM[vdNav.canal]=v;vdCommSave();vdSetComm();};
   var chk=$('vdCommChk'); if(chk)chk.onchange=function(){if(this.checked){delete VD_COMMOFF[vdNav.canal];}else{VD_COMMOFF[vdNav.canal]=true;}vdCommOffSave();vdSetComm();};
@@ -2880,7 +2925,7 @@ Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.o
   if(WS!=='principal'){try{document.title=WS_DEF.icon+' '+WS_DEF.label+' — '+document.title;}catch(e){}}
 })();
 (function(){var n=$('ehNew');if(n)n.onclick=function(){showView('editor');addEbook();};})();
-(function(){var r=$('anRefresh');if(r)r.onclick=renderAnalytics;['anEbook','anVersao','anRede','anTrack','anPeriodo','anVerPor','anFrom','anTo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderAnalytics;});})();
+(function(){var r=$('anRefresh');if(r)r.onclick=renderAnalytics;['anEbook','anVersao','anRede','anTrack','anPeriodo','anVerPor','anFrom','anTo'].forEach(function(id){var e=$(id);if(e)e.onchange=function(){anNav={canal:'',tema:''};renderAnalytics();};});})();
 /* ===== dropdowns bonitos pros filtros (custom, sobre o <select> escondido — sem migrar nada) ===== */
 (function(){
   function enhance(id){
@@ -3000,7 +3045,7 @@ function mkDatePicker(o){
   btn.onclick=function(e){e.stopPropagation();if(pop.style.display==='none')open();else close();};
   syncLabel();
 }
-mkDatePicker({btn:'anDateBtn',pop:'anDatePop',lbl:'anDateLbl',per:'anPeriodo',from:'anFrom',to:'anTo',onApply:renderAnalytics});
+mkDatePicker({btn:'anDateBtn',pop:'anDatePop',lbl:'anDateLbl',per:'anPeriodo',from:'anFrom',to:'anTo',onApply:function(){anNav={canal:'',tema:''};renderAnalytics();}});
 mkDatePicker({btn:'vdDateBtn',pop:'vdDatePop',lbl:'vdDateLbl',per:'vdPeriodo',from:'vdFrom',to:'vdTo',onApply:renderVendas});
 (function(){var b=$('anReset');if(!b)return;b.onclick=function(){
   if(!confirm('Isso APAGA todos os dados de analytics (acessos, cliques, vendas). Use só pra limpar testes. Continuar?'))return;

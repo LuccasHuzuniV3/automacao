@@ -30,7 +30,7 @@ module.exports = async function (req, res) {
       res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 1 })); return;
     }
     const q = parse(req.url, true).query || {};
-    const type = (q.t === 'click') ? 'click' : 'view';
+    const type = (q.t === 'click') ? 'click' : (q.t === 'read') ? 'read' : 'view';   // 'read' = rolou 50%+ (retenção); resto = view
     const ebook = clean(q.ebook, 40) || '-';
     const versao = clean(q.versao, 12) || '-';
     const rede = clean(q.rede, 40) || 'direto';

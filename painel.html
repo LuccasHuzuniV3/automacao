@@ -169,6 +169,7 @@
           <div id="anChart"></div>
         </div>
         <div class="angrid" id="anGrid"></div>
+        <div id="anFolders" style="margin:14px 0 4px"></div>
       </div>
     </div>
     <div id="view-vendas" class="view">
@@ -179,6 +180,7 @@
           <label class="cfgrow" style="max-width:160px;margin:0"><span>Canal</span><select class="dom" id="vdCanal"><option value="">todos</option></select></label>
           <label class="cfgrow" style="max-width:150px;margin:0"><span>Nicho / tema</span><select class="dom" id="vdTema"><option value="">todos</option></select></label>
           <label class="cfgrow" style="max-width:120px;margin:0"><span>País</span><select class="dom" id="vdPais"><option value="">todos</option></select></label>
+          <label class="cfgrow" style="max-width:150px;margin:0"><span>Funil</span><select class="dom" id="vdFunil"><option value="">todos</option></select></label>
           <label class="cfgrow" style="max-width:150px;margin:0"><span>Período</span><select class="dom" id="vdPeriodo"><option value="7">7 dias</option><option value="30" selected>30 dias</option><option value="90">90 dias</option><option value="365">1 ano</option></select></label>
         </div>
         <div class="ankpis" id="vdKpis"></div>
@@ -339,16 +341,17 @@ function anKpis(d,prev){
 }
 function anFunnel(d){
   var box=$('anFunnel');if(!box)return;
-  var ac=d.acessos||0, cl=d.cliques||0, vd=nn(d.vendas);
-  var c1=ac?(Math.round(cl/ac*1000)/10):0, c2=cl?(Math.round(vd/cl*1000)/10):0;
+  var ac=d.acessos||0, ret=nn(d.retencao||0), cl=d.cliques||0, vd=nn(d.vendas);
+  var cRet=ac?(Math.round(ret/ac*1000)/10):0, c1=ac?(Math.round(cl/ac*1000)/10):0, c2=cl?(Math.round(vd/cl*1000)/10):0;
   var recMap=clampRec(fxConsolidate(d.receitas)), recCur=Object.keys(recMap).sort();
   var recStr=recCur.length?recCur.map(function(c){return fmtMoney(recMap[c],c);}).join(' · '):fmtMoney(0,'BRL');
   var st=[
     {ic:'👁️',cor:'#4f8cff',bg:'rgba(79,140,255,.15)',bd:'rgba(79,140,255,.55)',k:'Visitas únicas',v:ac,sub:'topo do funil'},
+    {ic:'📖',cor:'#f59e0b',bg:'rgba(245,158,11,.15)',bd:'rgba(245,158,11,.55)',k:'Retenção de página',v:ret,sub:cRet.toLocaleString('pt-BR')+'% leram (rolaram 50%+)'},
     {ic:'🖱️',cor:'#a855f7',bg:'rgba(168,85,247,.15)',bd:'rgba(168,85,247,.55)',k:'Intenção de compra',v:cl,sub:'demonstraram interesse'},
     {ic:'🛒',cor:'#22c55e',bg:'rgba(34,197,94,.15)',bd:'rgba(34,197,94,.55)',k:'Vendas',v:vd,sub:recStr}
   ];
-  var conv=[null,c1,c2];
+  var conv=[null,cRet,c1,c2];
   var h='<div class="anfun3">';
   st.forEach(function(s,i){
     if(i>0)h+='<div class="anfun3-conn"><span>▸ '+conv[i].toLocaleString('pt-BR')+'%</span></div>';
@@ -372,14 +375,55 @@ function anBreak(titulo,icon,rows,fmtName,iconFn){
   }).join(''):'<div class="anbreak-empty">Sem dados ainda.</div>';
   return '<div class="anbreak"><div class="anbreak-h">'+icon+' '+titulo+'<small><i class="lg-ac">acessos</i> · <i class="lg-cl">cliq</i> · <i class="lg-vd">vendas</i></small></div>'+body+'</div>';
 }
+/* donut (rosca) de tráfego por dispositivo — substitui a lista "Por dispositivo" */
+function anDonut(rows){
+  rows=(rows||[]).filter(function(r){return (r.ac||0)>0;}).sort(function(a,b){return (b.ac||0)-(a.ac||0);});
+  var head='<div class="anbreak-h">📱 Tráfego por dispositivo<small>acessos</small></div>';
+  var tot=0;rows.forEach(function(r){tot+=r.ac||0;});
+  if(!tot)return '<div class="anbreak">'+head+'<div class="anbreak-empty">Sem dados ainda.</div></div>';
+  var COL={celular:'#2dd4bf',computador:'#f5c518',tablet:'#a855f7','?':'#6b7280'},IC={celular:'📱',computador:'💻',tablet:'📋','?':'📟'};
+  var R=52,C=2*Math.PI*R,off=0,segs='',leg='';
+  rows.forEach(function(r){
+    var ac=r.ac||0,f=ac/tot,len=f*C,col=COL[r.p]||'#6b7280',pct=Math.round(f*100);
+    segs+='<circle cx="70" cy="70" r="'+R+'" fill="none" stroke="'+col+'" stroke-width="20" stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'" transform="rotate(-90 70 70)"/>';
+    off+=len;
+    leg+='<div style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin:6px 0"><span style="width:10px;height:10px;border-radius:3px;background:'+col+';flex:0 0 auto"></span><span style="flex:1;color:var(--txt)">'+(IC[r.p]||'📟')+' '+(DISP_NOMES[r.p]||r.p)+'</span><b style="color:var(--txt)">'+ac.toLocaleString('pt-BR')+'</b><span style="color:var(--muted);font-size:11px;width:36px;text-align:right">'+pct+'%</span></div>';
+  });
+  var svg='<svg viewBox="0 0 140 140" width="124" height="124" style="flex:0 0 auto">'+segs+'<text x="70" y="66" text-anchor="middle" style="fill:var(--txt);font-size:22px;font-weight:800">'+tot.toLocaleString('pt-BR')+'</text><text x="70" y="84" text-anchor="middle" style="fill:var(--muted);font-size:11px">acessos</text></svg>';
+  return '<div class="anbreak">'+head+'<div style="display:flex;gap:16px;align-items:center;padding:6px 2px">'+svg+'<div style="flex:1;min-width:0">'+leg+'</div></div></div>';
+}
 function anBreakdowns(b){
   b=b||{};var grid=$('anGrid');if(!grid)return;
   function devIc(c){c=String(c).toLowerCase();if(/cel|phone|mobile|android|iphone/.test(c))return '📱';if(/comp|desk|pc|windows|mac/.test(c))return '💻';if(/tab|ipad/.test(c))return '📋';return '📟';}
   grid.innerHTML=
     anBreak('Por país','🌍',b.pais,paisNome,flagOf)+
-    anBreak('Por dispositivo','📱',b.dispositivo,function(c){return DISP_NOMES[c]||c;},devIc)+
+    anDonut(b.dispositivo)+
     anBreak('Por canal / fonte','🔗',b.canal,null,null)+
     anBreak('Por versão','🌐',b.versao,function(c){return String(c).toUpperCase();},flagOf);
+}
+/* #2: navegação em pastas (canal -> tema) no Analytics, igual o Vendas. Clica -> filtra TUDO abaixo (re-busca no /api/stats). */
+var anNav={canal:'',tema:''};
+function anFolders(tree){
+  var box=$('anFolders'); if(!box) return;
+  tree=tree||{};
+  if(!Object.keys(tree).length && !anNav.canal){box.innerHTML='';return;}
+  function n(x){return (x||0).toLocaleString('pt-BR');}
+  var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-anav="home">📂 Todos</span>';
+  if(anNav.canal)crumb+='<span class="vdcrumb-s">›</span><span class="'+(anNav.tema?'vdcrumb-a':'vdcrumb-cur')+'" data-anav="canal">👤 '+anNav.canal+'</span>';
+  if(anNav.tema)crumb+='<span class="vdcrumb-s">›</span><span class="vdcrumb-cur">📁 '+anNav.tema+'</span>';
+  crumb+='</div>';
+  var body='';
+  if(!anNav.canal){
+    var ks=Object.keys(tree).sort(function(a,b){return (tree[b].ac||0)-(tree[a].ac||0);});
+    body=ks.length?ks.map(function(c){var cd=tree[c];return '<div class="vdfolder" data-acanal="'+c+'"><span class="vdfi">👤</span><span class="vdfn">'+c+'</span><span class="vdft">'+n(cd.ac)+' acessos · '+n(cd.cl)+' cliques</span><span class="vdfa">›</span></div>';}).join(''):'<div style="color:var(--muted);font-size:13px;padding:10px 0">Sem dados de canal no período.</div>';
+  } else {
+    var cd=tree[anNav.canal]||{temas:{}}; var tks=Object.keys(cd.temas||{}).sort(function(a,b){return (cd.temas[b].ac||0)-(cd.temas[a].ac||0);});
+    body=tks.length?tks.map(function(tm){var td=cd.temas[tm];return '<div class="vdfolder" data-atema="'+tm+'"><span class="vdfi">📁</span><span class="vdfn">'+tm+'</span><span class="vdft">'+n(td.ac)+' acessos · '+n(td.cl)+' cliques</span><span class="vdfa">›</span></div>';}).join(''):'<div style="color:var(--muted);font-size:13px;padding:10px 0">Sem temas neste canal.</div>';
+  }
+  box.innerHTML='<div class="anpanel" style="padding:14px 16px"><div class="anpanel-h"><span class="anpanel-t">📂 Navegar por canal / tema</span><span class="anpanel-leg">clique pra filtrar os números acima ↑</span></div>'+crumb+body+'</div>';
+  Array.prototype.forEach.call(box.querySelectorAll('[data-acanal]'),function(el){el.onclick=function(){anNav={canal:el.getAttribute('data-acanal'),tema:''};renderAnalytics();};});
+  Array.prototype.forEach.call(box.querySelectorAll('[data-atema]'),function(el){el.onclick=function(){anNav.tema=el.getAttribute('data-atema');renderAnalytics();};});
+  Array.prototype.forEach.call(box.querySelectorAll('[data-anav]'),function(el){el.onclick=function(){var nv=el.getAttribute('data-anav');if(nv==='home')anNav={canal:'',tema:''};else if(nv==='canal')anNav.tema='';renderAnalytics();};});
 }
 function anSample(){return {acessos:0,cliques:0,vendas:0,receita:0,receitas:{},serie:[],breakdowns:{pais:[],dispositivo:[],canal:[],versao:[]}};}
 function anPaint(d,prev,real){
@@ -393,10 +437,11 @@ function anPaint(d,prev,real){
   anFunnel(d);
   anChart(d.serie);
   anBreakdowns(d.breakdowns);
+  anFolders(d.tree);
 }
 function renderAnalytics(){
   var dias=$('anPeriodo')?$('anPeriodo').value:'30';
-  var qs='?days='+enc(dias)+'&ebook=&versao=&rede='+apiTokQS();
+  var qs='?days='+enc(dias)+'&ebook=&versao=&rede=&canal='+enc(anNav.canal)+'&tema='+enc(anNav.tema)+apiTokQS();
   var qsPrev=qs+'&offset='+enc(dias);
   fxLoad().then(function(){
     return Promise.all([
@@ -492,7 +537,7 @@ function vdRanks(ranks){
 }
 function vdPaint(d){
   var b=$('vdBanner');if(b){b.innerHTML='✅ <b>Vendas reais</b> (via webhook da Hotmart). <span style="opacity:.8">Totais: <b>R$</b> (Brasil) + <b>US$</b> (resto, convertido pela cotação do dia).</span>';b.style.cssText='background:rgba(45,212,191,.12);border:1px solid rgba(45,212,191,.4);color:#7defc9;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}
-  var f=d.filtros||{};vdFillSelect('vdCanal',f.canais);vdFillSelect('vdTema',f.temas);vdFillSelect('vdPais',f.paises,paisNome);
+  var f=d.filtros||{};vdFillSelect('vdCanal',f.canais);vdFillSelect('vdTema',f.temas);vdFillSelect('vdPais',f.paises,paisNome);vdFillSelect('vdFunil',f.funis,vdFunilNome);
   vdAllSerie=d.serie||[]; vdAllRanks=d.ranks||{};   // guarda o do servidor (a RAIZ usa o agregado preciso)
   var list=d.list||[]; vdAllList=list;              // lista individual -> gráfico+rankings filtram por pasta (no vdRenderNav)
   vdGroups={};
@@ -516,7 +561,8 @@ function vdComputeView(list){
   function rank(keyFn){var m={};list.forEach(function(o){if(o.st==='estorno')return;var k=keyFn(o)||'-';if(!m[k])m[k]={k:k,vd:0,r:{}};m[k].vd++;var cu=o.cur||'BRL';m[k].r[cu]=(m[k].r[cu]||0)+((o.v||0)/100);});return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return (b.vd||0)-(a.vd||0);});}
   return {serie:serie, ranks:{pais:rank(function(o){return o.p;}), src:rank(function(o){return o.vid;}), ebook:rank(function(o){return o.e;})}};
 }
-function vdFunil(ws){var m={upsell:'⬆️ Upsell',downsell:'⬇️ Downsell',downsell2:'⏬ Downsell 2',upsell2:'⏫ Upsell 2',downsell3:'🔻 Downsell 3'};return '<span style="color:'+(m[ws]?'#9fb0d0':'var(--muted)')+'">'+(m[ws]||'Principal')+'</span>';}   /* etapa do funil (vendas antigas sem ws = Principal) */
+function vdFunilNome(ws){return ({upsell:'⬆️ Upsell',downsell:'⬇️ Downsell',downsell2:'⏬ Downsell 2',upsell2:'⏫ Upsell 2',downsell3:'🔻 Downsell 3'})[ws]||'Principal';}
+function vdFunil(ws){var known=({upsell:1,downsell:1,downsell2:1,upsell2:1,downsell3:1})[ws];return '<span style="color:'+(known?'#9fb0d0':'var(--muted)')+'">'+vdFunilNome(ws)+'</span>';}   /* etapa do funil (vendas antigas sem ws = Principal) */
 function vdRenderNav(){
   var t=$('vdTable');if(!t)return;
   var keys=Object.keys(vdGroups);
@@ -551,8 +597,8 @@ function vdRenderNav(){
   Array.prototype.forEach.call(t.querySelectorAll('[data-nav]'),function(el){el.onclick=function(){var n=el.getAttribute('data-nav');if(n==='home')vdNav={canal:'',tema:''};else if(n==='canal')vdNav.tema='';vdRenderNav();};});
 }
 function renderVendas(){
-  var cnl=$('vdCanal')?$('vdCanal').value:'',tma=$('vdTema')?$('vdTema').value:'',pa=$('vdPais')?$('vdPais').value:'',dias=$('vdPeriodo')?$('vdPeriodo').value:'30';
-  var qs='?days='+enc(dias)+'&ebook=&canal='+enc(cnl)+'&tema='+enc(tma)+'&pais='+enc(pa)+apiTokQS();
+  var cnl=$('vdCanal')?$('vdCanal').value:'',tma=$('vdTema')?$('vdTema').value:'',pa=$('vdPais')?$('vdPais').value:'',fun=$('vdFunil')?$('vdFunil').value:'',dias=$('vdPeriodo')?$('vdPeriodo').value:'30';
+  var qs='?days='+enc(dias)+'&ebook=&canal='+enc(cnl)+'&tema='+enc(tma)+'&pais='+enc(pa)+'&ws='+enc(fun)+apiTokQS();
   fxLoad().then(function(){return fetch('/api/sales'+qs,{cache:'no-store'}).then(function(r){return r.json();});})
     .then(function(d){if(d&&d.ok)vdPaint(d);else vdEmpty('Sem conexão com o banco.');})
     .catch(function(){vdEmpty('Sem conexão com o banco.');});
@@ -562,12 +608,12 @@ function renderVendas(){
 function showView(v){
   ['analytics','vendas'].forEach(function(n){var el=$('view-'+n);if(el)el.classList.toggle('on',n===v);});
   Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.classList.toggle('on',b.getAttribute('data-view')===v);});
-  if(v==='analytics')renderAnalytics();
+  if(v==='analytics'){anNav={canal:'',tema:''};renderAnalytics();}
   if(v==='vendas')renderVendas();
 }
 Array.prototype.forEach.call(document.querySelectorAll('.railb'),function(b){b.onclick=function(){showView(b.getAttribute('data-view'));};});
-(function(){var r=$('anRefresh');if(r)r.onclick=renderAnalytics;var p=$('anPeriodo');if(p)p.onchange=renderAnalytics;})();
-(function(){var r=$('vdRefresh');if(r)r.onclick=renderVendas;['vdCanal','vdTema','vdPais','vdPeriodo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderVendas;});})();
+(function(){var r=$('anRefresh');if(r)r.onclick=renderAnalytics;var p=$('anPeriodo');if(p)p.onchange=function(){anNav={canal:'',tema:''};renderAnalytics();};})();
+(function(){var r=$('vdRefresh');if(r)r.onclick=renderVendas;['vdCanal','vdTema','vdPais','vdFunil','vdPeriodo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderVendas;});})();
 
 /* ===== Login (read-only) ===== */
 function panelTry(tok,cb){fetch('/api/stats?days=1&token='+enc(tok),{cache:'no-store'}).then(function(r){return r.json();}).then(function(d){cb(!!(d&&d.ok));}).catch(function(){cb(false);});}
