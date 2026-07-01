@@ -372,6 +372,10 @@
         <div id="anFunnel"></div>
       </div>
       <div class="anpanel">
+        <div class="anpanel-h"><span class="anpanel-t">📖 Até onde leram (por seção)</span><span class="anpanel-leg">quem rolou até cada seção da página</span></div>
+        <div id="anSecFunnel"></div>
+      </div>
+      <div class="anpanel">
         <div class="anpanel-h"><span class="anpanel-t">Acessos &amp; cliques no tempo</span><span class="anpanel-leg"><i class="andot" style="background:#2dd4bf"></i>Acessos<i class="andot" style="background:#f5c518;margin-left:12px"></i>Cliques &nbsp; <span id="anChartRange"></span></span></div>
         <div id="anChart"></div>
       </div>
@@ -2489,6 +2493,30 @@ function anKpis(d,prev){
 }
 /* funil "Conversão de visitas": Visitas -> Intenção -> Vendas, com a % entre cada etapa */
 /* Funil de vendas estilo Mercado Livre: barrões que vão DIMINUINDO (Visitas -> Intenção -> Vendas) + a % de conversão entre cada etapa */
+/* #3 nível 2: funil de leitura por SEÇÃO. cum[s] = quem chegou até s ou mais fundo (a mesma pessoa manda só a seção MAIS funda). */
+var SEC_ORD=['hero','trust','blocos','gift','bonus','bundle','oferta','garantia','stat','depo','ultima','pagamentos','footer'];
+var SEC_SHOW=[['hero','🔝 Herói (topo)'],['blocos','🎬 Vídeo / Blocos'],['bonus','🎁 Bônus'],['bundle','📦 Combo'],['oferta','💰 Oferta / Preço'],['garantia','🛡️ Garantia'],['ultima','⏰ Última chance'],['footer','🏁 Rodapé']];
+function anSecFunnel(d){
+  var box=$('anSecFunnel'); if(!box)return;
+  var sec=d.secoes||{}, ac=d.acessos||0;
+  var cum={},run=0; for(var i=SEC_ORD.length-1;i>=0;i--){run+=(sec[SEC_ORD[i]]||0);cum[SEC_ORD[i]]=run;}
+  var rows=SEC_SHOW.filter(function(x){return (cum[x[0]]||0)>0;});
+  if(!ac||!rows.length){box.innerHTML='<div style="color:var(--muted);font-size:12.5px;padding:12px 2px">Sem dados de leitura ainda — vai encher conforme o tráfego rolar a página (dado novo, só conta pós-deploy).</div>';return;}
+  var pcts=rows.map(function(x){return ac?Math.round((cum[x[0]]||0)/ac*100):0;});
+  var drops=pcts.map(function(p,i){return i===0?0:(pcts[i-1]-p);});
+  var maxDrop=Math.max.apply(null,drops), worstIdx=drops.indexOf(maxDrop);
+  var h='';
+  rows.forEach(function(x,i){
+    var pct=pcts[i], reached=cum[x[0]]||0, drop=drops[i], worst=(maxDrop>0&&i===worstIdx), col=worst?'#ff8f8f':'#2dd4bf';
+    h+='<div style="display:grid;grid-template-columns:150px 1fr 128px;align-items:center;gap:12px;margin:6px 0'+(worst?';padding:6px 8px;margin-left:-8px;margin-right:-8px;background:rgba(255,143,143,.08);border:1px solid rgba(255,143,143,.28);border-radius:8px':'')+'">'+
+      '<div style="font-size:13px;color:var(--txt)'+(worst?';font-weight:700':'')+'">'+x[1]+'</div>'+
+      '<div style="height:22px;background:rgba(255,255,255,.05);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+col+';border-radius:6px;transition:width .35s"></div></div>'+
+      '<div style="text-align:right;font-size:12px"><b style="color:var(--txt)">'+pct+'%</b> <span style="color:var(--muted)">'+reached.toLocaleString('pt-BR')+'</span>'+((drop>0)?' <span style="color:'+(worst?'#ff8f8f':'var(--muted)')+';font-weight:'+(worst?'700':'400')+'">▼'+drop+'</span>':'')+'</div>'+
+      '</div>';
+  });
+  if(maxDrop>0){h+='<div style="margin-top:12px;padding:10px 12px;background:rgba(255,143,143,.09);border:1px solid rgba(255,143,143,.28);border-radius:9px;font-size:12.5px;color:var(--txt);line-height:1.5">⚠️ <b>Maior queda antes de "'+rows[worstIdx][1].replace(/^\S+\s/,'')+'"</b> (−'+maxDrop+' pts). É onde a galera larga — vale encurtar/melhorar o que vem antes.</div>';}
+  box.innerHTML=h;
+}
 function anFunnel(d){
   var box=$('anFunnel');if(!box)return;
   var ac=d.acessos||0, ret=nn(d.retencao||0), cl=d.cliques||0, vd=nn(d.vendas);
@@ -2594,6 +2622,7 @@ function anPaint(d,prev,real){
   var cmp=$('anFunnelCmp');if(cmp)cmp.textContent=prev?'vs. período anterior':'';
   anKpis(d,prev);
   anFunnel(d);
+  anSecFunnel(d);
   anChart(d.serie);
   anBreakdowns(d.breakdowns);
   anFolders(d.tree);

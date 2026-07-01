@@ -11,7 +11,7 @@
   var off=(q.get('edit')==='1'||q.get('preview')==='1'||/localhost|127\.0\.0\.1|^192\.168\.|^10\./.test(location.hostname));
   window.__track=function(type,p){
     if(off)return;p=p||{};
-    var u='/api/track?t='+type+'&ebook='+encodeURIComponent(p.ebook||'')+'&versao='+encodeURIComponent(p.versao||'')+'&rede='+encodeURIComponent(p.rede||'direto');
+    var u='/api/track?t='+type+'&ebook='+encodeURIComponent(p.ebook||'')+'&versao='+encodeURIComponent(p.versao||'')+'&rede='+encodeURIComponent(p.rede||'direto')+(p.sec?'&sec='+encodeURIComponent(p.sec):'');
     try{fetch(u,{keepalive:true,cache:'no-store'});}catch(e){try{new Image().src=u;}catch(_){}}
   };
 })();
@@ -502,6 +502,20 @@
   try{if(window.__track)window.__track('view',window.__trackParams);}catch(e){}
   /* RETENÇÃO (#3 nível 1): dispara 'read' UMA vez quando o visitante rola >= 50% da página (= "leitor"). Aditivo; o __track já é gateado (só na publicada). */
   (function(){var fired=false;function chk(){if(fired)return;var h=document.documentElement,sc=h.scrollHeight||document.body.scrollHeight||0,vh=window.innerHeight||h.clientHeight||0,stp=window.pageYOffset||h.scrollTop||0;if(sc<=0)return;if((stp+vh)/sc>=0.5){fired=true;try{if(window.__track)window.__track('read',window.__trackParams);}catch(e){}try{window.removeEventListener('scroll',chk);}catch(e){}}}window.addEventListener('scroll',chk,{passive:true});setTimeout(chk,1200);})();
+  /* RETENÇÃO (#3 nível 2): funil de leitura por SEÇÃO — observa as seções VISÍVEIS (data-sec) e manda 1 ping com a MAIS FUNDA alcançada. Defere 1,5s pro DOM/seções montarem. */
+  setTimeout(function(){
+    if(!('IntersectionObserver' in window))return;
+    var secs=[].slice.call(document.querySelectorAll('[data-sec]')).filter(function(el){return el.offsetParent!==null;});
+    if(!secs.length)return;
+    var order={};secs.forEach(function(el,i){order[el.getAttribute('data-sec')]=i;});
+    var deepIdx=-1,deepSec='',sent=false;
+    var io=new IntersectionObserver(function(ents){ents.forEach(function(e){if(e.isIntersecting){var s=e.target.getAttribute('data-sec'),i=order[s];if(i>deepIdx){deepIdx=i;deepSec=s;}}});},{threshold:0.4});
+    secs.forEach(function(el){io.observe(el);});
+    function flush(){if(sent||!deepSec)return;sent=true;var tp=window.__trackParams||{};try{if(window.__track)window.__track('sec',{ebook:tp.ebook,versao:tp.versao,rede:tp.rede,sec:deepSec});}catch(e){}}
+    document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden')flush();});
+    window.addEventListener('pagehide',flush);
+    setTimeout(flush,30000);
+  },1500);
   var R=document.documentElement.style;
   ['bg1','bg2','accent','accent2','btn1','btn2','btnTxt','giftBg','giftTxt','hl1','hl2','priceNow','priceOld','divColor','divColor2','bcardScale','titleFont','szTitle','szHero','szBlocos','szBlocosW','szSeal','szAtend'].forEach(function(k){if(tema[k])R.setProperty('--'+k,tema[k]);});
   function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
