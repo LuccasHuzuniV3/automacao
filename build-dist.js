@@ -23,6 +23,10 @@ const ROOT = __dirname;
 const DIST = path.join(ROOT, 'dist');
 const { planEbooks, imgsOf, protectedImages, decollide } = require('./deploy-merge.js');
 
+// cache de ETag das imagens baixadas do ar -> pula o re-download quando NAO mudou (deploy rapido + resiliente a blip de rede)
+const CACHE_FILE = path.join(ROOT, '.imgcache.json');
+let ETAGS = {}; try { ETAGS = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')) || {}; } catch (e) { ETAGS = {}; }
+
 global.window = {};
 require(path.join(ROOT, 'ebooks.js'));      // popula window.EBOOKS
 const all = window.EBOOKS || {};
@@ -47,14 +51,20 @@ async function fetchLive(url) {
 // baixa baseUrl/rel -> distDir/rel (true se baixou). force=true sempre sobrescreve; senao pula se ja existe.
 async function dl(baseUrl, rel, distDir, force) {
   const dst = path.join(distDir, rel.replace(/\//g, path.sep));
-  if (!force && fs.existsSync(dst)) return true;
+  const have = fs.existsSync(dst);
+  if (!force && have) return true;                                   // nao-protegida ja em dist -> pula (comportamento antigo)
+  const url = baseUrl + '/' + rel.replace(/^\/+/, '');
+  const headers = {};
+  if (have && ETAGS[rel]) headers['If-None-Match'] = ETAGS[rel];     // "so me manda se mudou" (ETag)
   try {
-    const r = await fetch(baseUrl + '/' + rel.replace(/^\/+/, ''), { cache: 'no-store' });
-    if (!r.ok) return false;
+    const r = await fetch(url, { cache: 'no-store', headers });
+    if (r.status === 304 && have) return true;                       // NAO mudou -> usa o cache da dist, pula o download
+    if (!r.ok) return have;                                          // 404/erro: se ja tenho em cache, uso; senao falha (protegida -> cancela la fora)
     fs.mkdirSync(path.dirname(dst), { recursive: true });
     fs.writeFileSync(dst, Buffer.from(await r.arrayBuffer()));
+    const et = r.headers.get('etag'); if (et) { ETAGS[rel] = et; } else { delete ETAGS[rel]; }
     return true;
-  } catch (e) { return false; }
+  } catch (e) { return have; }                                       // blip de rede: se ja tenho em cache, uso -> NAO cancela o deploy
 }
 
 // imgsOf vem do deploy-merge.js (aceita string ou objeto)
@@ -156,4 +166,4 @@ async function writeSite(sub, localAll, onlyKeys, globalName) {
     if (!Object.keys(wAll).length) { console.log(w[0].toUpperCase() + ' vazio -> /' + w[0] + ' nao publicado'); continue; }
     await writeSite(w[0], wAll, [], w[2]);
   }
-})().then(function () { process.exit(0); }).catch(function (e) { console.error('Erro no build:', e && e.message || e); process.exit(1); });   // exit explicito: o fetch (undici) deixa conexoes no pool e o processo nao encerra sozinho -> sem isso o deploy estourava o timeout e virava "falha" mesmo tendo montado certo
+})().then(function () { try { fs.writeFileSync(CACHE_FILE, JSON.stringify(ETAGS)); } catch (e) {} process.exit(0); }).catch(function (e) { console.error('Erro no build:', e && e.message || e); process.exit(1); });   // exit explicito: o fetch (undici) deixa conexoes no pool e o processo nao encerra sozinho -> sem isso o deploy estourava o timeout e virava "falha" mesmo tendo montado certo

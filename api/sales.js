@@ -22,7 +22,8 @@ module.exports = async function (req, res) {
     const days = Math.min(Math.max(parseInt(q.days || '30', 10) || 30, 1), 365);
     const fE = q.ebook || '', fC = q.canal || '', fT = q.tema || '', fP = q.pais || '', fW = q.ws || q.funil || '';
 
-    // datas (UTC): intervalo DE/ATÉ (from/to = YYYY-MM-DD) tem prioridade; senão, janela de N dias.
+    // datas em horário de BRASÍLIA (UTC-3): from/to (YYYY-MM-DD, dias BR) tem prioridade; senão, janela de N dias BR.
+    function brDate(ms) { return new Date(ms - 10800000).toISOString().slice(0, 10); }   // dia-BR de um timestamp (UTC-3)
     const reDt = /^\d{4}-\d{2}-\d{2}$/, dates = [];
     let from = String(q.from || ''), to = String(q.to || '');
     if (reDt.test(from) && reDt.test(to)) {
@@ -30,14 +31,17 @@ module.exports = async function (req, res) {
       let cur = new Date(to + 'T00:00:00Z'); const end = new Date(from + 'T00:00:00Z'); let guard = 0;
       while (cur >= end && guard < 400) { dates.push(cur.toISOString().slice(0, 10)); cur = new Date(cur.getTime() - 86400000); guard++; }
     } else {
-      const base = Date.now();
-      for (let i = 0; i < days; i++) dates.push(new Date(base - i * 86400000).toISOString().slice(0, 10));
+      for (let i = 0; i < days; i++) dates.push(brDate(Date.now() - i * 86400000));   // dias-BR, mais novo primeiro
     }
-    const results = await Promise.all(dates.map(dt => redis(['LRANGE', 'salelog:' + dt, '0', '-1']).catch(() => ({ result: [] }))));
+    // agrupa cada venda pelo DIA-BR do seu ts exato (corrige o histórico gravado em UTC). LÊ 1 dia extra à frente pq
+    // a venda da NOITE-BR fica gravada no salelog do dia UTC seguinte -> precisa buscar pra reagrupar certo.
+    const winSet = {}; dates.forEach(d => winSet[d] = 1);
+    const readKeys = dates.slice();
+    if (dates.length) { const buf = new Date(new Date(dates[0] + 'T00:00:00Z').getTime() + 86400000).toISOString().slice(0, 10); if (readKeys.indexOf(buf) < 0) readKeys.unshift(buf); }
+    const results = await Promise.all(readKeys.map(dt => redis(['LRANGE', 'salelog:' + dt, '0', '-1']).catch(() => ({ result: [] }))));
 
-    const list = [], serie = [];
-    results.forEach((day, idx) => {                          // results[idx] <-> dates[idx] (mais novo primeiro)
-      let dVd = 0; const dR = {};
+    const list = []; const byDay = {};
+    results.forEach(day => {
       (day && day.result || []).forEach(s => {
         let o; try { o = JSON.parse(s); } catch (e) { return; }
         if (fE && o.e !== fE) return;
@@ -45,13 +49,15 @@ module.exports = async function (req, res) {
         if (fT && o.t !== fT) return;
         if (fP && o.p !== fP) return;
         if (fW && (o.ws || 'principal') !== fW) return;   // filtro por etapa do funil (venda antiga sem ws = principal)
+        const bd = brDate(o.ts || 0);
+        if (!winSet[bd]) return;                          // fora da janela BR (ex.: venda de amanhã que veio no buffer)
         list.push(o);
         const sg = o.st === 'estorno' ? -1 : 1, cur = (o.cur || 'BRL');
-        dVd += sg; dR[cur] = (dR[cur] || 0) + sg * (o.v || 0);  // vendas + receita do DIA (respeita os mesmos filtros)
+        if (!byDay[bd]) byDay[bd] = { vd: 0, r: {} };
+        byDay[bd].vd += sg; byDay[bd].r[cur] = (byDay[bd].r[cur] || 0) + sg * (o.v || 0);
       });
-      const rr = {}; Object.keys(dR).forEach(c => { rr[c] = dR[c] / 100; });
-      serie.push({ d: dates[idx], vd: dVd, r: rr });
     });
+    const serie = dates.map(d => { const dd = byDay[d] || { vd: 0, r: {} }; const rr = {}; Object.keys(dd.r).forEach(c => { rr[c] = dd.r[c] / 100; }); return { d: d, vd: dd.vd, r: rr }; });
     serie.reverse();                                          // mais antigo -> mais novo (p/ o gráfico)
     list.sort((a, b) => (b.ts || 0) - (a.ts || 0));
 

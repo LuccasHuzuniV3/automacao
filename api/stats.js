@@ -38,7 +38,7 @@ module.exports = async function (req, res) {
       let cur = new Date(to + 'T00:00:00Z'); const end = new Date(from + 'T00:00:00Z'); let guard = 0;
       while (cur >= end && guard < 400) { dates.push(cur.toISOString().slice(0, 10)); cur = new Date(cur.getTime() - 86400000); guard++; }   // mais novo -> mais antigo (mesma ordem da janela de dias)
     } else {
-      const base = Date.now();
+      const base = Date.now() - 10800000;   // janela em horário de Brasília (UTC-3), nao UTC
       for (let i = 0; i < days; i++) dates.push(new Date(base - (i + offset) * 86400000).toISOString().slice(0, 10));
     }
 

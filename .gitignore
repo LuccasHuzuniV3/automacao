@@ -10,6 +10,8 @@ ebooks-upsell2.js
 ebooks-downsell3.js
 ebooks.bak.js
 _chk.js
+# cache de ETag das imagens (pra deploy rapido) — LOCAL, gerado pelo build-dist.js
+.imgcache.json
 # versoes .webp das imagens (geradas pelo OTIMIZAR-IMAGENS.bat) — LOCAIS, nao versionar (nao vao pro manifest nem pro colega)
 *.webp
 *.log

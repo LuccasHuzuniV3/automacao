@@ -36,7 +36,7 @@ module.exports = async function (req, res) {
     const rede = clean(q.rede, 40) || 'direto';
     const pais = clean(req.headers['x-vercel-ip-country'], 4) || '??';
     const dev = device(ua);
-    const date = new Date().toISOString().slice(0, 10);     // YYYY-MM-DD (UTC)
+    const date = new Date(Date.now() - 10800000).toISOString().slice(0, 10);     // YYYY-MM-DD em horário de Brasília (UTC-3)
     const field = [ebook, versao, rede, pais, dev, type].join('|');   // type sempre por ULTIMO (parse aguenta formato antigo de 5 partes)
     await redis(['HINCRBY', 'stats:' + date, field, 1]);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));

@@ -103,7 +103,7 @@ module.exports = async function (req, res) {
     const canal = (parts.slice(2, 4).join('_').replace(/[^a-zA-Z0-9._-]/g, '')) || 'direto'; // combinado canal_tema (p/ o dashboard); o titulo NAO entra na chave agregada
     const pais = clean(country, 4).toUpperCase() || '??';
     const cents = Math.round((parseFloat(price) || 0) * 100);
-    const date = new Date().toISOString().slice(0, 10);
+    const date = new Date(Date.now() - 10800000).toISOString().slice(0, 10);   // data-chave em horário de Brasília (UTC-3), nao UTC
     const baseK = [ebook, versao, canal, pais].join('|');
     await redis(['HINCRBY', 'sales:' + date, baseK + '|n', sign]);               // contagem líquida (compat)
     await redis(['HINCRBY', 'sales:' + date, baseK + '|r|' + moeda, sign * cents]); // receita líquida por moeda (compat)

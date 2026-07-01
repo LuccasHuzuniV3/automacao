@@ -598,7 +598,7 @@ function vdPaint(d){
 /* recalcula a série (gráfico) + rankings a partir de uma lista de vendas — p/ filtrar pela PASTA selecionada */
 function vdComputeView(list){
   var byDay={};
-  list.forEach(function(o){ if(o.st==='estorno')return; var day=''; try{day=(new Date(o.ts)).toISOString().slice(0,10);}catch(e){} if(!day)return; if(!byDay[day])byDay[day]={vd:0,vdc:{},r:{}}; byDay[day].vd++; var cu=o.cur||'BRL', bk=(cu==='BRL'?'BRL':'USD'); byDay[day].vdc[bk]=(byDay[day].vdc[bk]||0)+1; byDay[day].r[cu]=(byDay[day].r[cu]||0)+((o.v||0)/100); });   /* v vem em CENTAVOS -> /100 (gráfico/rankings usam reais/dólares, igual o servidor) */
+  list.forEach(function(o){ if(o.st==='estorno')return; var day=''; try{day=(new Date((o.ts||0)-10800000)).toISOString().slice(0,10);}catch(e){} if(!day)return; if(!byDay[day])byDay[day]={vd:0,vdc:{},r:{}}; byDay[day].vd++; var cu=o.cur||'BRL', bk=(cu==='BRL'?'BRL':'USD'); byDay[day].vdc[bk]=(byDay[day].vdc[bk]||0)+1; byDay[day].r[cu]=(byDay[day].r[cu]||0)+((o.v||0)/100); });   /* v vem em CENTAVOS -> /100 (gráfico/rankings usam reais/dólares, igual o servidor) */
   var serie=(vdAllSerie||[]).map(function(s){var dd=byDay[s.d]||{vd:0,vdc:{},r:{}};return {d:s.d,vd:dd.vd,vdc:dd.vdc,r:dd.r};});
   function rank(keyFn){var m={};list.forEach(function(o){if(o.st==='estorno')return;var k=keyFn(o)||'-';if(!m[k])m[k]={k:k,vd:0,r:{}};m[k].vd++;var cu=o.cur||'BRL';m[k].r[cu]=(m[k].r[cu]||0)+((o.v||0)/100);});return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return (b.vd||0)-(a.vd||0);});}
   return {serie:serie, ranks:{pais:rank(function(o){return o.p;}), src:rank(function(o){return o.vid;}), ebook:rank(function(o){return o.e;})}};
