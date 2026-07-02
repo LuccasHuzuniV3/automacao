@@ -436,10 +436,9 @@
     body.colcentral .ultBook{margin:2px auto 4px;text-align:center;position:relative}body.colcentral .ultBook img{width:var(--szUltima,260px);max-width:88%;height:auto;display:block;margin:0 auto;filter:drop-shadow(-10px 14px 24px rgba(0,0,0,.55))}   /* upsell: imagem antes do preço na última chance (estilo capa da oferta) */
     body.colcentral .cta{font-size:20px;padding:15px 28px;margin-top:16px;width:100%;box-sizing:border-box}
     body.colcentral .scarcity{font-size:19px;line-height:1.18;padding:16px 0 4px}
-    body.colcentral .giftbar{display:none!important}   /* #1 upsell: remove a faixa VERMELHA do topo (giftbar). !important: a faixa é reordenada/forçada a block por regra de maior especificidade; gateado em colcentral = só upsell */
+    body.colcentral .giftbar{width:100vw;position:relative;left:50%;transform:translateX(-50%)}   /* faixa de bônus no upsell: FULL-WIDTH (rompe a coluna estreita p/ as faixas cruzarem de ponta a ponta, igual ao principal). Só aparece quando tem giftBar — o render (show('giftbar',...)) controla o display. */
     body.colcentral #banner{display:none!important}   /* #1b upsell: esconde TAMBÉM o #banner (faixa de urgência vazia, gradiente vermelho rgb(122,13,13)) — fantasma que reaparecia via clobber do localStorage; CSS no template = à prova de clobber */
-    body.colcentral .ribbon.r2{display:none}
-    body.colcentral .ribbon.r1{position:static;transform:none;left:auto;width:100%;font-size:12.5px;padding:10px 0;letter-spacing:.02em}
+    /* faixa de bônus no upsell: mantém as DUAS faixas diagonais cruzadas (X), igual ao principal — antes o colcentral escondia a r2 e achatava a r1 (deixava uma faixa reta só). Com o full-width acima, cruzam de ponta a ponta. */
     body.colcentral .paysec{padding:16px 10px 6px}
   </style>
   <section class="paysec" id="pagamentos" data-sec="pagamentos" style="display:none">

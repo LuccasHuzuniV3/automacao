@@ -2020,7 +2020,7 @@ function puxarBonusPrincipal(){   /* copia os cards de bônus da Principal (wind
   if(Object.keys(mine).some(function(pc){return (mine[pc].t.bonus||[]).length;}) && !confirm('Já existem bônus no upsell. Substituir pelos da Principal "'+slug+'"?'))return;
   undoPush(undoSnap());
   var feito=0;
-  Object.keys(mine).forEach(function(pc){var r=srcBonus(pc);if(r.b.length){mine[pc].t.bonus=JSON.parse(JSON.stringify(r.b));feito++;}});
+  Object.keys(mine).forEach(function(pc){var r=srcBonus(pc);if(r.b.length){mine[pc].t.bonus=JSON.parse(JSON.stringify(r.b));feito++;}var sg=(pps[r.sp]&&pps[r.sp].t&&pps[r.sp].t.giftBar);if(sg)mine[pc].t.giftBar=sg;});   /* traz também a FAIXA de bônus (giftBar) junto */
   save();renderForm();updatePreview();
   toast('Puxei os bônus da Principal ('+slug+') pra '+feito+' idioma(s). Traduza os que ficaram em outra língua.');
 }
