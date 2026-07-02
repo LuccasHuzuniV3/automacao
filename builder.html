@@ -955,7 +955,7 @@ function geminiTranslateBatch(texts,srcLang,tgtLang){
   if(cur.length){ groups.push(cur); gidx.push(curIdx); }
   function oneTry(g){ return geminiOneBatch(g,srcLang,tgtLang).catch(function(){ return geminiOneBatch(g,srcLang,tgtLang); }); }   /* 1 retry por lote: falha passageira não deixa um pedaço (ex.: a faixa vermelha) sem traduzir */
   if(groups.length<=1) return oneTry(texts);
-  var out=new Array(texts.length), LIMIT=5;
+  var out=new Array(texts.length), LIMIT=8;   /* lotes em paralelo: era 5 (estável) -> 8 pra acelerar. Se o CLI do agy não aguentar (mais falhas/retry -> mais lento), volta pra 5. */
   function doChunk(gi){
     return oneTry(groups[gi]).then(
       function(arr){ arr.forEach(function(v,k){ out[gidx[gi][k]]=v; }); },
