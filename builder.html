@@ -1719,6 +1719,7 @@ function wireInlineEdit(){
     /* ===== Barra LATERAL da SEÇÃO (o BLOCÃO inteiro): ▲ ▼ mover · 🗑 ocultar · 👁 mostrar ===== */
     Array.prototype.forEach.call(doc.querySelectorAll('[data-sec]'),function(el){
       var sk=el.getAttribute('data-sec');var sbar=null;
+      if(doc.body.classList.contains('colcentral')&&(sk==='stat'||sk==='depo'))return;   /* upsell: 89% e depoimento são CARDS ARRASTÁVEIS (data-move), não seções fixas -> sem barra de SEÇÃO (evita cara de seção + alça brigando com o ▲▼) */
       function sri(){var r=el.getBoundingClientRect();var sx=doc.documentElement.scrollLeft||0,sy=doc.documentElement.scrollTop||0;return {l:r.left+sx,t:r.top+sy,w:r.width,h:r.height};}
       function slay(){if(!sbar)return;var r=sri();sbar.style.left='6px';sbar.style.top=(r.t+10)+'px';}
       function shide2(){if(sbar&&sbar.parentNode)sbar.parentNode.removeChild(sbar);sbar=null;}
