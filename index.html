@@ -47,6 +47,7 @@
   .herotext>.pill,.herotext>.sub,.herotext>.cta,.herotext>.proof,.herotext>h1{position:relative;z-index:2}
   .hlbox{position:absolute;z-index:0;border-radius:10px;background:linear-gradient(90deg,var(--hl1,#7c2fe0),var(--hl2,#c98bff));box-shadow:0 10px 32px -8px var(--hl1,#7c2fe0);display:none}
   .xtra{position:absolute;z-index:0;box-shadow:0 10px 32px -8px rgba(120,40,220,.5)}
+  .ximg{display:block;max-width:100%;height:auto;filter:drop-shadow(-8px 12px 20px rgba(0,0,0,.45))}   /* imagem livre (+ Elemento) */
   h1,.scarcity,.giftbar,.bonus h2,.bcard .bt,.offerInfo .line,.validade{font-family:var(--titleFont)}
   h1 .hl{background:linear-gradient(90deg,var(--hl1,#7c2fe0),var(--hl2,#c98bff));color:var(--hlTxt,#fff);padding:2px 12px;border-radius:4px;text-shadow:0 1px 4px rgba(0,0,0,.5);box-decoration-break:clone;-webkit-box-decoration-break:clone}
   .sub{margin-top:22px;font-size:clamp(15px,1.5vw,18px);color:var(--muted);max-width:560px;line-height:1.6}
@@ -285,7 +286,7 @@
         <span class="pill" id="eyebrow"></span>
         <h1><span id="h1a"></span> <span class="hl" id="h1b"></span></h1>
         <p class="sub" id="sub"></p>
-        <div class="heroprice" id="heroPrice" style="display:none"><span class="hpDe" id="precoDe"></span> <span class="hpLbl" id="precoLbl"></span> <span class="hpVal" id="preco"></span></div>
+        <div class="heroprice" id="heroPrice" data-move="heroprice" style="display:none"><span class="hpDe" id="precoDe"></span> <span class="hpLbl" id="precoLbl"></span> <span class="hpVal" id="preco"></span></div>
         <a class="cta ctaLink" data-move="cta1" href="#" target="_blank" rel="noopener"><span id="ctaTxt"></span><span class="arw">&#8594;</span></a>
         <div class="proof" id="proofRow" style="display:none"><span class="pavs" id="proofAvs"></span><span class="pstars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span id="prova"></span></div>
       </div>
@@ -329,10 +330,10 @@
 
   <!-- ===== PROVA REAL: estatística (89%) + depoimento. Cores do tema (dourado/roxo/escuro). Gated por dado. ===== -->
   <section class="statsec" id="stat" data-sec="stat" style="display:none">
-    <div class="statcard"><div class="statnum" id="statNum"></div><div class="statdesc" id="statDesc"></div></div>
+    <div class="statcard" data-move="statcard"><div class="statnum" id="statNum"></div><div class="statdesc" id="statDesc"></div></div>
   </section>
   <section class="deposec" id="depo" data-sec="depo" style="display:none">
-    <div class="depocard">
+    <div class="depocard" data-move="depocard">
       <div class="depohead"><span class="depoav" id="depoAv"></span><div class="depoinfo"><span class="depostars">&#9733;&#9733;&#9733;&#9733;&#9733;</span><span class="deponome" id="depoNome"></span></div></div>
       <p class="depotxt" id="depoTexto"></p>
     </div>
@@ -342,9 +343,10 @@
     <span class="pill" id="ultimaEyebrow" style="display:none"></span>
     <h2 class="ulttit" id="ultimaTit"></h2>
     <p class="ultsub" id="ultimaSub"></p>
-    <div class="ultprice" id="ultimaPrice" style="display:none"><span class="hpDe" id="ultPrecoDe"></span> <span class="hpLbl" id="ultPrecoLbl"></span> <span class="hpVal" id="ultPreco"></span></div>
-    <a class="cta ctaLink" href="#" target="_blank" rel="noopener"><span id="ultimaCtaTxt"></span><span class="arw">&#8594;</span></a>
-    <a class="recusar" id="recusarBtn" href="#" style="display:none"><span id="recusarTxt"></span></a>
+    <div class="ultBook" id="ultimaBook"></div>
+    <div class="ultprice" id="ultimaPrice" data-move="ultimaprice" style="display:none"><span class="hpDe" id="ultPrecoDe"></span> <span class="hpLbl" id="ultPrecoLbl"></span> <span class="hpVal" id="ultPreco"></span></div>
+    <a class="cta ctaLink" data-move="cta3" href="#" target="_blank" rel="noopener"><span id="ultimaCtaTxt"></span><span class="arw">&#8594;</span></a>
+    <a class="recusar" id="recusarBtn" data-move="recusar" href="#" style="display:none"><span id="recusarTxt"></span></a>
   </section>
 
   <!-- ===== Selos de pagamento (aparece SÓ quando t.pagamentos=true; não afeta páginas sem o flag). Bandeiras+Hotmart+selo em SVG/CSS, sem imagem externa. ===== -->
@@ -369,6 +371,8 @@
     body.colcentral .hero{display:flex;flex-direction:column;align-items:center;text-align:center;gap:12px;padding:22px 0 12px}
     body.colcentral .herotext{display:contents}   /* solta pill/h1/sub/cta como itens flex do .hero pra a 'order' (imagem ANTES do CTA) funcionar */
     body.colcentral .gbadge{order:0}body.colcentral .hero .pill{order:1}body.colcentral .hero h1{order:2}body.colcentral .hero .sub{order:3}body.colcentral .art{order:4;min-height:auto}body.colcentral .heroprice{order:5;justify-content:center}body.colcentral .hero .cta{order:6}body.colcentral .hero .proof{order:7}
+    body.colcentral .art .capax{position:absolute;left:0;right:0;margin-left:auto;margin-right:auto;top:32px;z-index:4}   /* upsell: cópia da capa FLUTUA (fora do fluxo) por cima -> NÃO empurra nada; arraste pra onde quiser (sistema de arrasto da imagem). */
+    @media (max-width:880px){body.colcentral .art{flex-direction:column;gap:14px}body.colcentral .art .capax{position:static;left:auto;right:auto;top:auto;margin:0 auto;z-index:auto}}   /* celular (MOBILE<=880 no JS): volta pro fluxo e EMPILHA limpo, sem sobrepor a capa */
     /* selo verde "pedido garantido" (topo) */
     .gbadge{display:inline-flex;align-items:center;gap:7px;background:linear-gradient(180deg,#2fd34a,#16a836);color:#053b16;font-weight:800;font-size:12px;padding:9px 18px;border-radius:999px;letter-spacing:.03em;box-shadow:0 8px 22px -8px rgba(40,200,90,.7)}
     .gbadge::before{content:"\2713";font-weight:900;font-size:13px}
@@ -428,6 +432,8 @@
     body.colcentral h1 .hl{background:none;padding:0;border-radius:0;box-shadow:none;color:#fff;text-shadow:0 2px 14px rgba(0,0,0,.5)}   /* #2 upsell: título SEM degradê (tira a caixa roxa do destaque) */
     body.colcentral .sub{max-width:100%;font-size:14px;margin-top:8px}
     body.colcentral .art img{width:min(92%,340px);max-width:92%;height:auto}
+    body.colcentral .bgrid{grid-template-columns:1fr;gap:18px}body.colcentral .bcard{grid-template-columns:1fr;justify-items:center;text-align:center}body.colcentral .bcard>div{width:100%}body.colcentral .bcard img{width:min(92%,340px);display:block;margin:6px auto 0}   /* upsell: bônus EMPILHADOS (1 coluna), card centralizado (texto em cima, imagem embaixo) */
+    body.colcentral .ultBook{margin:2px auto 4px;text-align:center;position:relative}body.colcentral .ultBook img{width:var(--szUltima,260px);max-width:88%;height:auto;display:block;margin:0 auto;filter:drop-shadow(-10px 14px 24px rgba(0,0,0,.55))}   /* upsell: imagem antes do preço na última chance (estilo capa da oferta) */
     body.colcentral .cta{font-size:20px;padding:15px 28px;margin-top:16px;width:100%;box-sizing:border-box}
     body.colcentral .scarcity{font-size:19px;line-height:1.18;padding:16px 0 4px}
     body.colcentral .giftbar{display:none!important}   /* #1 upsell: remove a faixa VERMELHA do topo (giftbar). !important: a faixa é reordenada/forçada a block por regra de maior especificidade; gateado em colcentral = só upsell */
@@ -455,7 +461,7 @@
   <footer id="footer" data-sec="footer" style="display:none">
     <div class="ftrow">
       <div class="ftleft"><div class="rd" id="footerRedes"></div><div class="social" id="social"></div></div>
-      <div class="contact" id="contact" style="display:none"><span id="atend"></span><a class="chat" id="chat" target="_blank" rel="noopener"><span id="contatoTxt"></span> &#128172;</a></div>
+      <div class="contact" id="contact" style="display:none"><span id="atend"></span><a class="chat" id="chat" data-move="chat" target="_blank" rel="noopener"><span id="contatoTxt"></span> &#128172;</a></div>
     </div>
     <div class="copy" id="footerCopy"></div>
   </footer>
@@ -517,7 +523,7 @@
     setTimeout(flush,30000);
   },1500);
   var R=document.documentElement.style;
-  ['bg1','bg2','accent','accent2','btn1','btn2','btnTxt','giftBg','giftTxt','hl1','hl2','priceNow','priceOld','divColor','divColor2','bcardScale','titleFont','szTitle','szHero','szBlocos','szBlocosW','szSeal','szAtend'].forEach(function(k){if(tema[k])R.setProperty('--'+k,tema[k]);});
+  ['bg1','bg2','accent','accent2','btn1','btn2','btnTxt','giftBg','giftTxt','hl1','hl2','priceNow','priceOld','divColor','divColor2','bcardScale','titleFont','szTitle','szHero','szBlocos','szBlocosW','szSeal','szAtend','szUltima'].forEach(function(k){if(tema[k])R.setProperty('--'+k,tema[k]);});
   function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
   function set(id,v){var e=document.getElementById(id);if(e)e.textContent=(v==null?'':v);}
   function show(id,on){var e=document.getElementById(id);if(e)e.style.display=on?'':'none';}
@@ -556,6 +562,7 @@
           var posM=(x.mx||x.my)?'left:'+nv(x.mx,0)+'px;top:'+nv(x.my,0)+'px;':'';   /* posição relativa SÓ no mobile (Modo celular) */
           mh='<div class="xtxt-m"'+(EDIT?' data-extra="'+i+'" data-extype="text"':'')+' style="position:relative;width:auto;max-width:100%;margin:'+marM+';text-align:'+mtaM+';white-space:pre-wrap;'+posM+'font-size:'+mfsM+'px;color:'+hx(x.color,'#ffffff')+';font-weight:'+(x.fw||700)+';line-height:'+nv(x.lh,1.3)+';'+(ffM?'font-family:'+ffM+';':'')+(x.tt&&x.tt!=='none'?'text-transform:'+esc(x.tt)+';':'')+'">'+esc(x.txt||'')+(x.xmark?'<span style="position:absolute;left:78%;top:54%;transform:translate(-50%,-50%);width:1.5em;height:1.8em;pointer-events:none;background:url(\'img/x-mark.png\') center/contain no-repeat"></span>':'')+'</div>';}
         else if(x.type==='cta'){mh='<div style="text-align:center;margin:18px 0"><a class="cta ctaLink" href="#" target="_blank" rel="noopener"><span>'+esc(t.cta||'')+'</span><span class="arw">&#8594;</span></a></div>';}
+        else if(x.type==='img'&&x.img){mh='<div style="text-align:center;margin:14px 0"><img src="'+esc(x.img)+'" style="max-width:88%;height:auto;display:inline-block" alt=""></div>';}   /* imagem livre no mobile: em fluxo, centralizada */
         htmlMobile+=mh;return;   /* caixas/degradê (decorativas) ficam de fora no mobile */
       }
       var um=(function(){
@@ -581,6 +588,14 @@
           (x.sc&&x.sc!==1?'transform:scale('+nv(x.sc,1)+');transform-origin:top left;':'')+
           ((EDIT&&!lockedC)?'outline:1.5px dashed rgba(181,107,255,.6);outline-offset:2px;':'')+peC;
         return '<a class="cta ctaLink xcta"'+((EDIT&&!lockedC)?' data-extra="'+i+'" data-extype="cta"':'')+(lockedC?' data-locked="'+i+'"':'')+' href="#" target="_blank" rel="noopener" style="'+stC+'"><span>'+esc(t.cta||'')+'</span><span class="arw">&#8594;</span></a>';
+      }
+      if(x.type==='img'){   /* IMAGEM livre (+ Elemento): posicionada, POR CIMA; render em #extras (z-index:5) */
+        var lockedI=(EDIT&&x.lock);
+        var peI=(EDIT&&!lockedI?'pointer-events:auto;':'pointer-events:none;');
+        var baseI='position:absolute;z-index:2;left:'+nv(x.x,0)+'px;top:'+nv(x.y,0)+'px;'+(x.sc&&x.sc!==1?'transform:scale('+nv(x.sc,1)+');transform-origin:top left;':'');
+        if(!x.img){if(!EDIT)return '';return '<div class="ximg-ph" data-extra="'+i+'" data-extype="img" style="'+baseI+'width:'+nv(x.w,220)+'px;height:150px;border:1.5px dashed rgba(181,107,255,.7);border-radius:10px;display:flex;align-items:center;justify-content:center;text-align:center;color:#c9b6ff;font-size:12px;padding:8px;'+peI+'">'+String.fromCodePoint(0x1F5BC)+' escolha a imagem (botao trocar)</div>';}
+        var stI=baseI+'width:'+nv(x.w,220)+'px;height:auto;'+((EDIT&&!lockedI)?'outline:1.5px dashed rgba(181,107,255,.6);outline-offset:2px;':'')+peI;
+        return '<img class="ximg" src="'+esc(x.img)+'"'+((EDIT&&!lockedI)?' data-extra="'+i+'" data-extype="img"':'')+(lockedI?' data-locked="'+i+'"':'')+' style="'+stI+'" alt="">';
       }
       var c1=hx(x.c1,'#7c2fe0'),c2=hx(x.c2,'#c98bff'),r=nv(x.r,10);
       var locked=(EDIT&&x.lock);
@@ -610,7 +625,9 @@
   function styAttr(k,extra){var s=(extra||'')+posCss(k);return s?' style="'+s+'"':'';}
 
   var art=document.getElementById('art');
-  if(img.hero)art.innerHTML='<div class="glow"></div><img src="'+esc(img.hero)+'"'+' data-img="img.hero"'+styAttr('img.hero','')+' alt="">';
+  if(img.hero){var _ah='<div class="glow"></div><img src="'+esc(img.hero)+'"'+' data-img="img.hero"'+styAttr('img.hero','')+' alt="">';
+    if(t.colCentral&&Array.isArray(t.capaX))t.capaX.forEach(function(cx,i){if(cx&&cx.img)_ah+='<img class="capax" src="'+esc(cx.img)+'"'+' data-img="capaX.'+i+'.img"'+styAttr('capaX.'+i+'.img',cx.sz?'width:'+esc(cx.sz)+';height:auto;':'')+' alt="">';});   /* capas EXTRAS (duplicadas) do upsell — só no layout central; contrato em tests/capa-extra.test.js */
+    art.innerHTML=_ah;}
   else art.innerHTML='<div class="glow"></div><div class="book"><div class="k">'+esc(cfg.nome||'')+'</div><div class="bt">'+esc(t.capaTit||'')+'</div><div class="bs">'+esc(t.capaSub||'')+'</div><div class="seal">&#10070;</div></div>';
 
   document.getElementById('blocks').innerHTML=(t.blocos||[]).map(function(b,i){
@@ -676,6 +693,7 @@
   set('ultimaTit',t.ultimaTit);set('ultimaSub',t.ultimaSub);set('ultimaCtaTxt',t.cta);
   set('ultPrecoDe',t.precoDe);set('ultPrecoLbl',t.precoLbl);set('ultPreco',t.preco);show('ultimaPrice',!!(t.precoDe||t.preco));
   set('recusarTxt',t.recusarTxt);show('recusarBtn',!!t.recusarTxt);
+  (function(){var uB=document.getElementById('ultimaBook');if(!uB)return;var uImg=t.colCentral?(img.ultima||''):'';uB.innerHTML=uImg?'<img src="'+esc(uImg)+'"'+' data-img="img.ultima"'+styAttr('img.ultima','')+' alt="">':'';})();   /* upsell: imagem antes do preço na última chance */
   /* ===== FUNIL: alerta de 50% OFF antes de sair. PRINCIPAL -> DownSell 1 (/downsell). UPSELL 1 -> DownSell 2 (/downsell2). UPSELL 2 -> DownSell 3 (/downsell3). Roda nos SOURCES publicados (/, /upsell, /upsell2), não nas páginas de downsell nem no editor. ===== */
   var DS_I18N={
     pt:{tit:'ESPERA! 🎁',msg:'Você acabou de ganhar {pct}% DE DESCONTO!',val:'Só agora, por apenas',cta:'QUERO APROVEITAR!',no:'Não, sair sem o desconto'},
