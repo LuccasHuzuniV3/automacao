@@ -1176,10 +1176,41 @@ function wireInlineEdit(){
     var EDSEL=null;
     function edSelectEl(E){if(EDSEL===E)return;var prev=EDSEL;EDSEL=E;if(prev&&prev!==E){try{prev.dispatchEvent(new MouseEvent('mouseleave'));}catch(_e){}}if(E){try{E.dispatchEvent(new MouseEvent('mouseenter'));}catch(_e){}}}
     function edDeselect(){var prev=EDSEL;EDSEL=null;if(prev){try{prev.dispatchEvent(new MouseEvent('mouseleave'));}catch(_e){}}}
+    /* ===== MULTI-SELEÇÃO (marquee estilo Canva): arrastar uma CAIXA no vazio seleciona vários itens -> caixa de grupo -> arrasta pra mover todos juntos (via __edNudge de cada). Backup em backups/pre-multiselect-*. ===== */
+    var MULTISEL=[],GBOX=null;
+    function mRect(el){var r=el.getBoundingClientRect();var sx=doc.documentElement.scrollLeft||0,sy=doc.documentElement.scrollTop||0;return {l:r.left+sx,t:r.top+sy,r:r.right+sx,b:r.bottom+sy};}
+    function mItems(){return Array.prototype.slice.call(doc.querySelectorAll('[data-edit],[data-img],[data-move],[data-extra]')).filter(function(el){return typeof el.__edNudge==='function';});}
+    function mClear(){MULTISEL=[];if(GBOX&&GBOX.parentNode)GBOX.parentNode.removeChild(GBOX);GBOX=null;}
+    function mGrab(e){e.preventDefault();e.stopPropagation();var lx=e.clientX,ly=e.clientY,moved=false;
+      function mm(ev){var dx=ev.clientX-lx,dy=ev.clientY-ly;lx=ev.clientX;ly=ev.clientY;if(!dx&&!dy)return;if(!moved){moved=true;try{undoPush(undoSnap());}catch(_e){}}MULTISEL.forEach(function(el){try{el.__edNudge(dx,dy);}catch(_e){}});mDraw();}
+      function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);if(moved){try{save();}catch(_e){}}}
+      doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
+    function mDraw(){if(GBOX&&GBOX.parentNode)GBOX.parentNode.removeChild(GBOX);GBOX=null;
+      if(MULTISEL.length<2)return;
+      var l=1e9,t=1e9,r=-1e9,b=-1e9;MULTISEL.forEach(function(el){var q=mRect(el);l=Math.min(l,q.l);t=Math.min(t,q.t);r=Math.max(r,q.r);b=Math.max(b,q.b);});
+      GBOX=doc.createElement('div');GBOX.style.cssText='position:absolute;z-index:9994;left:'+(l-5)+'px;top:'+(t-5)+'px;width:'+(r-l+10)+'px;height:'+(b-t+10)+'px;border:2px solid #2dd4bf;border-radius:9px;background:rgba(45,212,191,.07);cursor:move;pointer-events:auto';
+      var tag=doc.createElement('div');tag.textContent='⤢ '+MULTISEL.length+' itens — arraste pra mover juntos (clique no vazio pra soltar)';tag.style.cssText='position:absolute;left:0;top:-25px;background:#0e2a26;color:#7fe9d6;font:800 11px Inter,system-ui;padding:3px 8px;border-radius:6px;white-space:nowrap;pointer-events:none';GBOX.appendChild(tag);
+      GBOX.addEventListener('mousedown',mGrab);doc.body.appendChild(GBOX);}
     doc.addEventListener('mousedown',function(ev){
       var E=(ev.target&&ev.target.closest)?ev.target.closest('[data-edit],[data-img],[data-move],[data-extra]'):null;
-      if(E){edSelectEl(E);return;}
-      if(ev.target&&ev.target.closest&&ev.target.closest('#stage')){edDeselect();}   /* fundo da prancheta = desseleciona (handles ficam fora do #stage, então não caem aqui) */
+      if(E){edSelectEl(E);mClear();return;}   /* item = seleção normal (limpa o grupo) */
+      if(ev.target&&((ev.target.closest&&ev.target.closest('#stage'))||ev.target===doc.body||ev.target.id==='stagewrap')){   /* vazio da prancheta OU margens laterais vazias (body/#stagewrap): clique = desseleciona · ARRASTAR = marquee. As margens contam -> dá pra começar a caixa dos LADOS (essencial no upsell, coluna estreita). Handles ficam em divs próprios (ev.target != body), então não disparam aqui. */
+        var sx0=ev.clientX,sy0=ev.clientY,mbox=null,marq=false,dsx=doc.documentElement.scrollLeft||0,dsy=doc.documentElement.scrollTop||0;
+        function mm(e2){if(!marq&&(Math.abs(e2.clientX-sx0)+Math.abs(e2.clientY-sy0))<5)return;
+          if(!marq){marq=true;edDeselect();mClear();mbox=doc.createElement('div');mbox.style.cssText='position:absolute;z-index:99990;border:1.5px dashed #2dd4bf;background:rgba(45,212,191,.10);pointer-events:none';doc.body.appendChild(mbox);}
+          mbox.style.left=(Math.min(sx0,e2.clientX)+dsx)+'px';mbox.style.top=(Math.min(sy0,e2.clientY)+dsy)+'px';mbox.style.width=Math.abs(e2.clientX-sx0)+'px';mbox.style.height=Math.abs(e2.clientY-sy0)+'px';}
+        function mu(e2){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);
+          if(!marq){edDeselect();mClear();return;}
+          if(mbox&&mbox.parentNode)mbox.parentNode.removeChild(mbox);
+          var ml=Math.min(sx0,e2.clientX)+dsx,mt=Math.min(sy0,e2.clientY)+dsy,mr=Math.max(sx0,e2.clientX)+dsx,mb=Math.max(sy0,e2.clientY)+dsy;
+          var raw=mItems().filter(function(el){var q=mRect(el);return !(q.r<ml||q.l>mr||q.b<mt||q.t>mb);});
+          var picked=raw.filter(function(el){return !raw.some(function(o){return o!==el&&o.contains(el);});});   /* tira FILHOS cujo pai também está no grupo -> senão o filho (ex.: texto dentro do botão/card) move o DOBRO (pai move + ele move) e desalinha */
+          mClear();
+          if(picked.length===1){edSelectEl(picked[0]);return;}
+          if(picked.length>=2){edDeselect();MULTISEL=picked;mDraw();}
+        }
+        doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);
+      }
     },true);
     /* SETAS = alinhamento fino do item selecionado (1px; Shift=10px; Alt=5px). Coordenadas LÓGICAS da prancheta (editor é 1:1 1280).
        Não interfere ao digitar (contenteditable/input/textarea): aí as setas movem o CURSOR. Esc: 1º sai da edição de texto (mantém selecionado p/ mover), 2º desseleciona. */
