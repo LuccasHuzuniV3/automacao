@@ -1048,18 +1048,17 @@ function renderEbookTabs(){var box=$('ebookTabs');box.innerHTML='';
   var rbtn=document.createElement('div');rbtn.style.cssText='cursor:pointer;font-size:12px;display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid rgba(255,255,255,.14);border-radius:8px;color:'+(curRede?'#7fd1ff':'#8a93a6');rbtn.innerHTML='📡 '+(curRede?('Rede: '+ehEsc(curRede)):'definir rede / canal')+' <span style="font-size:11px;opacity:.65">▾</span>';rbtn.title='Rede / canal deste ebook (agrupa por canal na lista)';
   var rlist=document.createElement('div');rlist.style.cssText='display:none;position:absolute;left:6px;top:100%;margin-top:4px;z-index:60;min-width:175px;max-height:300px;overflow:auto;background:#0f1726;border:1px solid rgba(255,255,255,.16);border-radius:9px;box-shadow:0 12px 34px rgba(0,0,0,.55);padding:4px';
   function rItem(txt,col,fn){var it=document.createElement('div');it.style.cssText='padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:'+col+';white-space:nowrap';it.innerHTML=txt;it.onmouseenter=function(){it.style.background='rgba(255,255,255,.07)';};it.onmouseleave=function(){it.style.background='transparent';};it.onclick=function(ev){ev.stopPropagation();rlist.style.display='none';fn();};return it;}
-  var redesAll=[];Object.keys(model).forEach(function(k){var rd=((model[k]||{}).rede||'').trim();if(rd&&redesAll.indexOf(rd)<0)redesAll.push(rd);});redesAll.sort();
-  redesAll.forEach(function(rd){rlist.appendChild(rItem('📡 '+ehEsc(rd)+(rd===curRede?'  ✓':''),rd===curRede?'#2dd4bf':'#cdd6e4',function(){model[curEbook].rede=rd;save();renderEbookTabs();}));});
-  if(redesAll.length){var rsep=document.createElement('div');rsep.style.cssText='height:1px;background:rgba(255,255,255,.1);margin:4px 2px';rlist.appendChild(rsep);}
-  rlist.appendChild(rItem('✎ Nova rede / canal…','#9fb0c8',function(){var nr=prompt('Rede / canal deste ebook (ex.: Instagram, Facebook):',curRede);if(nr===null)return;model[curEbook].rede=nr.trim();save();renderEbookTabs();}));
-  if(curRede)rlist.appendChild(rItem('✕ Tirar a rede','#9fb0c8',function(){model[curEbook].rede='';save();renderEbookTabs();}));
+  /* rede = "pasta": o dropdown NAVEGA entre redes (a lista de ebooks filtra pela rede atual). Selecionar uma rede ABRE o 1o ebook dela. + mover este ebook + nova rede. */
+  var redesDono=[];mine.forEach(function(k){var rd=ehRede(k);if(redesDono.indexOf(rd)<0)redesDono.push(rd);});redesDono.sort();
+  redesDono.forEach(function(rd){rlist.appendChild(rItem('📡 '+ehEsc(rd)+(rd===ehRede(curEbook)?'  ✓':''),rd===ehRede(curEbook)?'#2dd4bf':'#cdd6e4',function(){ if(rd===ehRede(curEbook))return; var first=mine.filter(function(k){return ehRede(k)===rd;})[0]; if(first){curEbook=first;curPais=Object.keys(model[first].paises)[0];render();} }));});
+  if(redesDono.length){var rsep=document.createElement('div');rsep.style.cssText='height:1px;background:rgba(255,255,255,.1);margin:4px 2px';rlist.appendChild(rsep);}
+  rlist.appendChild(rItem('→ Mover ESTE ebook pra outra rede…','#9fb0c8',function(){var nr=prompt('Mover "'+((model[curEbook]&&model[curEbook].nome)||curEbook)+'" pra qual rede / canal? (vazio = sem rede)',curRede);if(nr===null)return;model[curEbook].rede=nr.trim();save();renderEbookTabs();}));
+  rlist.appendChild(rItem('+ Nova rede (com um ebook novo)…','#7fffa0',function(){var nr=prompt('Nome da nova rede / canal (ex.: Instagram):');if(nr===null||!nr.trim())return;addEbook(realDono,nr.trim());}));
   rbtn.onclick=function(ev){ev.stopPropagation();if(rlist.style.display==='block'){rlist.style.display='none';if(rlist._clo){document.removeEventListener('mousedown',rlist._clo);rlist._clo=null;}return;}rlist.style.display='block';var clo=function(e){if(!rwrap.contains(e.target)){rlist.style.display='none';document.removeEventListener('mousedown',clo);rlist._clo=null;}};rlist._clo=clo;setTimeout(function(){document.addEventListener('mousedown',clo);},0);};
   rwrap.appendChild(rbtn);rwrap.appendChild(rlist);box.appendChild(rwrap);
-  var byRede={};mine.forEach(function(k){var rd=ehRede(k);if(!byRede[rd])byRede[rd]=[];byRede[rd].push(k);});
-  var redes=Object.keys(byRede).sort(),multiRede=redes.length>1;
-  function addTab(s){var t=document.createElement('div');t.className='tab'+(s===curEbook?' on':'');t.textContent=s;t.title='clique = abrir · duplo-clique = renomear';t.onclick=function(){curEbook=s;curPais=Object.keys(model[s].paises)[0];render();};t.ondblclick=function(e){e.preventDefault();e.stopPropagation();renomearEbook(s);};box.appendChild(t);}
-  if(multiRede){redes.forEach(function(rd){var rh=document.createElement('div');rh.style.cssText='padding:6px 10px 2px;font-size:11px;color:#7a8499';rh.textContent='📡 '+rd;box.appendChild(rh);byRede[rd].forEach(addTab);});}
-  else{mine.forEach(addTab);}
+  function addTab(s){var t=document.createElement('div');t.className='tab'+(s===curEbook?' on':'');t.textContent=(model[s]&&model[s].nome)||s;t.title='clique = abrir · duplo-clique = renomear   (URL/rastreamento: '+s+')';t.onclick=function(){curEbook=s;curPais=Object.keys(model[s].paises)[0];render();};t.ondblclick=function(e){e.preventDefault();e.stopPropagation();renomearEbook(s);};box.appendChild(t);}
+  var inRede=mine.filter(function(k){return ehRede(k)===ehRede(curEbook);});   /* FILTRA: mostra só os ebooks da REDE atual (rede = "pasta"). Troca de rede pelo dropdown 📡 acima. */
+  inRede.forEach(addTab);
   var add=document.createElement('div');add.className='tab add';add.textContent='+ Ebook';add.title='Cria um ebook pra '+dono;add.onclick=function(){addEbook(realDono);};box.appendChild(add);
   if(WS!=='principal'){var _cf=(WS_DEFS[WS_DEF.cloneFrom||'principal']||WS_DEFS.principal).label;var clo=document.createElement('div');clo.className='tab';clo.style.color='#7fffa0';clo.textContent='⬇️ Clonar '+_cf;clo.title='Copia um ebook de '+_cf+' pra cá — o preço atual vira o "De" riscado, aí você baixa o "por"';clo.onclick=clonarDaPrincipal;box.appendChild(clo);}
   var del=document.createElement('div');del.className='tab';del.style.color='#ff8f8f';del.textContent='🗑 ebook';del.onclick=delEbook;box.appendChild(del);}
@@ -2033,17 +2032,19 @@ function buildSecNav(){var nav=$('secNav');if(!nav)return;nav.innerHTML='';var n
     var it=document.createElement('div');it.className='navitem';it.innerHTML='<span class="num">'+num+'</span>'+h.textContent;
     it.onclick=function(){g.scrollIntoView({behavior:'smooth',block:'start'});};nav.appendChild(it);});}
 function slugify(s){return (s||'').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g,'').slice(0,24);}
-function addEbook(defDono){var n=prompt('Apelido do ebook na URL (ex.: arc01, foco):');if(!n)return;var slug=slugify(n);if(!slug)return;
-  if(model[slug]){curEbook=slug;render();showView('editor');return;}
-  var dono=(prompt('Dono / pessoa deste ebook (ex.: luccas):', defDono||'')||'').trim();
-  var rede=(prompt('Rede / canal principal (ex.: instagram) — opcional:')||'').trim();
+function addEbook(defDono,defRede){var n=prompt('Nome do ebook:');if(n===null||!n.trim())return;var nome=n.trim();var slug=slugify(nome);if(!slug){toast('Nome inválido — use letras/números.');return;}
+  var dono=(defDono!=null?defDono:((model[curEbook]&&model[curEbook].dono)||'')).trim();
+  var rede=(defRede!=null?defRede:((model[curEbook]&&model[curEbook].rede)||'')).trim();   /* dono e rede vêm do CONTEXTO (não pergunta) */
+  var same=Object.keys(model).filter(function(k){return (((model[k]&&model[k].nome)||k)===nome)&&(((model[k]&&model[k].rede)||'').trim()===rede);})[0];
+  if(same){curEbook=same;curPais=Object.keys(model[same].paises)[0];render();showView('editor');return;}   /* mesmo NOME na MESMA rede = abre (não duplica) */
+  var key=slug;if(model[key]){var rs=slugify(rede)||'r';key=slug+'-'+rs;var c=2;while(model[key]){key=slug+'-'+rs+'-'+(c++);}}   /* CHAVE ÚNICA (é a URL/rastreamento — NUNCA colide). Nome igual em rede diferente -> chave nova. */
   /* Puxa o MOLDE do ebook atual (layout + estrutura + posicoes + tema), mas SO com o pais fonte (1o = BR). */
   var base=JSON.parse(JSON.stringify(model[curEbook]));
   var srcCode=Object.keys(base.paises)[0];
   var fonte=base.paises[srcCode];fonte.hotmart='https://pay.hotmart.com/XXXXXXXX';
   base.paises={};base.paises[srcCode]=fonte;
-  base.dono=dono;base.rede=rede;
-  model[slug]=base;curEbook=slug;curPais=srcCode;save();render();showView('editor');toast('Ebook "'+slug+'" criado'+(dono?' (dono: '+dono+')':'')+'.');}
+  base.dono=dono;base.rede=rede;base.nome=nome;
+  model[key]=base;curEbook=key;curPais=srcCode;save();render();showView('editor');toast('Ebook "'+nome+'" criado na rede "'+(rede||'(sem rede)')+'".');}
 function puxarBonusPrincipal(){   /* copia os cards de bônus da Principal (window.EBOOKS) pro modelo VIVO do upsell. O builder lê o modelo do localStorage, não do disco — por isso a cópia tem que ser no modelo em memória. */
   if(WS!=='upsell'){toast('Use no UPSELL');return;}
   var prin=WS_DEFS.principal.src()||{};
@@ -2093,22 +2094,16 @@ function clonarDaPrincipal(){
   else{toast('Clonado de '+srcLabel+' ✓');}
 }
 function delEbook(){if(Object.keys(model).length<=1){toast('Precisa ter ao menos 1 ebook');return;}if(!confirm('Excluir o ebook "'+curEbook+'"?'))return;delete model[curEbook];curEbook=Object.keys(model)[0];curPais=Object.keys(model[curEbook].paises)[0];save();render();}
-function renomearEbook(oldSlug){
-  oldSlug=oldSlug||curEbook;
-  if(!model[oldSlug])return;
-  var n=prompt('Novo apelido (URL) do ebook "'+oldSlug+'":',oldSlug);
-  if(n===null)return;
-  var slug=slugify(n);
-  if(!slug){toast('Nome inválido — use letras/números.');return;}
-  if(slug===oldSlug)return;
-  if(model[slug]){toast('Já existe um ebook "'+slug+'".');return;}
-  if(!confirm('Renomear "'+oldSlug+'" → "'+slug+'"?\n\n⚠️ O apelido É a URL e o rastreamento de vendas (?ebook='+oldSlug+'). Se este ebook JÁ foi publicado, os links antigos e o histórico no nome velho continuam até você republicar (Deploy) com o nome novo.'))return;
+function renomearEbook(oldKey){
+  oldKey=oldKey||curEbook;
+  if(!model[oldKey])return;
+  var atual=(model[oldKey].nome||oldKey);
+  var n=prompt('Novo NOME do ebook (só o rótulo de exibição — a URL/rastreamento "'+oldKey+'" NÃO muda):',atual);
+  if(n===null||!n.trim())return;
   undoPush(undoSnap());
-  var novo={};Object.keys(model).forEach(function(k){novo[k===oldSlug?slug:k]=model[k];});   /* recria preservando a ORDEM das chaves */
-  model=novo;
-  if(curEbook===oldSlug)curEbook=slug;
+  model[oldKey].nome=n.trim();   /* renomeia SÓ o nome de exibição; a chave (URL/rastreamento) fica estável -> renomear nunca quebra link/histórico */
   save();render();try{renderEbooksHome();}catch(e){}
-  toast('Renomeado pra "'+slug+'" ✓');
+  toast('Renomeado pra "'+n.trim()+'" ✓');
 }
 var LANGMAP={us:'en-US',usa:'en-US',uk:'en-GB',gb:'en-GB',en:'en-US',ca:'en-CA',au:'en-AU',es:'es-ES',mx:'es-MX',ar:'es-AR',co:'es-CO',cl:'es-CL',pe:'es-PE',pt:'pt-PT',br:'pt-BR',fr:'fr-FR',de:'de-DE',it:'it-IT',nl:'nl-NL',pl:'pl-PL',ro:'ro-RO',tr:'tr-TR',ru:'ru-RU',jp:'ja-JP'};
 function flagEmoji(idioma){var r=(String(idioma||'').split('-')[1]||'').toUpperCase();if(r.length!==2)return '🌐';return r.replace(/./g,function(ch){return String.fromCodePoint(0x1F1E6+ch.charCodeAt(0)-65);});}
