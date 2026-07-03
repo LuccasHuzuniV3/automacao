@@ -955,19 +955,19 @@ function geminiTranslateBatch(texts,srcLang,tgtLang){
   if(cur.length){ groups.push(cur); gidx.push(curIdx); }
   function oneTry(g){ return geminiOneBatch(g,srcLang,tgtLang).catch(function(){ return geminiOneBatch(g,srcLang,tgtLang); }); }   /* 1 retry por lote: falha passageira não deixa um pedaço (ex.: a faixa vermelha) sem traduzir */
   if(groups.length<=1) return oneTry(texts);
-  var out=new Array(texts.length), LIMIT=8;   /* lotes em paralelo: era 5 (estável) -> 8 pra acelerar. Se o CLI do agy não aguentar (mais falhas/retry -> mais lento), volta pra 5. */
+  var out=new Array(texts.length), LIMIT=8, fails=0;   /* lotes em paralelo: era 5 (estável) -> 8 pra acelerar. Se o CLI do agy não aguentar (mais falhas/retry -> mais lento), volta pra 5. */
   function doChunk(gi){
     return oneTry(groups[gi]).then(
       function(arr){ arr.forEach(function(v,k){ out[gidx[gi][k]]=v; }); },
-      function(){ groups[gi].forEach(function(v,k){ out[gidx[gi][k]]=v; }); }   /* ainda falhou após o retry: mantém original */
+      function(){ fails++; groups[gi].forEach(function(v,k){ out[gidx[gi][k]]=v; }); }   /* ainda falhou após o retry: conta a falha + mantém original */
     );
   }
-  return new Promise(function(resolve){
+  return new Promise(function(resolve,reject){
     var gi=0, active=0, fin=0, n=groups.length;
     (function pump(){
-      while(active<LIMIT && gi<n){ active++; doChunk(gi++).then(function(){ active--; fin++; if(fin===n){resolve();}else{pump();} }); }
+      while(active<LIMIT && gi<n){ active++; doChunk(gi++).then(function(){ active--; fin++; if(fin===n){ if(fails===n){reject(new Error('agy indisponível — '+fails+'/'+n+' lotes falharam'));}else{resolve();} }else{pump();} }); }
     })();
-  }).then(function(){ return out.map(function(v,i){ return v!=null?v:String(texts[i]==null?'':texts[i]); }); });
+  }).then(function(){ return out.map(function(v,i){ return v!=null?v:String(texts[i]==null?'':texts[i]); }); });   /* TODOS os lotes falharam (ex.: PC sem o CLI do agy) -> rejeita -> o .catch em translatePais cai no MyMemory (grátis) e traduz de verdade */
 }
 function translatePais(srcCode,tgtCode,onStep){
   return new Promise(function(resolve){
