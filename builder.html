@@ -230,6 +230,35 @@
   .ankpi-wide{flex:2.2 1 300px}
   .ankpi-ic+div{min-width:0;flex:1}
   @media(max-width:760px){.ankpis{flex-wrap:wrap}}
+  /* Resumo do Vendas (cards estilo dashboard) + gráficos de barras dia/horário */
+  .vdsums{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;margin-bottom:6px}   /* auto-FILL: com poucos cards sobram trilhas vazias e o card fica compacto (não estica gigante) */
+  .vdsum{background:linear-gradient(180deg,rgba(22,34,55,.9),rgba(13,22,38,.7));border:1px solid var(--line);border-radius:14px;padding:13px 16px;min-width:0}
+  .vdsum-k{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:10.5px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vdsum-v{font-size:21px;font-weight:900;color:var(--txt);font-variant-numeric:tabular-nums;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vdsum-v.grn{color:#34d399}
+  .vdsum-v.red{color:#ff8f8f}
+  .vdafi-op{padding:7px 10px;border-radius:7px;font-size:12.5px;color:var(--txt);cursor:pointer;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vdafi-op:hover{background:rgba(255,255,255,.08)}
+  .vdsum-s{font-size:12px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .vdbars{display:flex;align-items:flex-end;gap:10px;height:128px;padding:6px 4px 0}
+  .vdbar{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+  .vdbar-p{font-size:10.5px;color:#9fb0d0;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .vdbar-b{width:100%;max-width:46px;background:#2f6fed;border-radius:4px 4px 0 0}
+  .vdbar-x{font-size:10.5px;color:var(--muted);padding-top:5px;text-align:center;white-space:nowrap}
+  /* GRID único de 2 linhas: cards Gastos/Margem/ROAS (linha 1, trilhas 1-3) + funil (linha 2, trilhas 1-3) + SEMANA ALTA
+     (trilhas 4+, ocupando as DUAS linhas — preenche o espaço ao lado do ROAS, do topo dos cards até o pé do funil) */
+  .vdfunrow{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:12px;margin-bottom:20px}
+  .vdfunrow .anpanel{margin-bottom:0}
+  #vdFunPanel{grid-column:1/span 3;grid-row:2}
+  #vdWeekPanel{grid-column:4/-1;grid-row:1/span 2;display:flex;flex-direction:column}
+  #vdWeekPanel #vdWeek{flex:1;display:flex;flex-direction:column;justify-content:flex-end}
+  #vdWeek .vdbars{height:auto;flex:1;min-height:240px;align-items:flex-end}
+  @media(max-width:1100px){.vdfunrow{grid-template-columns:1fr}#vdFunPanel,#vdWeekPanel{grid-column:auto;grid-row:auto}}
+  /* filtros do Resumo (Vendas) esticados na largura toda, estilo dashboard de referência */
+  #vdFilters .dom{width:100%}
+  #vdFilters .dpbtn{width:100%}
+  #vdFilters .dpbtn .dpcar{margin-left:auto}
+  #vdDatePop{left:auto;right:0}   /* Período é o ÚLTIMO filtro (canto direito) -> calendário abre pra ESQUERDA, senão corta na borda da tela */
   .ankpi-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
   .ankpi-k{font-size:12px;color:var(--muted);margin-bottom:3px}
   .ankpi>div:last-child{min-width:0;flex:1}
@@ -244,19 +273,23 @@
   .vdcur-tog{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;vertical-align:middle}
   .vdcur-b{background:transparent;border:0;color:var(--muted);font-weight:700;font-size:11.5px;padding:5px 11px;cursor:pointer}
   .vdcur-b+.vdcur-b{border-left:1px solid var(--line)}
-  .vdcur-b.on{background:#f5c518;color:#10141c}
+  .vdcur-b.on{background:#2563eb;color:#fff}
   #anChart{width:100%}
   .angrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px}
   .anbreak{background:rgba(13,22,38,.7);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
   .vdrk{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05)}
   .vdrk:last-child{border-bottom:0;padding-bottom:0}
-  .vdrk-pos{width:18px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0;font-size:13px}
+  .vdrk-pos{width:20px;text-align:center;font-weight:800;color:var(--muted);flex-shrink:0;font-size:13px}
+  .vdrk-top{background:linear-gradient(90deg,rgba(109,40,217,.22),rgba(219,39,119,.05));border:1px solid rgba(168,85,247,.38);border-radius:10px;padding:8px 10px;margin-bottom:4px}   /* campeão no roxo→rosa do funil (azul = dado, roxo/rosa = destaque) */
+  .vdrk-top .vdrk-nm{font-weight:800}
+  .vdrk-top .vdrk-v b{font-size:16px;color:#e879f9}
+  .vdrk-top .vdrk-bar i{background:linear-gradient(90deg,#6d28d9,#a21caf,#db2777)}
   .vdrk-mid{flex:1;min-width:0}
   .vdrk-nm{font-size:13px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .vdrk-bar{height:6px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;margin-top:5px}
-  .vdrk-bar i{display:block;height:100%;background:linear-gradient(90deg,#5bd66b,#2fae3e);border-radius:4px}
+  .vdrk-bar i{display:block;height:100%;background:linear-gradient(90deg,#6d28d9,#a21caf,#db2777);border-radius:4px}
   .vdrk-v{text-align:right;flex-shrink:0;font-variant-numeric:tabular-nums}
-  .vdrk-v b{font-size:14px;color:#5bd66b;display:block;line-height:1.15}
+  .vdrk-v b{font-size:14px;color:#e879f9;display:block;line-height:1.15}
   .vdrk-v span{font-size:10.5px;color:var(--muted);white-space:nowrap}
   .anbreak .vdrk-more{display:none}
   .anbreak.vdrk-open .vdrk-more{display:flex}
@@ -385,18 +418,39 @@
   </div>
   <div id="view-vendas" class="view">
     <div class="anwrap">
-      <div class="vhead" style="padding:0 0 6px"><h2>💰 Vendas</h2><button class="btn" id="vdRefresh">↻ Atualizar</button></div>
+      <div class="vhead" style="padding:0 0 6px"><h2>💰 Vendas</h2></div>
       <div id="vdBanner" class="anbanner"></div>
-      <div class="anfilters">
-        <label class="cfgrow" style="max-width:160px;margin:0"><span>Ebook</span><select class="dom" id="vdEbook"><option value="">todos</option></select></label>
-        <label class="cfgrow" style="max-width:150px;margin:0"><span>Canal</span><select class="dom" id="vdCanal"><option value="">todos</option></select></label>
-        <label class="cfgrow" style="max-width:150px;margin:0"><span>Nicho / tema</span><select class="dom" id="vdTema"><option value="">todos</option></select></label>
-        <label class="cfgrow" style="max-width:120px;margin:0"><span>País</span><select class="dom" id="vdPais"><option value="">todos</option></select></label>
-        <div class="cfgrow" style="max-width:none;margin:0;position:relative"><span>Período</span><button type="button" class="dpbtn" id="vdDateBtn"><i class="dpcal">📅</i><span id="vdDateLbl">Últimos 30 dias</span><i class="dpcar">▾</i></button><div class="dppop" id="vdDatePop" style="display:none"></div></div>
-        <input type="hidden" id="vdPeriodo" value="30"><input type="hidden" id="vdFrom"><input type="hidden" id="vdTo">
+      <div class="anpanel" style="padding:16px 18px 12px">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding-bottom:13px;border-bottom:1px solid var(--line);margin-bottom:15px">
+          <span style="font-size:15.5px;font-weight:800;color:var(--txt)">Resumo</span>
+          <span style="display:flex;align-items:center;gap:12px"><span id="vdUpdated" style="font-size:12px;color:var(--muted)"></span><button class="btn" id="vdGastosBtn" title="Lançar gastos com anúncios por dia — entra no Lucro / Margem / ROAS / ROI">💸 Despesas</button><button class="btn" id="vdRefresh" style="background:#2563eb;border-color:#2f6fed;color:#fff;font-weight:700">↻ Atualizar</button></span>
+        </div>
+        <div class="anfilters" id="vdFilters" style="background:none;border:0;border-radius:0;padding:0;margin-bottom:6px;gap:14px">
+          <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>Ebook</span><select class="dom" id="vdEbook"><option value="">todos</option></select></label>
+          <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>Canal</span><select class="dom" id="vdCanal"><option value="">todos</option></select></label>
+          <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>Nicho / tema</span><select class="dom" id="vdTema"><option value="">todos</option></select></label>
+          <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>País</span><select class="dom" id="vdPais"><option value="">todos</option></select></label>
+          <div class="cfgrow" style="flex:1.25 1 210px;max-width:none;margin:0;position:relative"><span>Período</span><button type="button" class="dpbtn" id="vdDateBtn"><i class="dpcal">📅</i><span id="vdDateLbl">Últimos 30 dias</span><i class="dpcar">▾</i></button><div class="dppop" id="vdDatePop" style="display:none"></div></div>
+          <input type="hidden" id="vdPeriodo" value="30"><input type="hidden" id="vdFrom"><input type="hidden" id="vdTo">
+        </div>
       </div>
-      <div class="ankpis" id="vdKpis"></div>
+      <div class="vdsums" id="vdKpis"></div>
       <div id="vdComm" style="margin-top:10px"></div>
+      <div class="vdfunrow" style="margin-top:10px">
+        <span id="vdAds" style="display:contents"></span>
+        <div class="anpanel" id="vdFunPanel">
+          <div class="anpanel-h"><span class="anpanel-t">🎯 Funil de conversão</span><span class="anpanel-leg">segue os filtros de cima</span></div>
+          <div id="vdFunnel"></div>
+        </div>
+        <div class="anpanel" id="vdWeekPanel">
+          <div class="anpanel-h"><span class="anpanel-t">📆 Vendas por dia da semana</span><span class="anpanel-leg">segue a pasta</span></div>
+          <div id="vdWeek"></div>
+        </div>
+      </div>
+      <div class="anpanel">
+        <div class="anpanel-h"><span class="anpanel-t">🕐 Vendas por horário</span><span class="anpanel-leg">horário de Brasília</span></div>
+        <div id="vdHour"></div>
+      </div>
       <div class="anpanel">
         <div class="anpanel-h"><span class="anpanel-t" id="vdChartTitle">Receita no tempo</span><span class="anpanel-leg"><span class="vdcur-tog"><button type="button" class="vdcur-b on" data-cur="BRL" onclick="vdSetChartCur('BRL')">R$</button><button type="button" class="vdcur-b" data-cur="USD" onclick="vdSetChartCur('USD')">US$</button></span> &nbsp; <span id="vdChartRange"></span></span></div>
         <div id="vdChart"></div>
@@ -457,6 +511,18 @@
   <div class="gh" style="border:0;margin:0 0 8px;color:var(--gold)">Cole o conteúdo do seu ebooks.js</div>
   <textarea id="impText" placeholder="window.EBOOKS = { ... };"></textarea>
   <div class="actions"><button class="btn" id="impCancel">Cancelar</button><button class="btn pri" id="impOk">Importar</button></div>
+</div></div>
+<div class="modal" id="gastosModal"><div class="card" style="width:520px;max-width:94vw">
+  <h3 style="margin:0 0 4px">💸 Despesas</h3>
+  <p style="color:var(--muted);font-size:12.5px;margin:0 0 14px">Lança o gasto por dia — entra no Lucro / Margem / ROAS / ROI do período. Fica salvo no servidor (todo mundo vê o mesmo número).</p>
+  <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
+    <label class="cfgrow" style="margin:0;max-width:175px"><span>Dia</span><input type="date" id="gastoDia" style="background:#0c1626;border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--txt);min-height:40px;color-scheme:dark"></label>
+    <label class="cfgrow" style="margin:0;max-width:130px"><span>Valor (R$)</span><input type="text" id="gastoValor" placeholder="150,36" inputmode="decimal" style="background:#0c1626;border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--txt);min-height:40px"></label>
+    <label class="cfgrow" style="margin:0;flex:1;min-width:140px;max-width:none"><span>Descrição</span><input type="text" id="gastoDesc" placeholder="ex.: Meta Ads" maxlength="60" style="background:#0c1626;border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--txt);min-height:40px;width:100%"></label>
+  </div>
+  <div id="gastoMsg" style="font-size:12px;margin-top:8px;min-height:15px"></div>
+  <div id="gastoList" style="margin-top:12px;max-height:260px;overflow:auto"></div>
+  <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:14px"><button class="btn" id="gastoFechar">Fechar</button><button class="btn" id="gastoAddBtn" style="background:#2563eb;border-color:#2f6fed;color:#fff;font-weight:700">Adicionar</button></div>
 </div></div>
 <div class="modal" id="depModal"><div class="card" style="width:700px;max-width:94vw;max-height:86vh;overflow:auto">
   <div class="gh" style="border:0;margin:0 0 4px;color:var(--gold)">🚀 Publicado na Vercel</div>
@@ -2416,7 +2482,7 @@ function showView(v){
   else if(_sb)_sb.classList.remove('efull');
   if(v==='ebooks')renderEbooksHome();
   if(v==='analytics'){anNav={canal:'',tema:''};renderAnalytics();}
-  if(v==='vendas'){vdNav={canal:'',tema:''};vdPerson=null;renderVendas();}   /* clicar em Vendas SEMPRE volta pra raiz (Todos), não fica preso na pasta */
+  if(v==='vendas'){vdNav={dono:'',rede:'',ebook:''};vdPerson=null;renderVendas();}   /* clicar em Vendas SEMPRE volta pra raiz (Todos), não fica preso na pasta */
 }
 var PAIS_NOMES={
   BR:'Brasil',US:'EUA',PT:'Portugal',ES:'Espanha',FR:'França',DE:'Alemanha',IT:'Itália',GB:'Reino Unido',IE:'Irlanda',NL:'Holanda',BE:'Bélgica',LU:'Luxemburgo',CH:'Suíça',AT:'Áustria',
@@ -2590,29 +2656,36 @@ function anSecFunnel(d){
   if(maxDrop>0){h+='<div style="margin-top:12px;padding:10px 12px;background:rgba(255,143,143,.09);border:1px solid rgba(255,143,143,.28);border-radius:9px;font-size:12.5px;color:var(--txt);line-height:1.5">⚠️ <b>Maior queda antes de "'+rows[worstIdx][1].replace(/^\S+\s/,'')+'"</b> (−'+maxDrop+' pts). É onde a galera larga — vale encurtar/melhorar o que vem antes.</div>';}
   box.innerHTML=h;
 }
-function anFunnel(d){
-  var box=$('anFunnel');if(!box)return;
+function anFunnel(d,elId){   /* funil "orgânico" com gradiente (estilo Meta Ads dashboards): forma contínua azul→roxo→rosa, % vs o topo no meio, nº absoluto embaixo. elId opcional = renderiza em outra caixa (Vendas usa 'vdFunnel'); gradiente com id único por caixa (defs duplicado em view display:none quebra o visível) */
+  var box=$(elId||'anFunnel');if(!box)return;
+  var gid=(elId||'anFunnel')+'Grad';
   var ac=d.acessos||0, ret=nn(d.retencao||0), cl=d.cliques||0, vd=nn(d.vendas);
-  var cRet=ac?(Math.round(ret/ac*1000)/10):0, c1=ac?(Math.round(cl/ac*1000)/10):0, c2=cl?(Math.round(vd/cl*1000)/10):0;
   var recMap=clampRec(fxConsolidate(d.receitas)), recCur=Object.keys(recMap).sort();
   var recStr=recCur.length?recCur.map(function(c){return fmtMoney(recMap[c],c);}).join(' · '):fmtMoney(0,'BRL');
-  var st=[
-    {ic:'👁️',cor:'#4f8cff',bg:'rgba(79,140,255,.15)',bd:'rgba(79,140,255,.55)',k:'Visitas únicas',v:ac,sub:'topo do funil'},
-    {ic:'📖',cor:'#f59e0b',bg:'rgba(245,158,11,.15)',bd:'rgba(245,158,11,.55)',k:'Retenção de página',v:ret,sub:cRet.toLocaleString('pt-BR')+'% leram (rolaram 50%+)'},
-    {ic:'🖱️',cor:'#a855f7',bg:'rgba(168,85,247,.15)',bd:'rgba(168,85,247,.55)',k:'Intenção de compra',v:cl,sub:'demonstraram interesse'},
-    {ic:'🛒',cor:'#22c55e',bg:'rgba(34,197,94,.15)',bd:'rgba(34,197,94,.55)',k:'Vendas',v:vd,sub:recStr}
-  ];
-  var conv=[null,cRet,c1,c2];
-  var h='<div class="anfun3">';
-  st.forEach(function(s,i){
-    if(i>0)h+='<div class="anfun3-conn"><span>▸ '+conv[i].toLocaleString('pt-BR')+'%</span></div>';
-    h+='<div class="anfun3-card" style="border-top-color:'+s.cor+'">'+
-       '<div class="anfun3-ic" style="background:'+s.bg+';border-color:'+s.bd+'">'+s.ic+'</div>'+
-       '<div class="anfun3-k">'+s.k+'</div>'+
-       '<div class="anfun3-n">'+(s.v||0).toLocaleString('pt-BR')+'</div>'+
-       '<div class="anfun3-sub">'+s.sub+'</div></div>';
-  });
-  h+='</div>';box.innerHTML=h;
+  var st=[{k:'Visitas únicas',v:ac},{k:'Leram 50%+',v:ret},{k:'Intenção de compra',v:cl},{k:'Vendas',v:vd}];
+  var vmax=Math.max(ac,ret,cl,vd);
+  if(!vmax){box.innerHTML='<div style="color:var(--muted);font-size:13px;padding:12px 0">Sem dados no período.</div>';return;}
+  var cx=[80,240,400,560], C=50, H=[], i;   /* shape fininha: SVG só desenha a FAIXA (altura fixa 120px, preserveAspectRatio none); textos são HTML de tamanho fixo — não inflam em monitor largo */
+  for(i=0;i<4;i++)H.push(Math.max(5,Math.round(st[i].v/vmax*46)));
+  function pcTop(v){ if(!ac)return '0%'; return (Math.round(v/ac*1000)/10).toLocaleString('pt-BR')+'%'; }
+  var p='M0 '+(C-H[0])+' L'+cx[0]+' '+(C-H[0]);
+  for(i=1;i<4;i++)p+=' C'+(cx[i-1]+80)+' '+(C-H[i-1])+' '+(cx[i]-80)+' '+(C-H[i])+' '+cx[i]+' '+(C-H[i]);
+  p+=' L640 '+(C-H[3])+' L640 '+(C+H[3])+' L'+cx[3]+' '+(C+H[3]);
+  for(i=3;i>0;i--)p+=' C'+(cx[i]-80)+' '+(C+H[i])+' '+(cx[i-1]+80)+' '+(C+H[i-1])+' '+cx[i-1]+' '+(C+H[i-1]);
+  p+=' L0 '+(C+H[0])+' Z';
+  function col4(f){var s='',j;for(j=0;j<4;j++)s+=f(j);return s;}
+  var h='<div style="position:relative;padding-top:2px">'+
+    '<div style="position:absolute;left:25%;top:0;bottom:36px;width:1px;background:rgba(255,255,255,.07)"></div>'+
+    '<div style="position:absolute;left:50%;top:0;bottom:36px;width:1px;background:rgba(255,255,255,.07)"></div>'+
+    '<div style="position:absolute;left:75%;top:0;bottom:36px;width:1px;background:rgba(255,255,255,.07)"></div>'+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);text-align:center;position:relative;padding-bottom:12px">'+col4(function(j){return '<span style="font-size:12px;font-weight:700;color:#8b96ab">'+st[j].k+'</span>';})+'</div>'+
+    '<div style="position:relative;height:120px">'+
+      '<svg viewBox="0 0 640 100" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:100%;display:block"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2563eb"/><stop offset=".38" stop-color="#6d28d9"/><stop offset=".7" stop-color="#a21caf"/><stop offset="1" stop-color="#db2777"/></linearGradient></defs><path d="'+p+'" fill="url(#'+gid+')" fill-opacity=".95"/></svg>'+
+      '<div style="position:absolute;left:0;top:0;right:0;bottom:0;display:grid;grid-template-columns:repeat(4,1fr);align-items:center;text-align:center">'+col4(function(j){return '<span style="font-size:15px;font-weight:700;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.5)">'+pcTop(st[j].v)+'</span>';})+'</div>'+
+    '</div>'+
+    '<div style="display:grid;grid-template-columns:repeat(4,1fr);text-align:center;position:relative;padding-top:9px">'+col4(function(j){return '<span style="font-size:12.5px;color:#6b7691;font-weight:600">'+(st[j].v||0).toLocaleString('pt-BR')+(j===3?'<br><span style="font-size:11px;color:#34d399;font-weight:700">'+recStr+'</span>':'')+'</span>';})+'</div>'+
+  '</div>';
+  box.innerHTML=h;
 }
 function flagOf(cc){cc=String(cc||'').trim().toUpperCase();if(!/^[A-Z]{2}$/.test(cc))return '';try{return String.fromCodePoint(0x1F1E6+cc.charCodeAt(0)-65,0x1F1E6+cc.charCodeAt(1)-65);}catch(e){return '';}}
 function anBreak(titulo,icon,rows,fmtName,iconFn){
@@ -2740,8 +2813,8 @@ function renderAnalytics(){
   }).catch(function(){ anPaint(anSample(),null,false); });
 }
 function vdFillSelect(id,vals,lbl){var s=$(id);if(!s)return;var cur=s.value;s.innerHTML='<option value="">todos</option>'+(vals||[]).map(function(x){return '<option value="'+x+'">'+(lbl?lbl(x):x)+'</option>';}).join('');if(cur)s.value=cur;}
-function vdEmpty(msg){var b=$('vdBanner');if(b){b.innerHTML='⚠️ '+msg;b.style.cssText='background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4);color:#f5d77a;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}var t=$('vdTable');if(t)t.innerHTML='';var k=$('vdKpis');if(k)k.innerHTML='';}
-var vdGroups={}, vdNav={canal:'',tema:''}, vdAllList=[], vdAllSerie=[], vdAllRanks={};
+function vdEmpty(msg){var b=$('vdBanner');if(b){b.innerHTML='⚠️ '+msg;b.style.cssText='background:rgba(245,197,24,.12);border:1px solid rgba(245,197,24,.4);color:#f5d77a;font-size:12.5px;padding:10px 14px;border-radius:10px;margin:6px 0 18px';}var t=$('vdTable');if(t)t.innerHTML='';var k=$('vdKpis');if(k)k.innerHTML='';var ad=$('vdAds');if(ad)ad.innerHTML='';}
+var vdGroups={}, vdNav={dono:'',rede:'',ebook:''}, vdAllList=[], vdAllSerie=[], vdAllRanks={};   /* vdNav = navegação dono→rede→ebook (dono/rede vêm do model[o.e]); substituiu a antiga canal/tema */
 var vdPerson=null;   /* #3: filtro do gráfico por pessoa (clica no card junin/theuzim/afiliado) -> {kind,name} ou null */
 /* formata na MOEDA real da venda (BRL=R$, USD=US$, EUR=€, CLP, etc.) */
 function fmtMoney(v,cur){cur=String(cur||'BRL').toUpperCase();if(cur.length!==3)cur='BRL';try{return (v||0).toLocaleString('pt-BR',{style:'currency',currency:cur});}catch(e){return cur+' '+(v||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});}}
@@ -2753,9 +2826,30 @@ function vdRecStrC(rec){return vdRecStr(clampRec(fxConsolidate(rec)));}
 /* valor de UMA venda na linha: moeda original + (≈ US$) quando não é BR/US */
 function vdRowMoney(cents,cur){cur=String(cur||'BRL').toUpperCase();var main=vdMoney(cents,cur);if(cur==='BRL'||cur==='USD')return main;var u=fxTo((cents||0)/100,cur,'USD');if(u==null)return main;return main+' <span style="color:var(--muted);font-size:11px">≈ '+fmtMoney(u,'USD')+'</span>';}
 function vdDt(ts){var dt=new Date(ts||0);if(isNaN(dt.getTime()))return '—';return ('0'+dt.getDate()).slice(-2)+'/'+('0'+(dt.getMonth()+1)).slice(-2)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);}
-function vdSetKpis(v,rec){var k=$('vdKpis');if(!k)return;v=nn(v);var rc=clampRec(fxConsolidate(rec)),rBRL=(rc.BRL||0)/100,rUSD=(rc.USD||0)/100;k.innerHTML='<div class="ankpi"><div class="ankpi-ic" style="background:rgba(91,214,107,.16);color:#5bd66b">🛒</div><div><div class="ankpi-k">Vendas</div><div class="ankpi-v">'+v+'</div></div></div>'+
-  '<div class="ankpi"><div class="ankpi-ic" style="background:rgba(91,214,107,.16);color:#5bd66b">💰</div><div><div class="ankpi-k">Receita R$</div><div class="ankpi-v">'+fmtMoney(rBRL,'BRL')+'</div></div></div>'+
-  '<div class="ankpi"><div class="ankpi-ic" style="background:rgba(45,212,191,.16);color:#2dd4bf">💵</div><div><div class="ankpi-k">Receita US$</div><div class="ankpi-v">'+fmtMoney(rUSD,'USD')+'</div></div></div>';kpiFit(k);}
+function vdSetKpis(v,rec,nEst){var k=$('vdKpis');if(!k)return;v=nn(v);nEst=nn(nEst);var rc=clampRec(fxConsolidate(rec)),rBRL=(rc.BRL||0)/100,rUSD=(rc.USD||0)/100;
+  /* consolida TUDO em R$ (US$ pela cotação do dia) p/ cruzar com o GASTO (que é lançado em R$) */
+  var gR=Math.max(0,vdGastoCents)/100, fat=rBRL+(rUSD?(fxTo(rUSD,'USD','BRL')||0):0), temG=gR>0;
+  var lucro=fat-gR, mar=(temG&&fat>0)?(lucro/fat*100):null, roas=temG?(fat/gR):null, roi=temG?(lucro/gR):null;
+  function pv(x,dec){if(x==null)return '—';return x.toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec});}
+  function card(tit,tip,val,sub,cls){return '<div class="vdsum" title="'+tip+'"><div class="vdsum-k"><span>'+tit+'</span><span style="color:#5a6478;font-weight:400">ⓘ</span></div><div class="vdsum-v'+(cls||'')+'">'+val+'</div><div class="vdsum-s">'+sub+'</div></div>';}
+  var gSub; if(!vdGastoOk){gSub='faça o Deploy do api/gastos';} else {gSub=vdGastoList.length+' lançamento'+(vdGastoList.length===1?'':'s')+' no período';}
+  /* linha 1 (#vdKpis): Faturamento · Vendas · [slot da comissão: junin/theuzim/afiliados] · Lucro · ROI — tudo lado a lado.
+     O vdSetComm preenche o slot (display:contents = os cards entram no MESMO grid). linha 2 (#vdAds): Gastos · Margem · ROAS. */
+  k.innerHTML='<span id="vdCommSlot" style="display:contents"></span>'+
+    card('Faturamento bruto','Receita líquida do período/pasta (estorno desconta); US$ somado pela cotação do dia',fmtMoney(rBRL,'BRL'),(rUSD?fmtMoney(rUSD,'USD'):'—'),'')+
+    card('Vendas aprovadas','Vendas aprovadas (estorno não conta)',String(v),(nEst?(nEst+' estorno'+(nEst===1?'':'s')):'sem estornos'),'')+
+    card('Lucro','Faturamento consolidado em R$ − Gastos',(temG?fmtMoney(lucro,'BRL'):'—'),'Faturamento − Gastos',(temG?(lucro<0?' red':' grn'):''))+
+    card('ROI','Lucro ÷ Gastos',(roi==null?'—':pv(roi,2)),'Lucro ÷ Gastos',(roi==null?'':(roi<0?' red':' grn')));
+  var ad=$('vdAds'); if(!ad)return;
+  ad.innerHTML=card('Gastos','Despesas lançadas no botão 💸 Despesas (por dia; segue o período filtrado)',(vdGastoOk?fmtMoney(gR,'BRL'):'—'),gSub,'')+
+    card('Margem','Lucro ÷ Faturamento (tudo em R$ pela cotação)',(mar==null?'—':pv(mar,1)+'%'),'Lucro ÷ Faturamento',(mar==null?'':(mar<0?' red':' grn')))+
+    card('ROAS','Faturamento ÷ Gastos (retorno por real investido)',(roas==null?'—':pv(roas,2)),'Faturamento ÷ Gastos',(roas==null?'':' grn'));}
+/* selo "Atualizado há X min" do topo do Vendas */
+var vdLastFetch=0;
+/* 💸 DESPESAS (gastos com anúncios): total do período em centavos + lançamentos (vem do api/gastos junto com o /api/sales) */
+var vdGastoCents=0, vdGastoList=[], vdGastoOk=false, vdBase='';
+function vdUpdLbl(){var el=$('vdUpdated');if(!el)return;if(!vdLastFetch){el.textContent='';return;}var m=Math.floor((Date.now()-vdLastFetch)/60000);el.textContent=(m<1)?'Atualizado agora':('Atualizado há '+m+' min');}
+setInterval(vdUpdLbl,60000);
 /* ===== COMISSÃO: afiliado (canal) leva a %, os 2 sócios dividem o resto 50/50. Reflete a pasta/filtro atual. ===== */
 var VD_SOCIOS=['junin','theuzim'];   // 2 sócios fixos
 function vdCommLoad(){try{return JSON.parse(localStorage.getItem('VD_COMM')||'{}')||{};}catch(e){return {};}}
@@ -2766,28 +2860,51 @@ function vdCommOffLoad(){try{return JSON.parse(localStorage.getItem('VD_COMMOFF'
 var VD_COMMOFF=vdCommOffLoad();
 function vdCommOffSave(){try{localStorage.setItem('VD_COMMOFF',JSON.stringify(VD_COMMOFF));}catch(e){}}
 function vdCommOff(canal){return !!VD_COMMOFF[canal];}   // true = rede NAO ganha comissao (afiliado 0%, 100% divide entre os socios)
+var vdCommSel='';   // canal escolhido no menu ▾ do card 🎯 Afiliados (''=soma de todos; a pasta tem prioridade)
 function vdSetComm(){
   var box=$('vdComm'); if(!box) return;
   var afi={}, soc={}, label='Afiliados', line='';
   function addRec(dst,r,f){Object.keys(r||{}).forEach(function(c){dst[c]=(dst[c]||0)+(r[c]||0)*f;});}
-  if(vdNav.canal){
-    var pc=vdNav.canal, off=vdCommOff(pc), cp=off?0:vdCommOf(pc), comm=cp/100;
-    var rec=vdNav.tema?((((vdGroups[pc]||{}).temas||{})[vdNav.tema]||{}).rec):((vdGroups[pc]||{}).rec); rec=rec||{};
+  var pc=vdNav.dono||vdCommSel, off=false, cp=10, isDir=(pc==='direto');   /* canal em foco: a PASTA tem prioridade; senão o escolhido no menu ▾ do card 🎯. 'direto' = venda SEM afiliado (NUNCA gera comissão) */
+  if(pc){
+    off=isDir||vdCommOff(pc); cp=off?0:vdCommOf(pc); var comm=cp/100;
+    var _Dc=vdGroups[pc]||{rec:{},redes:{}};
+    var rec=(vdNav.dono&&vdNav.ebook)?((((_Dc.redes[vdNav.rede]||{}).ebooks||{})[vdNav.ebook]||{}).rec):((vdNav.dono&&vdNav.rede)?((_Dc.redes[vdNav.rede]||{}).rec):_Dc.rec); rec=rec||{};   // rec da PASTA atual (ebook > rede > dono) ou do canal escolhido no menu
     addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2); label=pc;
-    var chk='<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--txt)"><input type="checkbox" id="vdCommChk"'+(off?'':' checked')+' style="width:14px;height:14px"> esta rede ganha comissão</label>';
-    var pctUi=off?('<small style="color:#f5c518">sem comissão → 100% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+'</small>'):('Comissão do <b style="color:#2dd4bf">'+pc+'</b>: <input id="vdCommInp" type="number" min="0" max="100" step="1" value="'+cp+'" style="width:58px;background:#000;border:1px solid var(--line);color:#f2eee4;border-radius:6px;padding:3px 6px;font-size:12px"> % &nbsp;<small>(o resto '+(100-cp)+'% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+')</small>');
-    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">'+chk+'<span>'+pctUi+'</span></div>';
+    if(isDir){
+      line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px">🌐 <b style="color:var(--txt)">direto</b> é venda sem afiliado — 100% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+'.</div>';
+    } else {
+      var chk='<label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;color:var(--txt)"><input type="checkbox" id="vdCommChk"'+(off?'':' checked')+' style="width:14px;height:14px"> este canal ganha comissão</label>';
+      var pctUi=off?('<small style="color:#f5c518">sem comissão → 100% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+'</small>'):('Comissão de <b style="color:#2dd4bf">'+ehEsc(pc)+'</b>: <input id="vdCommInp" type="number" min="0" max="100" step="1" value="'+cp+'" style="width:58px;background:#000;border:1px solid var(--line);color:#f2eee4;border-radius:6px;padding:3px 6px;font-size:12px"> % &nbsp;<small>(o resto '+(100-cp)+'% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+')</small>');
+      line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">'+chk+'<span>'+pctUi+'</span></div>';
+    }
   } else {
-    Object.keys(vdGroups).forEach(function(c){var comm=(vdCommOff(c)?0:vdCommOf(c))/100, rec=vdGroups[c].rec||{}; addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2);});
-    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Comissão por canal (padrão 10%) — entre numa pasta de canal pra ajustar a %.</div>';
+    Object.keys(vdGroups).forEach(function(c){var comm=((c==='direto')||vdCommOff(c))?0:(vdCommOf(c)/100), rec=vdGroups[c].rec||{}; addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2);});   /* direto NÃO entra na comissão de afiliado (100% pros sócios) */
+    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Comissão por canal (padrão 10%; venda direta não gera comissão) — clique no card 🎯 e escolha o canal pra ver/ajustar a % dele.</div>';
   }
   function money(m){var rc=clampRec(fxConsolidate(m)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100,p=[];if(b)p.push(fmtMoney(b,'BRL'));if(u)p.push(fmtMoney(u,'USD'));return p.join(' · ')||fmtMoney(0,'BRL');}
-  function moneyBoxes(m){var rc=clampRec(fxConsolidate(m)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100;function bx(lbl,num,cur,col){var c=num>0?col:'var(--muted)';return '<span style="display:inline-flex;flex-direction:column;gap:1px;background:rgba(255,255,255,.045);border:1px solid var(--line);border-radius:8px;padding:4px 9px"><span style="font-size:8.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;font-weight:700">'+lbl+'</span><span style="font-size:13.5px;font-weight:800;color:'+c+';white-space:nowrap">'+fmtMoney(num,cur)+'</span></span>';}return '<div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">'+bx('Real',b,'BRL','#5bd66b')+bx('Dólar',u,'USD','#2dd4bf')+'</div>';}
-  function card(nm,ic,col,val,kind){var act=(vdPerson&&vdPerson.kind===kind&&vdPerson.name===nm);return '<div class="ankpi" data-kind="'+kind+'" data-person="'+nm+'" style="cursor:pointer'+(act?';outline:2px solid '+col+';outline-offset:-1px;background:'+col+'14':'')+'" title="Clique pra filtrar o gráfico pelos ganhos de '+nm+'"><div class="ankpi-ic" style="background:'+col+'26;color:'+col+'">'+ic+'</div><div style="min-width:0"><div class="ankpi-k">'+nm+(act?' ✕':' ›')+'</div>'+moneyBoxes(val)+'</div></div>';}
-  box.innerHTML=line+'<div class="ankpis">'+card(VD_SOCIOS[0],'👤','#b06bff',soc,'socio')+card(VD_SOCIOS[1],'👤','#9b5cff',soc,'socio')+card(label,'🎯','#2dd4bf',afi,'afiliado')+'</div>';
-  var inp=$('vdCommInp'); if(inp)inp.onchange=function(){var v=Math.max(0,Math.min(100,parseFloat(this.value)||0));VD_COMM[vdNav.canal]=v;vdCommSave();vdSetComm();};
-  var chk=$('vdCommChk'); if(chk)chk.onchange=function(){if(this.checked){delete VD_COMMOFF[vdNav.canal];}else{VD_COMMOFF[vdNav.canal]=true;}vdCommOffSave();vdSetComm();};
-  Array.prototype.forEach.call(box.querySelectorAll('[data-kind]'),function(el){el.onclick=function(){var k=el.getAttribute('data-kind'),nm=el.getAttribute('data-person');if(vdPerson&&vdPerson.kind===k&&vdPerson.name===nm){vdPerson=null;}else{vdPerson={kind:k,name:nm};}vdRenderNav();};});
+  function card(nm,ic,col,val,kind){var act=(vdPerson&&vdPerson.kind===kind&&vdPerson.name===nm);var rc=clampRec(fxConsolidate(val)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100;
+    return '<div class="vdsum" data-kind="'+kind+'" data-person="'+nm+'" style="cursor:pointer'+(act?';outline:2px solid '+col+';outline-offset:-1px;background:'+col+'14':'')+'" title="Clique pra filtrar o gráfico pelos ganhos de '+nm+'"><div class="vdsum-k"><span>'+ic+' '+nm+'</span><span style="color:'+col+'">'+(act?'✕':'›')+'</span></div><div class="vdsum-v grn">'+fmtMoney(b,'BRL')+'</div><div class="vdsum-s">'+(u?fmtMoney(u,'USD'):'—')+'</div></div>';}
+  box.innerHTML=line;   /* aqui fica só a linha da comissão (%/checkbox); os CARDS vão pro slot na linha 1 dos KPIs, lado a lado com Faturamento/Lucro/ROI */
+  var slot=$('vdCommSlot');
+  /* card do AFILIADO com menu ▾ (pedido do user: escolher o canal ali, igual o filtro de Canal lá em cima) */
+  var rcA=clampRec(fxConsolidate(afi)), bA=(rcA.BRL||0)/100, uA=(rcA.USD||0)/100;
+  var afiSub=pc?(isDir?'venda direta — sem afiliado':(off?'sem comissão (desligado)':(cp+'% de comissão'))):'clique e escolha o canal';
+  var menu='<div id="vdAfiMenu" style="position:absolute;left:8px;right:8px;top:calc(100% - 8px);z-index:60;background:#0f1828;border:1px solid var(--line);border-radius:10px;box-shadow:0 14px 40px rgba(0,0,0,.55);padding:6px;display:none;max-height:230px;overflow:auto">'+
+    '<div class="vdafi-op" data-afisel="">🌐 Todos (soma dos canais)</div>'+
+    Object.keys(vdGroups).sort().map(function(c){return '<div class="vdafi-op" data-afisel="'+ehEsc(c)+'">'+((!vdNav.dono&&c===vdCommSel)?'✓ ':'')+ehEsc(c)+'</div>';}).join('')+'</div>';
+  var afiCard='<div class="vdsum" id="vdAfiCard" style="cursor:pointer;position:relative" title="Clique pra escolher o canal do afiliado"><div class="vdsum-k"><span>🎯 '+ehEsc(pc||'Afiliados')+'</span><span style="color:#2dd4bf">▾</span></div><div class="vdsum-v grn">'+fmtMoney(bA,'BRL')+'</div><div class="vdsum-s">'+(uA?(fmtMoney(uA,'USD')+' · '):'')+afiSub+'</div>'+menu+'</div>';
+  if(slot)slot.innerHTML=card(VD_SOCIOS[0],'👤','#b06bff',soc,'socio')+card(VD_SOCIOS[1],'👤','#9b5cff',soc,'socio')+afiCard;
+  var inp=$('vdCommInp'); if(inp)inp.onchange=function(){var v=Math.max(0,Math.min(100,parseFloat(this.value)||0));VD_COMM[pc]=v;vdCommSave();vdSetComm();};
+  var chk=$('vdCommChk'); if(chk)chk.onchange=function(){if(this.checked){delete VD_COMMOFF[pc];}else{VD_COMMOFF[pc]=true;}vdCommOffSave();vdSetComm();};
+  Array.prototype.forEach.call((slot||box).querySelectorAll('[data-kind]'),function(el){el.onclick=function(){var k=el.getAttribute('data-kind'),nm=el.getAttribute('data-person');if(vdPerson&&vdPerson.kind===k&&vdPerson.name===nm){vdPerson=null;}else{vdPerson={kind:k,name:nm};}vdRenderNav();};});
+  /* menu do card 🎯: abre/fecha no clique, escolhe o canal, fecha em clique fora */
+  var ac=$('vdAfiCard'), am=$('vdAfiMenu');
+  if(ac&&am){
+    ac.onclick=function(e){e.stopPropagation();am.style.display=(am.style.display==='none')?'block':'none';};
+    Array.prototype.forEach.call(am.querySelectorAll('[data-afisel]'),function(el){el.onclick=function(e){e.stopPropagation();vdCommSel=el.getAttribute('data-afisel')||'';am.style.display='none';vdSetComm();};});
+    if(!window.__vdAfiDoc){window.__vdAfiDoc=1;document.addEventListener('click',function(){var m=$('vdAfiMenu');if(m)m.style.display='none';});}
+  }
 }
 /* #3: série do gráfico filtrada por pessoa — só a RECEITA vira o quinhão da pessoa (junin/theuzim = sócio; afiliado = comissão).
    A CONTAGEM de vendas fica IGUAL à do gráfico sem filtro: a MESMA venda rende pro junin E pro theuzim E pro afiliado ao mesmo
@@ -2834,17 +2951,17 @@ function vdChart(serie){
   serie.forEach(function(s,i){
     var x=cx(i);
     line+=(i?'L':'M')+x.toFixed(1)+' '+lyR(rcs[i]).toFixed(1)+' ';
-    if(rcs[i])dots+='<circle cx="'+x.toFixed(1)+'" cy="'+lyR(rcs[i]).toFixed(1)+'" r="3.2" fill="#f5c518"/>';
+    if(rcs[i])dots+='<circle cx="'+x.toFixed(1)+'" cy="'+lyR(rcs[i]).toFixed(1)+'" r="3.2" fill="#4f8cff"/>';
   });
   var area='M'+cx(0).toFixed(1)+' '+base.toFixed(1)+' '+serie.map(function(s,i){return 'L'+cx(i).toFixed(1)+' '+lyR(rcs[i]).toFixed(1);}).join(' ')+' L'+cx(n-1).toFixed(1)+' '+base.toFixed(1)+' Z';
   var ticks=[];if(n<=8){for(var t=0;t<n;t++)ticks.push(t);}else{ticks=[0,Math.round(n*0.25),Math.round(n*0.5),Math.round(n*0.75),n-1];}
   var xlab='';ticks.forEach(function(i){xlab+='<text x="'+cx(i).toFixed(1)+'" y="'+(H-7)+'" fill="#5a6577" font-size="10.5" text-anchor="middle">'+fmt(serie[i].d)+'</text>';});
   var svg='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;overflow:visible">';
-  svg+='<defs><linearGradient id="vdbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#15897a"/></linearGradient><linearGradient id="vdclf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5c518" stop-opacity=".26"/><stop offset="1" stop-color="#f5c518" stop-opacity="0"/></linearGradient></defs>';
+  svg+='<defs><linearGradient id="vdbg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2dd4bf"/><stop offset="1" stop-color="#15897a"/></linearGradient><linearGradient id="vdclf" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2f6fed" stop-opacity=".28"/><stop offset="1" stop-color="#2f6fed" stop-opacity="0"/></linearGradient></defs>';
   svg+=grid+ylab;
   svg+='<line x1="'+padL+'" y1="'+base.toFixed(1)+'" x2="'+(W-padR)+'" y2="'+base.toFixed(1)+'" stroke="rgba(255,255,255,.14)"/>';
   svg+='<path d="'+area+'" fill="url(#vdclf)" stroke="none"/>';
-  svg+='<path d="'+line+'" fill="none" stroke="#f5c518" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
+  svg+='<path d="'+line+'" fill="none" stroke="#2f6fed" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+dots;
   svg+='<line class="vdguide" x1="0" y1="'+padT+'" x2="0" y2="'+base.toFixed(1)+'" stroke="rgba(255,255,255,.25)" stroke-width="1" style="display:none"/>';
   svg+=xlab+'</svg>';
   box.innerHTML=deltaHTML+svg;
@@ -2877,7 +2994,8 @@ function vdRanks(ranks){
   function card(titulo,icon,rows,nameFn){
     rows=rows||[];var max=1;rows.forEach(function(r){max=Math.max(max,r.vd||0);});
     var body=rows.length?rows.map(function(r,i){var pct=Math.round((r.vd||0)/max*100),nm=nameFn?nameFn(r.k):r.k;
-      return '<div class="vdrk'+(i>=5?' vdrk-more':'')+'"><span class="vdrk-pos">'+(i+1)+'</span><div class="vdrk-mid"><div class="vdrk-nm">'+nm+'</div><div class="vdrk-bar"><i style="width:'+pct+'%"></i></div></div><div class="vdrk-v"><b>'+(r.vd||0).toLocaleString('pt-BR')+'</b><span>'+recStr(r.r)+'</span></div></div>';
+      var pos=(i===0?'🥇':(i===1?'🥈':(i===2?'🥉':String(i+1))));   /* pódio: medalhas no top 3 + linha do 1º destacada */
+      return '<div class="vdrk'+(i>=5?' vdrk-more':'')+(i===0?' vdrk-top':'')+'"><span class="vdrk-pos">'+pos+'</span><div class="vdrk-mid"><div class="vdrk-nm">'+nm+'</div><div class="vdrk-bar"><i style="width:'+pct+'%"></i></div></div><div class="vdrk-v"><b>'+(r.vd||0).toLocaleString('pt-BR')+'</b><span>'+recStr(r.r)+'</span></div></div>';
     }).join(''):'<div class="anbreak-empty">Sem vendas ainda.</div>';
     var more=rows.length>5?'<button class="vdrk-vermais" onclick="vdRankMore(this)">ver mais '+(rows.length-5)+' ▾</button>':'';
     return '<div class="anbreak"><div class="anbreak-h">'+icon+' '+titulo+'<small>vendas · receita</small></div>'+body+more+'</div>';
@@ -2891,18 +3009,22 @@ function vdPaint(d){
   var f=d.filtros||{};vdFillSelect('vdEbook',f.ebooks);vdFillSelect('vdCanal',f.canais);vdFillSelect('vdTema',f.temas);vdFillSelect('vdPais',f.paises,paisNome);
   if(window.vdSyncDrops)vdSyncDrops();
   vdAllSerie=d.serie||[]; vdAllRanks=d.ranks||{};   // guarda o do servidor (a RAIZ usa o agregado preciso)
+  vdLastFetch=Date.now(); vdUpdLbl();               // selo "Atualizado há X min" do topo
   var list=d.list||[]; vdAllList=list;              // lista individual -> gráfico+rankings filtram por pasta (no vdRenderNav)
   vdGroups={};
   function recAdd(map,cur,cents){cur=(cur||'BRL');map[cur]=(map[cur]||0)+cents;}
   list.forEach(function(o){
-    var c=o.c||'direto', tm=o.t||'-', est=(o.st==='estorno'), inc=est?0:1, cu=(o.cur||'BRL'), val=est?0:(o.v||0);   // estorno nao conta nem na qtd nem na receita
-    if(!vdGroups[c])vdGroups[c]={tot:0,rec:{},temas:{}};
-    vdGroups[c].tot+=inc;recAdd(vdGroups[c].rec,cu,val);                 // tot = só APROVADAS; rec = líquido (trava em 0 ao exibir)
-    if(!vdGroups[c].temas[tm])vdGroups[c].temas[tm]={tot:0,rec:{},sales:[]};
-    vdGroups[c].temas[tm].tot+=inc;recAdd(vdGroups[c].temas[tm].rec,cu,val);vdGroups[c].temas[tm].sales.push(o);
+    var dn=(o.c||'direto'), rd=(o.t||'(sem rede)'), eb=o.e||'-', est=(o.st==='estorno'), inc=est?0:1, cu=(o.cur||'BRL'), val=est?0:(o.v||0);   // TUDO do rastreio da venda (global, funciona p/ venda de qualquer builder): DONO = pessoa/canal (o.c); REDE = campo 'tema' do link (o.t); EBOOK = o.e. estorno nao conta na qtd nem na receita
+    if(!vdGroups[dn])vdGroups[dn]={tot:0,rec:{},redes:{}};
+    vdGroups[dn].tot+=inc;recAdd(vdGroups[dn].rec,cu,val);                 // tot = só APROVADAS; rec = líquido (trava em 0 ao exibir)
+    var D=vdGroups[dn]; if(!D.redes[rd])D.redes[rd]={tot:0,rec:{},ebooks:{}};
+    D.redes[rd].tot+=inc;recAdd(D.redes[rd].rec,cu,val);
+    var R=D.redes[rd]; if(!R.ebooks[eb])R.ebooks[eb]={tot:0,rec:{},sales:[]};
+    R.ebooks[eb].tot+=inc;recAdd(R.ebooks[eb].rec,cu,val);R.ebooks[eb].sales.push(o);   // sales = todas (inclui estorno) p/ a tabela no nível ebook
   });
-  if(vdNav.canal&&!vdGroups[vdNav.canal])vdNav={canal:'',tema:''};
-  else if(vdNav.tema&&(!vdGroups[vdNav.canal]||!vdGroups[vdNav.canal].temas[vdNav.tema]))vdNav.tema='';
+  if(vdNav.dono&&!vdGroups[vdNav.dono])vdNav={dono:'',rede:'',ebook:''};
+  else if(vdNav.rede&&(!vdGroups[vdNav.dono]||!vdGroups[vdNav.dono].redes[vdNav.rede])){vdNav.rede='';vdNav.ebook='';}
+  else if(vdNav.ebook&&(!vdGroups[vdNav.dono]||!vdGroups[vdNav.dono].redes[vdNav.rede]||!vdGroups[vdNav.dono].redes[vdNav.rede].ebooks[vdNav.ebook]))vdNav.ebook='';
   vdRenderNav();
 }
 /* recalcula a série (gráfico) + rankings a partir de uma lista de vendas — p/ filtrar pela PASTA selecionada */
@@ -2945,39 +3067,62 @@ function vdTblPaint(){
 }
 function vdTblMore(all){vdTblLimit=all?1e9:(vdTblLimit+50);vdTblPaint();}
 function vdTblSearchChg(){vdTblLimit=50;vdTblPaint();}
+/* Vendas por DIA DA SEMANA + por HORÁRIO (fuso de Brasília, igual vdComputeView). Só aprovadas; % = fatia do total da pasta/filtro. */
+function vdWeekHour(list){
+  var wb=$('vdWeek'), hb=$('vdHour'); if(!wb&&!hb)return;
+  var wd=[0,0,0,0,0,0,0], hr=[], tot=0, i;
+  for(i=0;i<24;i++)hr.push(0);
+  (list||[]).forEach(function(o){ if(o.st==='estorno')return; var d=new Date((o.ts||0)-10800000); if(isNaN(d.getTime()))return; wd[d.getUTCDay()]++; hr[d.getUTCHours()]++; tot++; });
+  function pct(n){ return (Math.round(n/tot*1000)/10).toLocaleString('pt-BR')+'%'; }
+  var vazio='<div style="color:var(--muted);font-size:13px;padding:10px 0">Sem vendas no período.</div>';
+  var WN=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+  if(wb){ if(!tot){wb.innerHTML=vazio;} else { var mx=Math.max.apply(null,wd)||1;   /* barras LARGAS centradas (estilo referência); dia zerado = só "0%" sem barra */
+    wb.innerHTML='<div class="vdbars">'+wd.map(function(n,ix){var h=n?Math.max(10,Math.round(n/mx*200)):0;return '<div class="vdbar" title="'+WN[ix]+' — '+n+' venda'+(n===1?'':'s')+(n?' ('+pct(n)+')':'')+'"><span class="vdbar-p"'+(n?'':' style="color:#5a6478"')+'>'+(n?pct(n):'0%')+'</span><div class="vdbar-b" style="width:56%;max-width:130px;height:'+h+'px"></div></div>';}).join('')+'</div>'+
+    '<div style="display:flex;gap:10px;padding:2px 4px 0">'+WN.map(function(w){return '<span class="vdbar-x" style="flex:1">'+w+'</span>';}).join('')+'</div>'; } }
+  if(hb){ if(!tot){hb.innerHTML=vazio;} else { var mh=Math.max.apply(null,hr)||1;   /* estilo referência: barra fina centrada, hora zerada = só "0%" (sem barra), TODAS as horas rotuladas */
+    hb.innerHTML='<div class="vdbars" style="gap:6px">'+hr.map(function(n,ix){var h=n?Math.max(6,Math.round(n/mh*96)):0;return '<div class="vdbar" title="'+('0'+ix).slice(-2)+':00 — '+n+' venda'+(n===1?'':'s')+(n?' ('+pct(n)+')':'')+'"><span class="vdbar-p"'+(n?'':' style="color:#5a6478"')+'>'+(n?pct(n):'0%')+'</span><div class="vdbar-b" style="max-width:none;width:58%;border-radius:2px 2px 0 0;height:'+h+'px"></div></div>';}).join('')+'</div>'+
+    '<div style="display:flex;gap:6px;padding:2px 4px 0">'+hr.map(function(_,ix){return '<span class="vdbar-x" style="flex:1">'+('0'+ix).slice(-2)+':00</span>';}).join('')+'</div>'; } }
+}
 function vdRenderNav(){
   var t=$('vdTable');if(!t)return;
   var keys=Object.keys(vdGroups);
-  if(!keys.length){vdSetKpis(0,{});vdChart([]);vdRanks({});vdSetComm();t.innerHTML='<div style="color:var(--muted);font-size:13px;padding:14px 0">Nenhuma venda nesse filtro ainda. Quando vender, aparece aqui na hora.</div>';return;}
-  /* KPIs refletem a PASTA atual (receita somada POR MOEDA) */
+  if(!keys.length){vdSetKpis(0,{});vdChart([]);vdRanks({});vdSetComm();vdWeekHour([]);t.innerHTML='<div style="color:var(--muted);font-size:13px;padding:14px 0">Nenhuma venda nesse filtro ainda. Quando vender, aparece aqui na hora.</div>';return;}
+  /* KPIs refletem a PASTA atual (receita somada POR MOEDA) — dono -> rede -> ebook */
   var curV=0,curR={};
   function recMerge(dst,src){Object.keys(src||{}).forEach(function(c){dst[c]=(dst[c]||0)+src[c];});}
-  if(!vdNav.canal){keys.forEach(function(c){curV+=vdGroups[c].tot;recMerge(curR,vdGroups[c].rec);});}
-  else if(!vdNav.tema){var _cd=vdGroups[vdNav.canal]||{tot:0,rec:{}};curV=_cd.tot;recMerge(curR,_cd.rec);}
-  else{var _td=(vdGroups[vdNav.canal]&&vdGroups[vdNav.canal].temas[vdNav.tema])||{tot:0,rec:{}};curV=_td.tot;recMerge(curR,_td.rec);}
-  vdSetKpis(curV,curR);
+  var _D=vdGroups[vdNav.dono], _R=_D&&_D.redes[vdNav.rede], _E=_R&&_R.ebooks[vdNav.ebook];
+  if(!vdNav.dono){keys.forEach(function(dn){curV+=vdGroups[dn].tot;recMerge(curR,vdGroups[dn].rec);});}
+  else if(!vdNav.rede){var _x=_D||{tot:0,rec:{}};curV=_x.tot;recMerge(curR,_x.rec);}
+  else if(!vdNav.ebook){var _x=_R||{tot:0,rec:{}};curV=_x.tot;recMerge(curR,_x.rec);}
+  else{var _x=_E||{tot:0,rec:{}};curV=_x.tot;recMerge(curR,_x.rec);}
   /* GRÁFICO + RANKINGS refletem a PASTA atual: raiz = agregado do servidor; dentro da pasta = recalculado da lista filtrada */
-  var _fl=vdNav.canal?vdAllList.filter(function(o){ return (o.c||'direto')===vdNav.canal && (!vdNav.tema || (o.t||'-')===vdNav.tema); }):vdAllList;
-  var _cv=vdNav.canal?vdComputeView(_fl):null;
-  var _baseSerie=vdNav.canal?_cv.serie:vdAllSerie;                            // o que o gráfico SEM filtro mostraria (mantém a contagem de vendas)
-  vdRanks(vdNav.canal?_cv.ranks:vdAllRanks);                                  // rankings seguem a pasta (não a pessoa)
+  var _fl=vdNav.dono?vdAllList.filter(function(o){ return (o.c||'direto')===vdNav.dono && (!vdNav.rede||(o.t||'(sem rede)')===vdNav.rede) && (!vdNav.ebook||(o.e||'-')===vdNav.ebook); }):vdAllList;
+  vdSetKpis(curV,curR,_fl.filter(function(o){return o.st==='estorno';}).length);
+  vdWeekHour(_fl);
+  var _cv=vdNav.dono?vdComputeView(_fl):null;
+  var _baseSerie=vdNav.dono?_cv.serie:vdAllSerie;                             // o que o gráfico SEM filtro mostraria (mantém a contagem de vendas)
+  vdRanks(vdNav.dono?_cv.ranks:vdAllRanks);                                   // rankings seguem a pasta (não a pessoa)
   if(vdPerson){ vdChart(vdPersonSerie(_fl,vdPerson.kind,_baseSerie)); }       // filtra só a RECEITA pro quinhão da pessoa; contagem fica igual ao sem filtro
   else { vdChart(_baseSerie); }
   var _ttl=$('vdChartTitle'); if(_ttl)_ttl.innerHTML=vdPerson?('Receita no tempo — '+(vdPerson.kind==='afiliado'?'🎯':'👤')+' '+vdPerson.name+' <span style="color:#f5c518;font-weight:600">· filtrado (clique no card pra limpar)</span>'):'Receita no tempo';
   vdSetComm();
   var crumb='<div class="vdcrumb"><span class="vdcrumb-a" data-nav="home">📂 Todos</span>';
-  if(vdNav.canal)crumb+='<span class="vdcrumb-s">›</span><span class="'+(vdNav.tema?'vdcrumb-a':'vdcrumb-cur')+'" data-nav="canal">👤 '+vdNav.canal+'</span>';
-  if(vdNav.tema)crumb+='<span class="vdcrumb-s">›</span><span class="vdcrumb-cur">📁 '+vdNav.tema+'</span>';
+  if(vdNav.dono)crumb+='<span class="vdcrumb-s">›</span><span class="'+(vdNav.rede?'vdcrumb-a':'vdcrumb-cur')+'" data-nav="dono">👤 '+ehEsc(vdNav.dono)+'</span>';
+  if(vdNav.rede)crumb+='<span class="vdcrumb-s">›</span><span class="'+(vdNav.ebook?'vdcrumb-a':'vdcrumb-cur')+'" data-nav="rede">📡 '+ehEsc(vdNav.rede)+'</span>';
+  if(vdNav.ebook)crumb+='<span class="vdcrumb-s">›</span><span class="vdcrumb-cur">📖 '+ehEsc((model[vdNav.ebook]&&model[vdNav.ebook].nome)||vdNav.ebook)+'</span>';
   crumb+='</div>';
   var body='';
-  if(!vdNav.canal){
-    body=keys.sort().map(function(c){var cd=vdGroups[c],t=nn(cd.tot);return '<div class="vdfolder" data-canal="'+c+'"><span class="vdfi">👤</span><span class="vdfn">'+c+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(cd.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
-  } else if(!vdNav.tema){
-    var cd=vdGroups[vdNav.canal]||{temas:{}};
-    body=Object.keys(cd.temas).sort().map(function(tm){var td=cd.temas[tm],t=nn(td.tot);return '<div class="vdfolder" data-tema="'+tm+'"><span class="vdfi">📁</span><span class="vdfn">'+tm+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(td.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
+  if(!vdNav.dono){
+    body=keys.sort().map(function(dn){var cd=vdGroups[dn],t=nn(cd.tot);return '<div class="vdfolder" data-dono="'+ehEsc(dn)+'"><span class="vdfi">👤</span><span class="vdfn">'+ehEsc(dn)+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(cd.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
+  } else if(!vdNav.rede){
+    var D=_D||{redes:{}};
+    body=Object.keys(D.redes).sort().map(function(rd){var rdd=D.redes[rd],t=nn(rdd.tot);return '<div class="vdfolder" data-rede="'+ehEsc(rd)+'"><span class="vdfi">📡</span><span class="vdfn">'+ehEsc(rd)+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(rdd.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
+  } else if(!vdNav.ebook){
+    var R=_R||{ebooks:{}};
+    body=Object.keys(R.ebooks).sort().map(function(eb){var ed=R.ebooks[eb],t=nn(ed.tot),disp=(model[eb]&&model[eb].nome)||eb;return '<div class="vdfolder" data-ebook="'+ehEsc(eb)+'"><span class="vdfi">📖</span><span class="vdfn">'+ehEsc(disp)+'</span><span class="vdft">'+t+' venda'+(t===1?'':'s')+' · '+vdRecStrC(ed.rec)+'</span><span class="vdfa">›</span></div>';}).join('');
   } else {
-    var td=(vdGroups[vdNav.canal]&&vdGroups[vdNav.canal].temas[vdNav.tema])||{sales:[]};
-    vdTblRows=(td.sales||[]).slice(); vdTblLimit=50;
+    var ed=_E||{sales:[]};
+    vdTblRows=(ed.sales||[]).slice(); vdTblLimit=50;
     var _pmap={}; vdTblRows.forEach(function(o){if(o.p)_pmap[o.p]=1;});
     var _popts='<option value="">🌍 País: todos</option>'+Object.keys(_pmap).sort(function(a,b){return paisNome(a).localeCompare(paisNome(b),'pt');}).map(function(p){return '<option value="'+p+'">'+(flagOf(p)?flagOf(p)+' ':'')+paisNome(p)+'</option>';}).join('');
     body='<div class="vdtbar">'+
@@ -2988,9 +3133,10 @@ function vdRenderNav(){
       '<table class="vdtbl"><thead id="vdTblHead"></thead><tbody id="vdTblBody"></tbody></table><div id="vdTblMoreWrap" style="margin-top:12px;text-align:center"></div>';
   }
   t.innerHTML=crumb+body;
-  Array.prototype.forEach.call(t.querySelectorAll('[data-canal]'),function(el){el.onclick=function(){vdPerson=null;vdNav={canal:el.getAttribute('data-canal'),tema:''};vdRenderNav();};});
-  Array.prototype.forEach.call(t.querySelectorAll('[data-tema]'),function(el){el.onclick=function(){vdPerson=null;vdNav.tema=el.getAttribute('data-tema');vdRenderNav();};});
-  Array.prototype.forEach.call(t.querySelectorAll('[data-nav]'),function(el){el.onclick=function(){vdPerson=null;var n=el.getAttribute('data-nav');if(n==='home')vdNav={canal:'',tema:''};else if(n==='canal')vdNav.tema='';vdRenderNav();};});
+  Array.prototype.forEach.call(t.querySelectorAll('[data-dono]'),function(el){el.onclick=function(){vdPerson=null;vdNav={dono:el.getAttribute('data-dono'),rede:'',ebook:''};vdRenderNav();};});
+  Array.prototype.forEach.call(t.querySelectorAll('[data-rede]'),function(el){el.onclick=function(){vdPerson=null;vdNav.rede=el.getAttribute('data-rede');vdNav.ebook='';vdRenderNav();};});
+  Array.prototype.forEach.call(t.querySelectorAll('[data-ebook]'),function(el){el.onclick=function(){vdPerson=null;vdNav.ebook=el.getAttribute('data-ebook');vdRenderNav();};});
+  Array.prototype.forEach.call(t.querySelectorAll('[data-nav]'),function(el){el.onclick=function(){vdPerson=null;var n=el.getAttribute('data-nav');if(n==='home')vdNav={dono:'',rede:'',ebook:''};else if(n==='dono'){vdNav.rede='';vdNav.ebook='';}else if(n==='rede')vdNav.ebook='';vdRenderNav();};});
   if($('vdTblHead'))vdTblPaint();
 }
 function renderVendas(){
@@ -3010,10 +3156,52 @@ function renderVendas(){
   }
   fxLoad().then(function(){return fetch('/deploy-config.json',{cache:'no-store'}).then(function(r){return r.json();});}).then(function(c){
     var base=(c&&c.prodUrl)?String(c.prodUrl).replace(/\/$/,''):'';if(!base)throw new Error('x');
-    return fetch(base+'/api/sales'+qs,{cache:'no-store'}).then(function(r){return r.json();});
-  }).then(function(d){if(d&&d.ok)vdPaint(d);else vdEmpty('Sem conexão com o banco — fez o Deploy?');}).catch(function(){vdEmpty('Sem conexão — fez o Deploy do /api/sales?');});
+    vdBase=base;   /* guardado p/ o modal de Despesas postar no mesmo servidor */
+    var fb=$('vdFunnel');   /* funil do Vendas: mesma query dos filtros de cima (o /api/stats ignora o país sem quebrar) */
+    if(fb){fetch(base+'/api/stats'+qs,{cache:'no-store'}).then(function(r){return r.json();}).then(function(s){if(s&&s.ok)anFunnel(s,'vdFunnel');else fb.innerHTML='<div style="color:var(--muted);font-size:13px;padding:12px 0">Sem dados do funil.</div>';}).catch(function(){fb.innerHTML='<div style="color:var(--muted);font-size:13px;padding:12px 0">Sem conexão com o funil.</div>';});}
+    return Promise.all([
+      fetch(base+'/api/sales'+qs,{cache:'no-store'}).then(function(r){return r.json();}),
+      fetch(base+'/api/gastos'+qs,{cache:'no-store'}).then(function(r){return r.json();}).catch(function(){return null;})   /* gastos junto (endpoint novo; sem deploy = null e os cards mostram —) */
+    ]);
+  }).then(function(arr){var d=arr[0],g=arr[1];
+    vdGastoOk=!!(g&&g.ok); vdGastoCents=vdGastoOk?(g.total||0):0; vdGastoList=vdGastoOk?(g.list||[]):[];
+    if(d&&d.ok)vdPaint(d);else vdEmpty('Sem conexão com o banco — fez o Deploy?');
+    var gm=$('gastosModal'); if(gm&&gm.style.display==='flex')gastoPintar();   /* modal aberto -> lista atualiza na hora */
+  }).catch(function(){vdEmpty('Sem conexão — fez o Deploy do /api/sales?');});
 }
 (function(){var r=$('vdRefresh');if(r)r.onclick=renderVendas;['vdEbook','vdCanal','vdTema','vdPais','vdPeriodo','vdFrom','vdTo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderVendas;});})();
+/* ===== 💸 DESPESAS: modal de lançamento (servidor api/gastos.js — precisa de 1 Deploy pra existir no ar) ===== */
+function gastoUrl(){var t=bTokQS();return vdBase+'/api/gastos'+(t?('?'+t.slice(1)):'');}
+function gastoMsg(t,ok){var m=$('gastoMsg');if(m){m.textContent=t||'';m.style.color=ok?'#5bd66b':'#f5c518';}}
+function gastoAbrir(){var m=$('gastosModal');if(!m)return;m.style.display='flex';gastoMsg('');var d=$('gastoDia');if(d&&!d.value)d.value=new Date().toLocaleDateString('en-CA');gastoPintar();}
+function gastoPintar(){var b=$('gastoList');if(!b)return;
+  if(!vdGastoOk){b.innerHTML='<div style="color:#f5c518;font-size:12.5px">O api/gastos ainda não está no ar — faz 1 Deploy e volta aqui.</div>';return;}
+  if(!vdGastoList.length){b.innerHTML='<div style="color:var(--muted);font-size:12.5px">Nenhum lançamento no período filtrado.</div>';return;}
+  var rows=vdGastoList.slice().sort(function(a,b2){return String(b2.d||'').localeCompare(String(a.d||''))||((b2.ts||0)-(a.ts||0));});
+  b.innerHTML='<div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:7px">Lançamentos do período — total '+fmtMoney(Math.max(0,vdGastoCents)/100,'BRL')+'</div>'+
+    rows.map(function(o){var dd=String(o.d||'').split('-');return '<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;background:rgba(13,22,38,.5)"><span style="font-size:12.5px;color:var(--txt);font-weight:600;white-space:nowrap">'+dd[2]+'/'+dd[1]+'/'+dd[0]+'</span><span style="flex:1;font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+(o.n?ehEsc(o.n):'')+'</span><span style="text-align:right;font-size:13px;font-weight:800;color:#ff9f6b;white-space:nowrap">'+fmtMoney((o.v||0)/100,'BRL')+'</span><button class="btn" data-gdel="'+o.id+'" title="Remover este lançamento" style="padding:3px 9px;font-size:12px">🗑</button></div>';}).join('');
+  Array.prototype.forEach.call(b.querySelectorAll('[data-gdel]'),function(el){el.onclick=function(){gastoDel(el.getAttribute('data-gdel'));};});
+}
+function gastoAdd(){
+  if(!vdBase){gastoMsg('Abre a aba Vendas primeiro (ela conecta no servidor).');return;}
+  var d=($('gastoDia')&&$('gastoDia').value)||'', s=String(($('gastoValor')&&$('gastoValor').value)||'').trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(d)){gastoMsg('Escolhe o dia.');return;}
+  var vv; if(s.indexOf(',')>=0){vv=parseFloat(s.replace(/\./g,'').replace(',','.'));}else{vv=parseFloat(s);}   /* aceita 150 | 150,36 | 1.234,56 | 150.36 */
+  if(!isFinite(vv)||vv<=0){gastoMsg('Valor inválido — ex.: 150,36');return;}
+  var n=String(($('gastoDesc')&&$('gastoDesc').value)||'').trim().slice(0,60);
+  gastoMsg('Lançando…',true);
+  fetch(gastoUrl(),{method:'POST',body:JSON.stringify({d:d,v:Math.round(vv*100),n:n})}).then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok){gastoMsg('Lançado ✓',true);var vI=$('gastoValor');if(vI)vI.value='';var nI=$('gastoDesc');if(nI)nI.value='';renderVendas();}
+    else gastoMsg((j&&j.error)||'Falhou — fez o Deploy do api/gastos?');
+  }).catch(function(){gastoMsg('Sem conexão — fez o Deploy do api/gastos?');});
+}
+function gastoDel(id){
+  gastoMsg('Removendo…',true);
+  fetch(gastoUrl(),{method:'POST',body:JSON.stringify({del:id})}).then(function(r){return r.json();}).then(function(j){
+    if(j&&j.ok){gastoMsg('Removido ✓',true);renderVendas();}else gastoMsg((j&&j.error)||'Não achei esse lançamento.');
+  }).catch(function(){gastoMsg('Sem conexão.');});
+}
+(function(){var b=$('vdGastosBtn');if(b)b.onclick=gastoAbrir;var f=$('gastoFechar');if(f)f.onclick=function(){$('gastosModal').style.display='none';};var a=$('gastoAddBtn');if(a)a.onclick=gastoAdd;var m=$('gastosModal');if(m)m.onclick=function(e){if(e.target===m)m.style.display='none';};var vI=$('gastoValor');if(vI)vI.onkeydown=function(e){if(e.key==='Enter')gastoAdd();};var nI=$('gastoDesc');if(nI)nI.onkeydown=function(e){if(e.key==='Enter')gastoAdd();};})();
 function openLinksFor(ek){fetch('/deploy-config.json',{cache:'no-store'}).then(function(r){return r.json();}).then(function(c){showDeployResult((c&&c.prodUrl)||'',ek);}).catch(function(){showDeployResult('',ek);});}
 var ebNav={dono:'',rede:''};
 function ehEsc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}

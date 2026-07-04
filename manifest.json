@@ -1,6 +1,6 @@
 {
-  "version": 243,
-  "date": "2026-07-03T05:17:15.009Z",
+  "version": 244,
+  "date": "2026-07-04T04:33:17.644Z",
   "files": [
     "builder.html",
     "painel.html",
@@ -17,6 +17,7 @@
     "deploy.bat",
     "login-vercel.bat",
     "version.json",
+    "api/gastos.js",
     "api/hotmart.js",
     "api/reset.js",
     "api/sales.js",
