@@ -121,7 +121,8 @@ module.exports = async function (req, res) {
           if (!pk || pk.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'pend-duplicado:' + tx })); return; }
         }
         const rz = String((purchase.payment && purchase.payment.refusal_reason) || '').replace(/[<>]/g, '').trim().slice(0, 100);   // MOTIVO da recusa (ex.: "Fraud attempt detected.") — confirmado no payload real via espião
-        await redis(['LPUSH', 'pendlog:' + date, JSON.stringify({ tx: tx, ev: pcls, pm: pm, rz: rz, e: ebook, vs: versao, c: canalSo, t: tema, p: pais, v: cents, cur: moeda, ts: Date.now() })]);
+        const by = String((buyer && buyer.email) || '').toLowerCase().trim().slice(0, 80);   // comprador (p/ detectar a MESMA pessoa tentando várias vezes; exibido mascarado no painel)
+        await redis(['LPUSH', 'pendlog:' + date, JSON.stringify({ tx: tx, ev: pcls, pm: pm, rz: rz, by: by, e: ebook, vs: versao, c: canalSo, t: tema, p: pais, v: cents, cur: moeda, ts: Date.now() })]);
         await redis(['LTRIM', 'pendlog:' + date, '0', '999']);
         res.statusCode = 200; res.end(JSON.stringify({ ok: true, pend: pcls })); return;
       }

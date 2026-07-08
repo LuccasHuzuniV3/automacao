@@ -91,7 +91,7 @@ module.exports = async function (req, res) {
         if (o.ev === 'wait') ck.wait++; else if (o.ev === 'exp') ck.exp++; else if (o.ev === 'can') ck.can++; else return;
         const k = o.pm || '?'; if (!ck.m[k]) ck.m[k] = { w: 0, x: 0, c: 0 };
         if (o.ev === 'wait') ck.m[k].w++; else if (o.ev === 'exp') ck.m[k].x++; else ck.m[k].c++;
-        if (ck.list.length < 500) ck.list.push({ ev: o.ev, pm: k, rz: o.rz || '', p: o.p || '', v: o.v || 0, cur: o.cur || 'BRL', e: o.e || '-', ts: o.ts || 0 });   // registros p/ o drill-down (motivos das recusas)
+        if (ck.list.length < 500) ck.list.push({ ev: o.ev, pm: k, rz: o.rz || '', by: o.by || '', p: o.p || '', v: o.v || 0, cur: o.cur || 'BRL', e: o.e || '-', ts: o.ts || 0 });   // registros p/ o drill-down (motivos, país, comprador)
       });
     });
     list.forEach(o => { if (o.pm && o.st !== 'estorno') ck.pagos[o.pm] = (ck.pagos[o.pm] || 0) + 1; });   // pagos por método (só as vendas novas carregam pm)
