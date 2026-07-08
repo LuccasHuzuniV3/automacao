@@ -21,6 +21,7 @@ module.exports = async function (req, res) {
     if (VIEW && String(q.token || '') !== String(VIEW)) { res.statusCode = 401; res.end(JSON.stringify({ ok: false, auth: true, error: 'token' })); return; }
     const days = Math.min(Math.max(parseInt(q.days || '30', 10) || 30, 1), 365);
     const fE = q.ebook || '', fC = q.canal || '', fT = q.tema || '', fP = q.pais || '', fW = q.ws || q.funil || '';
+    const fTrk = (q.track === 'sim' || q.track === 'nao') ? q.track : '';   // rastreio: ''=todas | sim=só rastreadas | nao=só NÃO rastreadas (regra igual ao /api/stats: sem rastreio = ebook '-')
 
     // datas em horário de BRASÍLIA (UTC-3): from/to (YYYY-MM-DD, dias BR) tem prioridade; senão, janela de N dias BR.
     function brDate(ms) { return new Date(ms - 10800000).toISOString().slice(0, 10); }   // dia-BR de um timestamp (UTC-3)
@@ -39,6 +40,7 @@ module.exports = async function (req, res) {
     const readKeys = dates.slice();
     if (dates.length) { const buf = new Date(new Date(dates[0] + 'T00:00:00Z').getTime() + 86400000).toISOString().slice(0, 10); if (readKeys.indexOf(buf) < 0) readKeys.unshift(buf); }
     const results = await Promise.all(readKeys.map(dt => redis(['LRANGE', 'salelog:' + dt, '0', '-1']).catch(() => ({ result: [] }))));
+    const resultsP = await Promise.all(readKeys.map(dt => redis(['LRANGE', 'pendlog:' + dt, '0', '-1']).catch(() => ({ result: [] }))));   // vazamento do checkout (aguardando/expirada/cancelada)
 
     const list = []; const byDay = {};
     results.forEach(day => {
@@ -49,6 +51,9 @@ module.exports = async function (req, res) {
         if (fT && o.t !== fT) return;
         if (fP && o.p !== fP) return;
         if (fW && (o.ws || 'principal') !== fW) return;   // filtro por etapa do funil (venda antiga sem ws = principal)
+        const untr = ((o.e || '-') === '-');
+        if (fTrk === 'sim' && untr) return;               // só rastreadas
+        if (fTrk === 'nao' && !untr) return;              // só NÃO rastreadas
         const bd = brDate(o.ts || 0);
         if (!winSet[bd]) return;                          // fora da janela BR (ex.: venda de amanhã que veio no buffer)
         list.push(o);
@@ -69,8 +74,29 @@ module.exports = async function (req, res) {
     });
     const receitas = {}; Object.keys(receitasCents).forEach(c => { receitas[c] = receitasCents[c] / 100; });
     const ranks = rankSales(list);   // rankings (pais / src / ebook) sobre as vendas JÁ filtradas (respeita os filtros)
+    // VAZAMENTO DO CHECKOUT: agrega o pendlog com os MESMOS filtros (o registro pendente não tem ws/funil)
+    const ck = { wait: 0, exp: 0, can: 0, m: {}, pagos: {}, list: [] };
+    resultsP.forEach(day => {
+      (day && day.result || []).forEach(s => {
+        let o; try { o = JSON.parse(s); } catch (e) { return; }
+        if (fE && o.e !== fE) return;
+        if (fC && o.c !== fC) return;
+        if (fT && o.t !== fT) return;
+        if (fP && o.p !== fP) return;
+        const untrP = ((o.e || '-') === '-');
+        if (fTrk === 'sim' && untrP) return;              // rastreio também vale pro checkout (pendentes)
+        if (fTrk === 'nao' && !untrP) return;
+        const bd = brDate(o.ts || 0);
+        if (!winSet[bd]) return;
+        if (o.ev === 'wait') ck.wait++; else if (o.ev === 'exp') ck.exp++; else if (o.ev === 'can') ck.can++; else return;
+        const k = o.pm || '?'; if (!ck.m[k]) ck.m[k] = { w: 0, x: 0, c: 0 };
+        if (o.ev === 'wait') ck.m[k].w++; else if (o.ev === 'exp') ck.m[k].x++; else ck.m[k].c++;
+        if (ck.list.length < 500) ck.list.push({ ev: o.ev, pm: k, rz: o.rz || '', p: o.p || '', v: o.v || 0, cur: o.cur || 'BRL', e: o.e || '-', ts: o.ts || 0 });   // registros p/ o drill-down (motivos das recusas)
+      });
+    });
+    list.forEach(o => { if (o.pm && o.st !== 'estorno') ck.pagos[o.pm] = (ck.pagos[o.pm] || 0) + 1; });   // pagos por método (só as vendas novas carregam pm)
     res.statusCode = 200;
-    res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, serie: serie, ranks: ranks, list: list.slice(0, 5000),
+    res.end(JSON.stringify({ ok: true, vendas: totV, receita: totRcents / 100, receitas: receitas, serie: serie, ranks: ranks, list: list.slice(0, 5000), checkout: ck,
       filtros: { ebooks: Object.keys(ebooks), canais: Object.keys(canais), temas: Object.keys(temas), paises: Object.keys(paises), funis: Object.keys(funis) } }));
   } catch (e) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: String(e).slice(0, 150) })); }
 };

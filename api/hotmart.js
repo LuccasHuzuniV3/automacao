@@ -33,6 +33,7 @@ module.exports = async function (req, res) {
   if (req.method !== 'POST') {
     const q0 = parse(req.url, true).query || {};
     if (q0.raw === '1' && RURL && RTOK) { let lw = ''; try { lw = (await redis(['GET', 'lastwebhook'])).result || ''; } catch (e) {} res.statusCode = 200; res.end(JSON.stringify({ ok: true, last: lw })); return; }
+    if (q0.raw === 'cancel' && RURL && RTOK) { let lc = ''; try { lc = (await redis(['GET', 'lastcancel'])).result || ''; } catch (e) {} res.statusCode = 200; res.end(JSON.stringify({ ok: true, last: lc })); return; }   // espião do último CANCELAMENTO
     res.statusCode = 200; res.end(JSON.stringify({ ok: true, msg: 'Hotmart webhook pronto' })); return;
   }
   try {
@@ -78,22 +79,16 @@ module.exports = async function (req, res) {
     let moeda = curOf(purchase.price) || curOf(purchase.full_price) || curOf(purchase.original_offer_price) || curOf(data) || 'BRL';
     if (moeda.length !== 3) moeda = 'BRL';
 
-    let sign = 0;
-    if (/APPROV|APROVAD/.test(event)) sign = 1;                          // SO a aprovacao conta a venda
-    else if (/REFUND|CHARGEBACK|REEMBOLS|ESTORN|DISPUTE|PROTEST/.test(event)) sign = -1; // SO reembolso/chargeback REAL
-    // PURCHASE_COMPLETE = a MESMA venda mudando de status (fim da garantia) -> NAO conta de novo.
-    // expirado / cancelado / boleto-pix nao pago / carrinho abandonado -> IGNORA.
-    if (!sign) { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: event || '?' })); return; }
-
-    // ANTI-DUPLICACAO: a mesma transacao NUNCA conta 2x (reenvio/retry da Hotmart, eventos repetidos)
-    const tx = String(purchase.transaction || data.transaction || '').trim();
-    if (tx) {
-      const dk = (sign > 0 ? 'txok:' : 'txref:') + tx;
-      const dr = await redis(['SET', dk, '1', 'NX', 'EX', '15552000']);   // 180 dias
-      if (!dr || dr.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'duplicado:' + tx })); return; }
-    }
+    // método de pagamento (pix/boleto/cartão...) — o payload manda em purchase.payment.type; entra no registro da venda e no vazamento do checkout
+    const pmType = String((purchase.payment && purchase.payment.type) || (data.payment && data.payment.type) || '').toUpperCase();
+    const pm = pmType.indexOf('PIX') >= 0 ? 'pix'
+      : (pmType.indexOf('BILLET') >= 0 || pmType.indexOf('BOLETO') >= 0) ? 'boleto'
+      : (pmType.indexOf('CARD') >= 0 || pmType.indexOf('CREDIT') >= 0) ? 'cartao'
+      : pmType.indexOf('PAYPAL') >= 0 ? 'paypal'
+      : (pmType ? slug(pmType) : '');
 
     // track = ebook_versao_canal_tema (ex.: arcturianos_br_luccas_deusdisse) — vem do 'src' (com off) OU do 'sck' (sem off)
+    // (parse ANTES do gate de evento: o log de pendentes do checkout usa os mesmos campos)
     const parts = String(track).split('_');
     const ebook = slug(parts[0]) || '-';
     const versao = slug(parts[1]) || '-';
@@ -104,6 +99,41 @@ module.exports = async function (req, res) {
     const pais = clean(country, 4).toUpperCase() || '??';
     const cents = Math.round((parseFloat(price) || 0) * 100);
     const date = new Date(Date.now() - 10800000).toISOString().slice(0, 10);   // data-chave em horário de Brasília (UTC-3), nao UTC
+    const tx = String(purchase.transaction || data.transaction || '').trim();
+
+    let sign = 0;
+    if (/APPROV|APROVAD/.test(event)) sign = 1;                          // SO a aprovacao conta a venda
+    else if (/REFUND|CHARGEBACK|REEMBOLS|ESTORN|DISPUTE|PROTEST/.test(event)) sign = -1; // SO reembolso/chargeback REAL
+    // PURCHASE_COMPLETE = a MESMA venda mudando de status (fim da garantia) -> NAO conta de novo.
+    if (!sign) {
+      // VAZAMENTO DO CHECKOUT: aguardando pagamento (pix/boleto gerado), expirada e cancelada viram registro
+      // SEPARADO (pendlog) — NUNCA tocam nos contadores de venda. Só chegam se os eventos estiverem marcados
+      // no webhook do painel da Hotmart. Dedup próprio por (classe, transação).
+      let pcls = '';
+      if (/WAITING|PRINTED/.test(event)) pcls = 'wait';
+      else if (/EXPIR/.test(event)) pcls = 'exp';
+      else if (/CANCEL/.test(event) && /PURCHASE|COMPRA/.test(event)) pcls = 'can';   // só cancelamento de COMPRA (não de assinatura)
+      if (pcls) {
+        // espião: guarda o ÚLTIMO payload de CANCELAMENTO completo (7 dias) p/ investigar se o MOTIVO da recusa vem dentro — ler via GET ?raw=cancel
+        if (pcls === 'can') { try { await redis(['SET', 'lastcancel', JSON.stringify(body).slice(0, 8000), 'EX', '604800']); } catch (e) {} }
+        if (tx) {
+          const pk = await redis(['SET', 'pendk:' + pcls + ':' + tx, '1', 'NX', 'EX', '15552000']);
+          if (!pk || pk.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'pend-duplicado:' + tx })); return; }
+        }
+        const rz = String((purchase.payment && purchase.payment.refusal_reason) || '').replace(/[<>]/g, '').trim().slice(0, 100);   // MOTIVO da recusa (ex.: "Fraud attempt detected.") — confirmado no payload real via espião
+        await redis(['LPUSH', 'pendlog:' + date, JSON.stringify({ tx: tx, ev: pcls, pm: pm, rz: rz, e: ebook, vs: versao, c: canalSo, t: tema, p: pais, v: cents, cur: moeda, ts: Date.now() })]);
+        await redis(['LTRIM', 'pendlog:' + date, '0', '999']);
+        res.statusCode = 200; res.end(JSON.stringify({ ok: true, pend: pcls })); return;
+      }
+      res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: event || '?' })); return;
+    }
+
+    // ANTI-DUPLICACAO: a mesma transacao NUNCA conta 2x (reenvio/retry da Hotmart, eventos repetidos)
+    if (tx) {
+      const dk = (sign > 0 ? 'txok:' : 'txref:') + tx;
+      const dr = await redis(['SET', dk, '1', 'NX', 'EX', '15552000']);   // 180 dias
+      if (!dr || dr.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'duplicado:' + tx })); return; }
+    }
     const baseK = [ebook, versao, canal, pais].join('|');
     await redis(['HINCRBY', 'sales:' + date, baseK + '|n', sign]);               // contagem líquida (compat)
     await redis(['HINCRBY', 'sales:' + date, baseK + '|r|' + moeda, sign * cents]); // receita líquida por moeda (compat)
@@ -111,8 +141,21 @@ module.exports = async function (req, res) {
       await redis(['HINCRBY', 'sales:' + date, baseK + '|na', 1]);                // contagem só de APROVADAS (estorno nao desconta)
       await redis(['HINCRBY', 'sales:' + date, baseK + '|ra|' + moeda, cents]);   // receita só de APROVADAS por moeda
     }
+    // LÍQUIDO: no payload (data.commissions) a Hotmart JÁ divide entre os sócios —
+    //   PRODUCER   = parte do dono da conta (junin)   -> vn/cn
+    //   COPRODUCER = parte do coprodutor (theuzim/COIMBRA MKT) -> vc/cc
+    // CUIDADO: 'COPRODUCER' contém a palavra PRODUCER -> comparação EXATA por ===.
+    let vnCents = 0, curN = '', vcCents = 0, curC = '';
+    const comms = (data.commissions && Array.isArray(data.commissions)) ? data.commissions : [];
+    for (let ci = 0; ci < comms.length; ci++) {
+      const srcC = String((comms[ci] && comms[ci].source) || '').toUpperCase().trim();
+      const valC = Math.round((parseFloat(comms[ci] && comms[ci].value) || 0) * 100);
+      const monC = String((comms[ci] && (comms[ci].currency_value || comms[ci].currency_code)) || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) || moeda;
+      if (srcC === 'PRODUCER') { vnCents = valC; curN = monC; }
+      else if (srcC === 'COPRODUCER') { vcCents = valC; curC = monC; }
+    }
     // registro individual (p/ a lista de Vendas), no máximo 1000 por dia
-    const rec = JSON.stringify({ tx: (purchase.transaction || data.transaction || ''), st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, ws: (slug(sckStage) || 'principal'), vid: slug(vidRaw), p: pais, ts: Date.now() });
+    const rec = JSON.stringify({ tx: tx, st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, vn: vnCents, cn: curN, vc: vcCents, cc: curC, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, ws: (slug(sckStage) || 'principal'), vid: slug(vidRaw), p: pais, pm: pm, ts: Date.now() });
     await redis(['LPUSH', 'salelog:' + date, rec]);
     await redis(['LTRIM', 'salelog:' + date, '0', '999']);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));

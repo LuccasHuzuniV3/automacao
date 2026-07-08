@@ -259,6 +259,9 @@
   #vdFilters .dpbtn{width:100%}
   #vdFilters .dpbtn .dpcar{margin-left:auto}
   #vdDatePop{left:auto;right:0}   /* Período é o ÚLTIMO filtro (canto direito) -> calendário abre pra ESQUERDA, senão corta na borda da tela */
+  .vdhourrow{display:grid;grid-template-columns:2.2fr 1fr;gap:12px;margin-bottom:20px}
+  .vdhourrow .anpanel{margin-bottom:0}
+  @media(max-width:1100px){.vdhourrow{grid-template-columns:1fr}}
   .ankpi-ic{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
   .ankpi-k{font-size:12px;color:var(--muted);margin-bottom:3px}
   .ankpi>div:last-child{min-width:0;flex:1}
@@ -430,6 +433,7 @@
           <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>Canal</span><select class="dom" id="vdCanal"><option value="">todos</option></select></label>
           <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>Nicho / tema</span><select class="dom" id="vdTema"><option value="">todos</option></select></label>
           <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>País</span><select class="dom" id="vdPais"><option value="">todos</option></select></label>
+          <label class="cfgrow" style="flex:1 1 150px;max-width:none;margin:0"><span>Rastreio</span><select class="dom" id="vdTrack"><option value="">todas</option><option value="sim">só rastreadas</option><option value="nao">só NÃO rastreadas</option></select></label>
           <div class="cfgrow" style="flex:1.25 1 210px;max-width:none;margin:0;position:relative"><span>Período</span><button type="button" class="dpbtn" id="vdDateBtn"><i class="dpcal">📅</i><span id="vdDateLbl">Últimos 30 dias</span><i class="dpcar">▾</i></button><div class="dppop" id="vdDatePop" style="display:none"></div></div>
           <input type="hidden" id="vdPeriodo" value="30"><input type="hidden" id="vdFrom"><input type="hidden" id="vdTo">
         </div>
@@ -441,15 +445,22 @@
         <div class="anpanel" id="vdFunPanel">
           <div class="anpanel-h"><span class="anpanel-t">🎯 Funil de conversão</span><span class="anpanel-leg">segue os filtros de cima</span></div>
           <div id="vdFunnel"></div>
+          <div id="vdLeak" style="margin-top:10px"></div>
         </div>
         <div class="anpanel" id="vdWeekPanel">
           <div class="anpanel-h"><span class="anpanel-t">📆 Vendas por dia da semana</span><span class="anpanel-leg">segue a pasta</span></div>
           <div id="vdWeek"></div>
         </div>
       </div>
-      <div class="anpanel">
-        <div class="anpanel-h"><span class="anpanel-t">🕐 Vendas por horário</span><span class="anpanel-leg">horário de Brasília</span></div>
-        <div id="vdHour"></div>
+      <div class="vdhourrow">
+        <div class="anpanel">
+          <div class="anpanel-h"><span class="anpanel-t">🕐 Vendas por horário</span><span class="anpanel-leg">horário de Brasília</span></div>
+          <div id="vdHour"></div>
+        </div>
+        <div class="anpanel">
+          <div class="anpanel-h"><span class="anpanel-t">✅ Taxa de aprovação</span><span class="anpanel-leg">por método</span></div>
+          <div id="vdAprov"></div>
+        </div>
       </div>
       <div class="anpanel">
         <div class="anpanel-h"><span class="anpanel-t" id="vdChartTitle">Receita no tempo</span><span class="anpanel-leg"><span class="vdcur-tog"><button type="button" class="vdcur-b on" data-cur="BRL" onclick="vdSetChartCur('BRL')">R$</button><button type="button" class="vdcur-b" data-cur="USD" onclick="vdSetChartCur('USD')">US$</button></span> &nbsp; <span id="vdChartRange"></span></span></div>
@@ -2826,7 +2837,8 @@ function vdRecStrC(rec){return vdRecStr(clampRec(fxConsolidate(rec)));}
 /* valor de UMA venda na linha: moeda original + (≈ US$) quando não é BR/US */
 function vdRowMoney(cents,cur){cur=String(cur||'BRL').toUpperCase();var main=vdMoney(cents,cur);if(cur==='BRL'||cur==='USD')return main;var u=fxTo((cents||0)/100,cur,'USD');if(u==null)return main;return main+' <span style="color:var(--muted);font-size:11px">≈ '+fmtMoney(u,'USD')+'</span>';}
 function vdDt(ts){var dt=new Date(ts||0);if(isNaN(dt.getTime()))return '—';return ('0'+dt.getDate()).slice(-2)+'/'+('0'+(dt.getMonth()+1)).slice(-2)+' '+('0'+dt.getHours()).slice(-2)+':'+('0'+dt.getMinutes()).slice(-2);}
-function vdSetKpis(v,rec,nEst){var k=$('vdKpis');if(!k)return;v=nn(v);nEst=nn(nEst);var rc=clampRec(fxConsolidate(rec)),rBRL=(rc.BRL||0)/100,rUSD=(rc.USD||0)/100;
+function vdSetKpis(v,rec,nEst,liq,nLiq){var k=$('vdKpis');if(!k)return;v=nn(v);nEst=nn(nEst);var rc=clampRec(fxConsolidate(rec)),rBRL=(rc.BRL||0)/100,rUSD=(rc.USD||0)/100;
+  var rcL=clampRec(fxConsolidate(liq||{})),bL=(rcL.BRL||0)/100,uL=(rcL.USD||0)/100,temL=nn(nLiq)>0;   // "você recebeu" REAL (sem taxa Hotmart/coprodutor) — só vendas pós-deploy têm
   /* consolida TUDO em R$ (US$ pela cotação do dia) p/ cruzar com o GASTO (que é lançado em R$) */
   var gR=Math.max(0,vdGastoCents)/100, fat=rBRL+(rUSD?(fxTo(rUSD,'USD','BRL')||0):0), temG=gR>0;
   var lucro=fat-gR, mar=(temG&&fat>0)?(lucro/fat*100):null, roas=temG?(fat/gR):null, roi=temG?(lucro/gR):null;
@@ -2837,6 +2849,7 @@ function vdSetKpis(v,rec,nEst){var k=$('vdKpis');if(!k)return;v=nn(v);nEst=nn(nE
      O vdSetComm preenche o slot (display:contents = os cards entram no MESMO grid). linha 2 (#vdAds): Gastos · Margem · ROAS. */
   k.innerHTML='<span id="vdCommSlot" style="display:contents"></span>'+
     card('Faturamento bruto','Receita líquida do período/pasta (estorno desconta); US$ somado pela cotação do dia',fmtMoney(rBRL,'BRL'),(rUSD?fmtMoney(rUSD,'USD'):'—'),'')+
+    card('Recebido líquido','Líquido da OPERAÇÃO: parte do junin (PRODUCER) + parte do theuzim (coprodutor) — a Hotmart divide na fonte; já sem a taxa dela. Só as vendas novas carregam o dado',(temL?fmtMoney(bL,'BRL'):'—'),(temL?((uL?fmtMoney(uL,'USD')+' · ':'')+nn(nLiq)+' venda'+(nn(nLiq)===1?'':'s')+' c/ dado'):'só vendas pós-deploy têm'),(temL?' grn':''))+
     card('Vendas aprovadas','Vendas aprovadas (estorno não conta)',String(v),(nEst?(nEst+' estorno'+(nEst===1?'':'s')):'sem estornos'),'')+
     card('Lucro','Faturamento consolidado em R$ − Gastos',(temG?fmtMoney(lucro,'BRL'):'—'),'Faturamento − Gastos',(temG?(lucro<0?' red':' grn'):''))+
     card('ROI','Lucro ÷ Gastos',(roi==null?'—':pv(roi,2)),'Lucro ÷ Gastos',(roi==null?'':(roi<0?' red':' grn')));
@@ -2848,6 +2861,8 @@ function vdSetKpis(v,rec,nEst){var k=$('vdKpis');if(!k)return;v=nn(v);nEst=nn(nE
 var vdLastFetch=0;
 /* 💸 DESPESAS (gastos com anúncios): total do período em centavos + lançamentos (vem do api/gastos junto com o /api/sales) */
 var vdGastoCents=0, vdGastoList=[], vdGastoOk=false, vdBase='';
+/* 💧 VAZAMENTO do checkout: {wait,exp,can,m,pagos} vem no /api/sales (precisa dos eventos marcados no webhook da Hotmart) */
+var vdCheckout=null;
 function vdUpdLbl(){var el=$('vdUpdated');if(!el)return;if(!vdLastFetch){el.textContent='';return;}var m=Math.floor((Date.now()-vdLastFetch)/60000);el.textContent=(m<1)?'Atualizado agora':('Atualizado há '+m+' min');}
 setInterval(vdUpdLbl,60000);
 /* ===== COMISSÃO: afiliado (canal) leva a %, os 2 sócios dividem o resto 50/50. Reflete a pasta/filtro atual. ===== */
@@ -2861,15 +2876,17 @@ var VD_COMMOFF=vdCommOffLoad();
 function vdCommOffSave(){try{localStorage.setItem('VD_COMMOFF',JSON.stringify(VD_COMMOFF));}catch(e){}}
 function vdCommOff(canal){return !!VD_COMMOFF[canal];}   // true = rede NAO ganha comissao (afiliado 0%, 100% divide entre os socios)
 var vdCommSel='';   // canal escolhido no menu ▾ do card 🎯 Afiliados (''=soma de todos; a pasta tem prioridade)
+var vdCommBase='liq';   // base da divisão: 'liq' = líquido REAL (só vendas com o dado) | 'bru' = bruto (todas, visão histórica)
 function vdSetComm(){
   var box=$('vdComm'); if(!box) return;
   var afi={}, soc={}, label='Afiliados', line='';
   function addRec(dst,r,f){Object.keys(r||{}).forEach(function(c){dst[c]=(dst[c]||0)+(r[c]||0)*f;});}
   var pc=vdNav.dono||vdCommSel, off=false, cp=10, isDir=(pc==='direto');   /* canal em foco: a PASTA tem prioridade; senão o escolhido no menu ▾ do card 🎯. 'direto' = venda SEM afiliado (NUNCA gera comissão) */
+  var _rk=(vdCommBase==='bru')?'rec':'recL';   /* interruptor: 'recL' = líquido REAL (novas) | 'rec' = bruto (todas, histórico) */
   if(pc){
     off=isDir||vdCommOff(pc); cp=off?0:vdCommOf(pc); var comm=cp/100;
-    var _Dc=vdGroups[pc]||{rec:{},redes:{}};
-    var rec=(vdNav.dono&&vdNav.ebook)?((((_Dc.redes[vdNav.rede]||{}).ebooks||{})[vdNav.ebook]||{}).rec):((vdNav.dono&&vdNav.rede)?((_Dc.redes[vdNav.rede]||{}).rec):_Dc.rec); rec=rec||{};   // rec da PASTA atual (ebook > rede > dono) ou do canal escolhido no menu
+    var _Dc=vdGroups[pc]||{rec:{},recL:{},redes:{}};
+    var rec=(vdNav.dono&&vdNav.ebook)?((((_Dc.redes[vdNav.rede]||{}).ebooks||{})[vdNav.ebook]||{})[_rk]):((vdNav.dono&&vdNav.rede)?((_Dc.redes[vdNav.rede]||{})[_rk]):_Dc[_rk]); rec=rec||{};   // base escolhida no interruptor (líquido real OU bruto histórico) da PASTA atual
     addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2); label=pc;
     if(isDir){
       line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px">🌐 <b style="color:var(--txt)">direto</b> é venda sem afiliado — 100% divide '+VD_SOCIOS[0]+' / '+VD_SOCIOS[1]+'.</div>';
@@ -2879,13 +2896,19 @@ function vdSetComm(){
       line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;display:flex;gap:14px;align-items:center;flex-wrap:wrap">'+chk+'<span>'+pctUi+'</span></div>';
     }
   } else {
-    Object.keys(vdGroups).forEach(function(c){var comm=((c==='direto')||vdCommOff(c))?0:(vdCommOf(c)/100), rec=vdGroups[c].rec||{}; addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2);});   /* direto NÃO entra na comissão de afiliado (100% pros sócios) */
-    line='<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Comissão por canal (padrão 10%; venda direta não gera comissão) — clique no card 🎯 e escolha o canal pra ver/ajustar a % dele.</div>';
+    Object.keys(vdGroups).forEach(function(c){var comm=((c==='direto')||vdCommOff(c))?0:(vdCommOf(c)/100), rec=vdGroups[c][_rk]||{}; addRec(afi,rec,comm); addRec(soc,rec,(1-comm)/2);});   /* direto NÃO entra na comissão de afiliado (100% pros sócios); base = interruptor */
+    line=(vdCommBase==='bru')
+      ?'<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Divisão sobre o <b style="color:var(--txt)">BRUTO</b> (valor cheio, com taxa dentro — visão histórica, TODAS as vendas). Venda direta não gera comissão de afiliado.</div>'
+      :'<div style="font-size:12.5px;color:var(--muted);margin:2px 0 6px;opacity:.85">Divisão sobre o <b style="color:var(--txt)">líquido REAL da operação</b> (parte do junin + parte do theuzim — a Hotmart já divide na fonte, sem a taxa dela) — vendas antigas sem esse dado ficam fora; enche com as vendas novas. Venda direta não gera comissão de afiliado.</div>';
   }
   function money(m){var rc=clampRec(fxConsolidate(m)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100,p=[];if(b)p.push(fmtMoney(b,'BRL'));if(u)p.push(fmtMoney(u,'USD'));return p.join(' · ')||fmtMoney(0,'BRL');}
   function card(nm,ic,col,val,kind){var act=(vdPerson&&vdPerson.kind===kind&&vdPerson.name===nm);var rc=clampRec(fxConsolidate(val)),b=(rc.BRL||0)/100,u=(rc.USD||0)/100;
     return '<div class="vdsum" data-kind="'+kind+'" data-person="'+nm+'" style="cursor:pointer'+(act?';outline:2px solid '+col+';outline-offset:-1px;background:'+col+'14':'')+'" title="Clique pra filtrar o gráfico pelos ganhos de '+nm+'"><div class="vdsum-k"><span>'+ic+' '+nm+'</span><span style="color:'+col+'">'+(act?'✕':'›')+'</span></div><div class="vdsum-v grn">'+fmtMoney(b,'BRL')+'</div><div class="vdsum-s">'+(u?fmtMoney(u,'USD'):'—')+'</div></div>';}
-  box.innerHTML=line;   /* aqui fica só a linha da comissão (%/checkbox); os CARDS vão pro slot na linha 1 dos KPIs, lado a lado com Faturamento/Lucro/ROI */
+  /* interruptor da BASE (pedido do user: os sócios verem o ANTES no bruto e o AGORA no líquido) */
+  function bTog(key,lbl){var on=(vdCommBase===key);return '<button type="button" class="btn" data-cbase="'+key+'" style="padding:3px 11px;font-size:11.5px'+(on?';background:#2563eb;border-color:#2f6fed;color:#fff;font-weight:700':'')+'">'+lbl+'</button>';}
+  var baseTog='<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 7px"><span style="font-size:10.5px;color:var(--muted);font-weight:800;letter-spacing:.05em">DIVISÃO SOBRE:</span>'+bTog('liq','💧 Líquido real')+bTog('bru','📜 Bruto (histórico)')+'</div>';
+  box.innerHTML=baseTog+line;   /* aqui fica a linha da comissão (%/checkbox); os CARDS vão pro slot na linha 1 dos KPIs, lado a lado com Faturamento/Lucro/ROI */
+  Array.prototype.forEach.call(box.querySelectorAll('[data-cbase]'),function(el){el.onclick=function(){vdCommBase=el.getAttribute('data-cbase');vdSetComm();};});
   var slot=$('vdCommSlot');
   /* card do AFILIADO com menu ▾ (pedido do user: escolher o canal ali, igual o filtro de Canal lá em cima) */
   var rcA=clampRec(fxConsolidate(afi)), bA=(rcA.BRL||0)/100, uA=(rcA.USD||0)/100;
@@ -3015,12 +3038,13 @@ function vdPaint(d){
   function recAdd(map,cur,cents){cur=(cur||'BRL');map[cur]=(map[cur]||0)+cents;}
   list.forEach(function(o){
     var dn=(o.c||'direto'), rd=(o.t||'(sem rede)'), eb=o.e||'-', est=(o.st==='estorno'), inc=est?0:1, cu=(o.cur||'BRL'), val=est?0:(o.v||0);   // TUDO do rastreio da venda (global, funciona p/ venda de qualquer builder): DONO = pessoa/canal (o.c); REDE = campo 'tema' do link (o.t); EBOOK = o.e. estorno nao conta na qtd nem na receita
-    if(!vdGroups[dn])vdGroups[dn]={tot:0,rec:{},redes:{}};
-    vdGroups[dn].tot+=inc;recAdd(vdGroups[dn].rec,cu,val);                 // tot = só APROVADAS; rec = líquido (trava em 0 ao exibir)
-    var D=vdGroups[dn]; if(!D.redes[rd])D.redes[rd]={tot:0,rec:{},ebooks:{}};
-    D.redes[rd].tot+=inc;recAdd(D.redes[rd].rec,cu,val);
-    var R=D.redes[rd]; if(!R.ebooks[eb])R.ebooks[eb]={tot:0,rec:{},sales:[]};
-    R.ebooks[eb].tot+=inc;recAdd(R.ebooks[eb].rec,cu,val);R.ebooks[eb].sales.push(o);   // sales = todas (inclui estorno) p/ a tabela no nível ebook
+    var cuL=String(o.cn||cu), valL=(est||!o.vn)?0:((o.vn||0)+(o.vc?(o.vc||0):(o.vn||0)));   // recL = líquido da OPERAÇÃO: junin (vn, PRODUCER) + theuzim (vc, COPRODUCER — a Hotmart divide na fonte); venda gravada antes do vc estima = vn (coprodução 50/50 confirmada). Venda sem dado nenhum fica fora.
+    if(!vdGroups[dn])vdGroups[dn]={tot:0,rec:{},recL:{},redes:{}};
+    vdGroups[dn].tot+=inc;recAdd(vdGroups[dn].rec,cu,val);recAdd(vdGroups[dn].recL,cuL,valL);   // tot = só APROVADAS; rec = bruto líquido de estorno
+    var D=vdGroups[dn]; if(!D.redes[rd])D.redes[rd]={tot:0,rec:{},recL:{},ebooks:{}};
+    D.redes[rd].tot+=inc;recAdd(D.redes[rd].rec,cu,val);recAdd(D.redes[rd].recL,cuL,valL);
+    var R=D.redes[rd]; if(!R.ebooks[eb])R.ebooks[eb]={tot:0,rec:{},recL:{},sales:[]};
+    R.ebooks[eb].tot+=inc;recAdd(R.ebooks[eb].rec,cu,val);recAdd(R.ebooks[eb].recL,cuL,valL);R.ebooks[eb].sales.push(o);   // sales = todas (inclui estorno) p/ a tabela no nível ebook
   });
   if(vdNav.dono&&!vdGroups[vdNav.dono])vdNav={dono:'',rede:'',ebook:''};
   else if(vdNav.rede&&(!vdGroups[vdNav.dono]||!vdGroups[vdNav.dono].redes[vdNav.rede])){vdNav.rede='';vdNav.ebook='';}
@@ -3083,6 +3107,50 @@ function vdWeekHour(list){
     hb.innerHTML='<div class="vdbars" style="gap:6px">'+hr.map(function(n,ix){var h=n?Math.max(6,Math.round(n/mh*96)):0;return '<div class="vdbar" title="'+('0'+ix).slice(-2)+':00 — '+n+' venda'+(n===1?'':'s')+(n?' ('+pct(n)+')':'')+'"><span class="vdbar-p"'+(n?'':' style="color:#5a6478"')+'>'+(n?pct(n):'0%')+'</span><div class="vdbar-b" style="max-width:none;width:58%;border-radius:2px 2px 0 0;height:'+h+'px"></div></div>';}).join('')+'</div>'+
     '<div style="display:flex;gap:6px;padding:2px 4px 0">'+hr.map(function(_,ix){return '<span class="vdbar-x" style="flex:1">'+('0'+ix).slice(-2)+':00</span>';}).join('')+'</div>'; } }
 }
+/* 💧 faixa "Checkout" sob o funil: quanto GEROU pagamento (pix/boleto) e quanto expirou/cancelou — os desistentes que antes eram invisíveis */
+function vdLeakPaint(){
+  var b=$('vdLeak');if(!b)return;var ck=vdCheckout;
+  var tot=ck?((ck.wait||0)+(ck.exp||0)+(ck.can||0)):0;
+  if(!tot){b.innerHTML='<div style="font-size:11.5px;color:var(--muted);border-top:1px dashed var(--line);padding-top:8px">💧 Vazamento do checkout: sem dados ainda — marca os eventos <b style="color:var(--txt)">aguardando pagamento</b>, <b style="color:var(--txt)">compra expirada</b> e <b style="color:var(--txt)">compra cancelada</b> no webhook da Hotmart (+ 1 Deploy) que eu passo a contar daqui pra frente.</div>';return;}
+  function chip(lbl,n,col){return '<span style="background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:4px 10px;font-size:12px;color:'+col+';font-weight:700;white-space:nowrap">'+lbl+' <b>'+n+'</b></span>';}
+  var NOME={pix:'pix',boleto:'boleto',cartao:'cartão',paypal:'paypal',banktransfer:'transf. SEPA',directbanktransfer:'transf. SEPA',sepa:'SEPA',directdebit:'SEPA débito',mercadopago:'mercadopago',mbway:'mb way',cashpayment:'cash','?':'outros'};
+  var mets=Object.keys(ck.m||{}).sort().map(function(k){var o=ck.m[k]||{};var pago=(ck.pagos&&ck.pagos[k])||0;var ger=(o.w||0);var tx=(ger&&pago)?(' ('+Math.round(pago/ger*100)+'% pagos)'):'';return (NOME[k]||k)+': '+ger+' gerados'+(pago?(' → '+pago+' pagos'+tx):'')+((o.x||0)?(' · '+o.x+' exp.'):'');}).join('  |  ');
+  b.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-top:1px dashed var(--line);padding-top:9px"><span style="font-size:11px;color:var(--muted);font-weight:800;letter-spacing:.05em">💧 CHECKOUT</span>'+
+    chip('pagamento gerado',ck.wait||0,'#9fb0d0')+chip('expirados',ck.exp||0,'#f5c518')+chip('cancelados',ck.can||0,'#ff8f8f')+
+    (mets?'<span style="font-size:11px;color:var(--muted)">'+ehEsc(mets)+'</span>':'')+'</div>';
+}
+/* ✅ Taxa de aprovação por método (anéis estilo dashboard): pagos ÷ desfechos conhecidos (pago + expirado + cancelado).
+   Usa o vdCheckout (pendlog) + pagos por método (só vendas pós-deploy têm pm). Recusa de cartão CHEGA como
+   PURCHASE_CANCELED com purchase.payment.refusal_reason — clicar no método abre os motivos agrupados. */
+function vdAprovPaint(){
+  var b=$('vdAprov');if(!b)return;var ck=vdCheckout||{},m=ck.m||{},pg=ck.pagos||{};
+  var NOME={pix:'Pix',boleto:'Boleto',cartao:'Cartão',paypal:'PayPal',banktransfer:'Transf. bancária (SEPA)',directbanktransfer:'Transf. bancária (SEPA)',sepa:'SEPA',directdebit:'SEPA (débito automático)',mercadopago:'MercadoPago',mbway:'MB Way',cashpayment:'Dinheiro (cash)',googlepay:'Google Pay',applepay:'Apple Pay','?':'Outros'};
+  var keys={};Object.keys(m).forEach(function(k){keys[k]=1;});Object.keys(pg).forEach(function(k){keys[k]=1;});
+  var rows=Object.keys(keys).map(function(k){var o=m[k]||{};var paid=pg[k]||0,w=o.w||0,x=o.x||0,c=o.c||0,res=paid+x+c;
+    return {k:k,paid:paid,w:w,x:x,c:c,res:res,tx:(res?paid/res:null),tot:paid+w+x+c};}).filter(function(r){return r.tot>0;}).sort(function(a,b2){return b2.tot-a.tot;});
+  if(!rows.length){b.innerHTML='<div style="color:var(--muted);font-size:12.5px;padding:10px 0;line-height:1.6">Sem dados ainda — as vendas NOVAS (pós-deploy) preenchem aqui sozinhas. O histórico antigo não gravou o método de pagamento.</div>';return;}
+  var C=2*Math.PI*15;
+  function detHtml(k){   /* drill-down: MOTIVOS das recusas agrupados (rz vem do payload: purchase.payment.refusal_reason) + expirados */
+    var ents=(ck.list||[]).filter(function(x){return (x.pm||'?')===k&&(x.ev==='can'||x.ev==='exp');});
+    if(!ents.length)return '<div style="color:var(--muted);font-size:12px;padding:6px 2px 10px">Sem cancelamentos/expirados deste método no período.</div>';
+    var gz={},nx=0;ents.forEach(function(x){if(x.ev==='exp'){nx++;return;}var r=x.rz||'sem motivo informado (registro antigo)';gz[r]=(gz[r]||0)+1;});
+    var tot=0;Object.keys(gz).forEach(function(r){tot+=gz[r];});
+    var html=Object.keys(gz).sort(function(a,b2){return gz[b2]-gz[a];}).map(function(r){var n=gz[r],pc=tot?Math.round(n/tot*100):0;
+      return '<div style="display:flex;gap:8px;align-items:baseline;padding:3px 2px"><span style="color:#ff8f8f">❌</span><span style="flex:1;font-size:12px;color:var(--txt);line-height:1.4">'+ehEsc(r)+'</span><span style="font-size:12px;font-weight:800;color:#ff8f8f;white-space:nowrap">×'+n+' ('+pc+'%)</span></div>';}).join('');
+    if(nx)html+='<div style="display:flex;gap:8px;align-items:baseline;padding:3px 2px"><span style="color:#f5c518">⌛</span><span style="flex:1;font-size:12px;color:var(--txt)">expirados (gerou e não pagou a tempo)</span><span style="font-size:12px;font-weight:800;color:#f5c518">×'+nx+'</span></div>';
+    return '<div style="padding:4px 0 10px">'+html+'</div>';
+  }
+  b.innerHTML=rows.map(function(r){
+    var pct=(r.tx==null)?0:Math.round(r.tx*1000)/10;var dash=(C*pct/100).toFixed(1);
+    var tip=(NOME[r.k]||r.k)+': '+r.paid+' pago'+(r.paid===1?'':'s')+(r.x?' · '+r.x+' expirado'+(r.x===1?'':'s'):'')+(r.c?' · '+r.c+' cancelado'+(r.c===1?'':'s'):'')+(r.w?' · '+r.w+' gerado'+(r.w===1?'':'s'):'')+' — clique pra ver os motivos';
+    return '<div data-apm="'+ehEsc(r.k)+'" title="'+tip+'" style="display:flex;align-items:center;gap:12px;padding:9px 2px;border-bottom:1px solid rgba(255,255,255,.05);cursor:pointer">'+
+      '<span style="flex:1;font-size:13px;color:var(--muted);font-weight:600">'+(NOME[r.k]||r.k)+' <span style="color:#5a6478;font-size:11px">▾</span></span>'+
+      '<svg width="32" height="32" viewBox="0 0 36 36"><circle cx="18" cy="18" r="15" fill="none" stroke="rgba(255,255,255,.10)" stroke-width="4.5"/><circle cx="18" cy="18" r="15" fill="none" stroke="#2f6fed" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="'+dash+' '+C.toFixed(1)+'" transform="rotate(-90 18 18)"/></svg>'+
+      '<span style="min-width:56px;text-align:right;font-size:14.5px;font-weight:800;color:var(--txt)">'+(r.tx==null?'—':pct.toLocaleString('pt-BR')+'%')+'</span></div>'+
+      '<div data-apmdet="'+ehEsc(r.k)+'" style="display:none;border-bottom:1px solid rgba(255,255,255,.05)">'+detHtml(r.k)+'</div>';
+  }).join('')+'<div style="font-size:10.5px;color:var(--muted);padding-top:8px;line-height:1.5">aprovados ÷ desfechos conhecidos (pago + expirado + cancelado). Clique num método pra ver os MOTIVOS das recusas.</div>';
+  Array.prototype.forEach.call(b.querySelectorAll('[data-apm]'),function(el){el.onclick=function(){var d=b.querySelector('[data-apmdet="'+el.getAttribute('data-apm')+'"]');if(d)d.style.display=(d.style.display==='none')?'block':'none';};});
+}
 function vdRenderNav(){
   var t=$('vdTable');if(!t)return;
   var keys=Object.keys(vdGroups);
@@ -3097,7 +3165,8 @@ function vdRenderNav(){
   else{var _x=_E||{tot:0,rec:{}};curV=_x.tot;recMerge(curR,_x.rec);}
   /* GRÁFICO + RANKINGS refletem a PASTA atual: raiz = agregado do servidor; dentro da pasta = recalculado da lista filtrada */
   var _fl=vdNav.dono?vdAllList.filter(function(o){ return (o.c||'direto')===vdNav.dono && (!vdNav.rede||(o.t||'(sem rede)')===vdNav.rede) && (!vdNav.ebook||(o.e||'-')===vdNav.ebook); }):vdAllList;
-  vdSetKpis(curV,curR,_fl.filter(function(o){return o.st==='estorno';}).length);
+  var _liq={},_nLiq=0;_fl.forEach(function(o){if(o.st==='estorno'||!o.vn)return;var _cl=String(o.cn||o.cur||'BRL');_liq[_cl]=(_liq[_cl]||0)+(o.vn||0)+(o.vc?(o.vc||0):(o.vn||0));_nLiq++;});   // líquido da OPERAÇÃO (junin+theuzim; vc ausente = estima igual, 50/50)
+  vdSetKpis(curV,curR,_fl.filter(function(o){return o.st==='estorno';}).length,_liq,_nLiq);
   vdWeekHour(_fl);
   var _cv=vdNav.dono?vdComputeView(_fl):null;
   var _baseSerie=vdNav.dono?_cv.serie:vdAllSerie;                             // o que o gráfico SEM filtro mostraria (mantém a contagem de vendas)
@@ -3141,8 +3210,9 @@ function vdRenderNav(){
 }
 function renderVendas(){
   var ebk=$('vdEbook')?$('vdEbook').value:'',cnl=$('vdCanal')?$('vdCanal').value:'',tma=$('vdTema')?$('vdTema').value:'',pa=$('vdPais')?$('vdPais').value:'',per=$('vdPeriodo')?$('vdPeriodo').value:'30';
+  var trk=$('vdTrack')?$('vdTrack').value:'';   /* rastreio: ''=todas | sim=só rastreadas | nao=só NÃO rastreadas — vale p/ vendas, checkout, funil, tudo */
   var rw=$('vdRangeWrap');if(rw)rw.style.display=(per==='custom')?'':'none';
-  var qsBase='&ebook='+encodeURIComponent(ebk)+'&canal='+encodeURIComponent(cnl)+'&tema='+encodeURIComponent(tma)+'&pais='+encodeURIComponent(pa)+bTokQS();
+  var qsBase='&ebook='+encodeURIComponent(ebk)+'&canal='+encodeURIComponent(cnl)+'&tema='+encodeURIComponent(tma)+'&pais='+encodeURIComponent(pa)+(trk?('&track='+encodeURIComponent(trk)):'')+bTokQS();
   var qs;
   if(per==='custom'){
     var fI=$('vdFrom'), tI=$('vdTo');
@@ -3165,11 +3235,12 @@ function renderVendas(){
     ]);
   }).then(function(arr){var d=arr[0],g=arr[1];
     vdGastoOk=!!(g&&g.ok); vdGastoCents=vdGastoOk?(g.total||0):0; vdGastoList=vdGastoOk?(g.list||[]):[];
+    vdCheckout=(d&&d.ok&&d.checkout)?d.checkout:null; vdLeakPaint(); vdAprovPaint();   /* 💧 vazamento + ✅ taxa de aprovação (vêm juntos no /api/sales) */
     if(d&&d.ok)vdPaint(d);else vdEmpty('Sem conexão com o banco — fez o Deploy?');
     var gm=$('gastosModal'); if(gm&&gm.style.display==='flex')gastoPintar();   /* modal aberto -> lista atualiza na hora */
   }).catch(function(){vdEmpty('Sem conexão — fez o Deploy do /api/sales?');});
 }
-(function(){var r=$('vdRefresh');if(r)r.onclick=renderVendas;['vdEbook','vdCanal','vdTema','vdPais','vdPeriodo','vdFrom','vdTo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderVendas;});})();
+(function(){var r=$('vdRefresh');if(r)r.onclick=renderVendas;['vdEbook','vdCanal','vdTema','vdPais','vdTrack','vdPeriodo','vdFrom','vdTo'].forEach(function(id){var e=$(id);if(e)e.onchange=renderVendas;});})();
 /* ===== 💸 DESPESAS: modal de lançamento (servidor api/gastos.js — precisa de 1 Deploy pra existir no ar) ===== */
 function gastoUrl(){var t=bTokQS();return vdBase+'/api/gastos'+(t?('?'+t.slice(1)):'');}
 function gastoMsg(t,ok){var m=$('gastoMsg');if(m){m.textContent=t||'';m.style.color=ok?'#5bd66b':'#f5c518';}}
