@@ -69,7 +69,7 @@ module.exports = async function (req, res) {
     let track = '', vidRaw = '';
     if (isAttr(src)) { track = src; vidRaw = sckVid || (isAttr(sckRaw) ? '' : sckRaw); }            // COM 'off': a Hotmart devolveu o 'src'
     else if (isAttr(sckAttr)) { track = sckAttr; vidRaw = sckVid; }                                  // SEM 'off': a atribuicao veio no 'sck'
-    else { const f = findSrc(body); track = f || ''; vidRaw = (isAttr(sckRaw) ? '' : sckRaw); }      // direto / fallback (acha o src em qualquer lugar do payload)
+    else { const f = findSrc(data); track = f || ''; vidRaw = (isAttr(sckRaw) ? '' : sckRaw); }      // direto / fallback (acha o src no data — NÃO no body inteiro: o nome do evento PURCHASE_OUT_OF_SHOPPING_CART casa com o padrão de rastreio e viraria ebook "purchase")
     const buyer = data.buyer || {};
     const country = (buyer.address && (buyer.address.country_iso || buyer.address.country)) || buyer.country
       || (purchase.checkout_country && (purchase.checkout_country.iso || purchase.checkout_country.name))
@@ -100,6 +100,14 @@ module.exports = async function (req, res) {
     const cents = Math.round((parseFloat(price) || 0) * 100);
     const date = new Date(Date.now() - 10800000).toISOString().slice(0, 10);   // data-chave em horário de Brasília (UTC-3), nao UTC
     const tx = String(purchase.transaction || data.transaction || '').trim();
+    // dados do COMPRADOR + PRODUTO (usados nos pendentes E na venda aprovada — a jornada do lead cruza tudo pelo e-mail)
+    const rz = String((purchase.payment && purchase.payment.refusal_reason) || '').replace(/[<>]/g, '').trim().slice(0, 100);
+    const by = String((buyer && buyer.email) || '').toLowerCase().trim().slice(0, 80);
+    const bn = String((buyer && buyer.name) || '').replace(/[<>]/g, '').trim().slice(0, 60);
+    const ph = String((buyer && buyer.phone) || '').replace(/[^0-9+()\- ]/g, '').trim().slice(0, 24);
+    const prodD = data.product || {};
+    const pid = String(prodD.id || '').replace(/[^0-9]/g, '').slice(0, 20);
+    const pnm = String(prodD.name || '').replace(/[<>]/g, '').trim().slice(0, 80);
 
     let sign = 0;
     if (/APPROV|APROVAD/.test(event)) sign = 1;                          // SO a aprovacao conta a venda
@@ -113,16 +121,18 @@ module.exports = async function (req, res) {
       if (/WAITING|PRINTED/.test(event)) pcls = 'wait';
       else if (/EXPIR/.test(event)) pcls = 'exp';
       else if (/CANCEL/.test(event) && /PURCHASE|COMPRA/.test(event)) pcls = 'can';   // só cancelamento de COMPRA (não de assinatura)
+      else if (/OUT_OF_SHOPPING_CART|ABANDON/.test(event)) pcls = 'aband';   // ABANDONO de carrinho: preencheu o contato no checkout e saiu (a Hotmart só dispara se tiver e-mail; quem só abre a página não gera evento)
       if (pcls) {
         // espião: guarda o ÚLTIMO payload de CANCELAMENTO completo (7 dias) p/ investigar se o MOTIVO da recusa vem dentro — ler via GET ?raw=cancel
         if (pcls === 'can') { try { await redis(['SET', 'lastcancel', JSON.stringify(body).slice(0, 8000), 'EX', '604800']); } catch (e) {} }
-        if (tx) {
-          const pk = await redis(['SET', 'pendk:' + pcls + ':' + tx, '1', 'NX', 'EX', '15552000']);
-          if (!pk || pk.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'pend-duplicado:' + tx })); return; }
+        // (rz/by/bn/ph/pid/pnm já computados na zona compartilhada acima)
+        // dedup: pela transação quando tem; abandono NÃO tem tx -> por comprador+dia (retry da Hotmart não duplica; abandono em OUTRO dia conta de novo)
+        const pdk = tx ? ('pendk:' + pcls + ':' + tx) : (by ? ('pendk:' + pcls + ':' + by + ':' + date) : '');
+        if (pdk) {
+          const pk = await redis(['SET', pdk, '1', 'NX', 'EX', '15552000']);
+          if (!pk || pk.result !== 'OK') { res.statusCode = 200; res.end(JSON.stringify({ ok: true, skip: 'pend-duplicado:' + (tx || by) })); return; }
         }
-        const rz = String((purchase.payment && purchase.payment.refusal_reason) || '').replace(/[<>]/g, '').trim().slice(0, 100);   // MOTIVO da recusa (ex.: "Fraud attempt detected.") — confirmado no payload real via espião
-        const by = String((buyer && buyer.email) || '').toLowerCase().trim().slice(0, 80);   // comprador (p/ detectar a MESMA pessoa tentando várias vezes; exibido mascarado no painel)
-        await redis(['LPUSH', 'pendlog:' + date, JSON.stringify({ tx: tx, ev: pcls, pm: pm, rz: rz, by: by, e: ebook, vs: versao, c: canalSo, t: tema, p: pais, v: cents, cur: moeda, ts: Date.now() })]);
+        await redis(['LPUSH', 'pendlog:' + date, JSON.stringify({ tx: tx, ev: pcls, pm: pm, rz: rz, by: by, bn: bn, ph: ph, pid: pid, pnm: pnm, e: ebook, vs: versao, c: canalSo, t: tema, p: pais, v: cents, cur: moeda, ts: Date.now() })]);
         await redis(['LTRIM', 'pendlog:' + date, '0', '999']);
         res.statusCode = 200; res.end(JSON.stringify({ ok: true, pend: pcls })); return;
       }
@@ -156,7 +166,7 @@ module.exports = async function (req, res) {
       else if (srcC === 'COPRODUCER') { vcCents = valC; curC = monC; }
     }
     // registro individual (p/ a lista de Vendas), no máximo 1000 por dia
-    const rec = JSON.stringify({ tx: tx, st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, vn: vnCents, cn: curN, vc: vcCents, cc: curC, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, ws: (slug(sckStage) || 'principal'), vid: slug(vidRaw), p: pais, pm: pm, ts: Date.now() });
+    const rec = JSON.stringify({ tx: tx, st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, vn: vnCents, cn: curN, vc: vcCents, cc: curC, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, ws: (slug(sckStage) || 'principal'), vid: slug(vidRaw), p: pais, pm: pm, by: by, bn: bn, ts: Date.now() });
     await redis(['LPUSH', 'salelog:' + date, rec]);
     await redis(['LTRIM', 'salelog:' + date, '0', '999']);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));

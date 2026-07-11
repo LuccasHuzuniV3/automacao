@@ -1,6 +1,6 @@
 {
-  "version": 247,
-  "date": "2026-07-08T23:48:43.642Z",
+  "version": 248,
+  "date": "2026-07-11T03:13:11.775Z",
   "files": [
     "builder.html",
     "painel.html",
@@ -19,6 +19,7 @@
     "version.json",
     "api/gastos.js",
     "api/hotmart.js",
+    "api/lead.js",
     "api/reset.js",
     "api/sales.js",
     "api/stats.js",

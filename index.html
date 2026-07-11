@@ -465,6 +465,45 @@
     <div class="copy" id="footerCopy"></div>
   </footer>
   </div></div><!-- /#stage /#stagewrap -->
+  <!-- POPUPS DE CAPTURA DE E-MAIL (pacote DarkRecover adaptado): Passo-1 no EU QUERO + saída com cupom. Só PRINCIPAL publicado. -->
+  <style>
+    .dr-ov{position:fixed;inset:0;z-index:99998;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(8,3,16,.72);backdrop-filter:blur(4px)}
+    .dr-ov.on{display:flex}
+    .dr-pop{position:relative;width:100%;max-width:420px;text-align:center;background:linear-gradient(180deg,#1c0d2e,#150823);border:1px solid rgba(192,132,252,.4);border-radius:20px;padding:30px 26px 26px;color:#f3e8ff;font-family:'Segoe UI',system-ui,sans-serif;box-shadow:0 0 50px rgba(147,51,234,.45),0 30px 70px rgba(0,0,0,.6);animation:drpop .35s cubic-bezier(.2,.8,.2,1)}
+    @keyframes drpop{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:none}}
+    .dr-pop::before{content:'';position:absolute;top:-1px;left:15%;right:15%;height:2px;border-radius:2px;background:linear-gradient(90deg,transparent,#c084fc,transparent);box-shadow:0 0 12px #a855f7}
+    .dr-x{position:absolute;top:12px;right:14px;width:30px;height:30px;border-radius:50%;border:1px solid #3b1d5e;background:#0d0418;color:#a78bce;font-size:16px;cursor:pointer;line-height:1}
+    .dr-x:hover{color:#fff}
+    .dr-prog{margin-bottom:16px}
+    .dr-prog .rot{display:inline-block;padding:7px 16px;border-radius:999px;background:linear-gradient(90deg,#9333ea,#a855f7);color:#fff;font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;box-shadow:0 0 18px rgba(168,85,247,.55),inset 0 1px 0 rgba(255,255,255,.18);text-shadow:0 0 8px rgba(255,255,255,.35);margin-bottom:10px;animation:drpulsar 1.9s ease-in-out infinite}
+    .dr-prog .rot::before{content:'✨ '}
+    @keyframes drpulsar{0%,100%{box-shadow:0 0 14px rgba(168,85,247,.5),inset 0 1px 0 rgba(255,255,255,.18);transform:translateY(0) scale(1)}50%{box-shadow:0 0 28px rgba(168,85,247,.9),0 0 12px rgba(192,132,252,.6),inset 0 1px 0 rgba(255,255,255,.18);transform:translateY(-2px) scale(1.04)}}
+    .dr-bar{height:7px;border-radius:999px;background:#0d0418;border:1px solid #3b1d5e;overflow:hidden;box-shadow:0 0 12px rgba(168,85,247,.25)}
+    .dr-bar>i{position:relative;overflow:hidden;display:block;height:100%;width:50%;border-radius:999px;background:linear-gradient(90deg,#9333ea,#c084fc);box-shadow:0 0 12px #a855f7;animation:drfill 1.1s cubic-bezier(.2,.8,.2,1) both}
+    @keyframes drfill{from{width:0}to{width:50%}}
+    .dr-bar>i::after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,transparent,rgba(255,255,255,.55),transparent);animation:drrun 1.4s linear infinite}
+    @keyframes drrun{from{transform:translateX(-120%)}to{transform:translateX(220%)}}
+    .dr-tit{font-size:23px;font-weight:900;line-height:1.25;margin-bottom:12px;text-shadow:0 0 20px rgba(168,85,247,.5),0 2px 10px rgba(0,0,0,.4)}
+    .dr-livro{color:#fbbf24;font-weight:800;text-shadow:0 0 14px rgba(251,191,36,.45)}
+    .dr-sub{font-size:14.5px;line-height:1.55;color:#e9d5ff;margin:0 0 6px}
+    .dr-sub strong{color:#fff}.dr-dest{color:#fbbf24;font-weight:800}
+    .dr-email{width:100%;margin-top:18px;padding:16px;font-size:16px;font-family:inherit;text-align:center;background:#0d0418;border:1.5px solid #3b1d5e;border-radius:12px;color:#fff;outline:none}
+    .dr-email::placeholder{color:#7c6a97}
+    .dr-email:focus{border-color:#a855f7;box-shadow:0 0 0 4px rgba(168,85,247,.18)}
+    .dr-ck{display:flex;gap:9px;align-items:flex-start;text-align:left;margin-top:13px;font-size:12px;color:#a78bce;cursor:pointer;line-height:1.45}
+    .dr-ck input{width:19px;height:19px;flex:0 0 auto;margin-top:0;accent-color:#a855f7;cursor:pointer}
+    .dr-btn{position:relative;overflow:hidden;width:100%;margin-top:16px;padding:18px;font-size:16.5px;font-weight:900;font-family:inherit;color:#052e13;background:linear-gradient(180deg,#4ade80,#16a34a);border:0;border-radius:14px;cursor:pointer;box-shadow:0 0 26px rgba(34,197,94,.55);letter-spacing:.3px;animation:drpulse 1.9s ease-in-out infinite}
+    @keyframes drpulse{0%,100%{box-shadow:0 0 22px rgba(34,197,94,.55);transform:translateY(0) scale(1)}50%{box-shadow:0 0 40px rgba(34,197,94,.55),0 0 14px rgba(74,222,128,.7);transform:translateY(-2px) scale(1.015)}}
+    .dr-btn::after{content:'';position:absolute;top:0;left:-70%;width:50%;height:100%;transform:skewX(-20deg);background:linear-gradient(100deg,transparent,rgba(255,255,255,.6),transparent);animation:drshine 2.6s ease-in-out infinite}
+    @keyframes drshine{0%{left:-70%}55%,100%{left:140%}}
+    .dr-btn:hover{filter:brightness(1.08)}
+    .dr-micro{margin-top:14px;font-size:12px;color:#a78bce}
+    .dr-cup{margin-top:8px;border:2px dashed #a855f7;border-radius:14px;padding:16px;background:rgba(168,85,247,.08)}
+    .dr-cup .l{font-size:12px;color:#a78bce;letter-spacing:.5px}
+    .dr-cup .c{font-size:30px;font-weight:900;letter-spacing:3px;color:#fff;margin:6px 0;text-shadow:0 0 16px #a855f7}
+  </style>
+  <div class="dr-ov" id="dr-ov" role="dialog" aria-modal="true"><div class="dr-pop" id="dr-pop"></div></div>
+
   <!-- Alerta de 50% OFF: aparece ao recusar o upsell, antes de redirecionar pro downsell -->
   <div class="dsalert" id="dsAlert" style="display:none" role="dialog" aria-modal="true">
     <div class="dsalert-card">
@@ -709,6 +748,7 @@
     var dsEdit=EDIT&&/[?&]dsalert=1/.test(location.search);   // EDITOR: modo "ver/editar o alerta" (botão do painel liga via ?dsalert=1)
     if(EDIT&&!dsEdit)return;                                   // editor normal -> não mexe no alerta
     if(!EDIT&&/\/downsell/.test(location.pathname.toLowerCase()))return;   // publicado: alerta nos SOURCES (Principal "/" e Upsell "/upsell"); NÃO nas páginas de downsell (que são o destino)
+    if(!EDIT&&!/\/(upsell|downsell)/.test(location.pathname.toLowerCase()))return;   // PRINCIPAL publicado: os POPUPS de captura assumem a saída (o alerta 50%->downsell SAIU do fluxo do Principal, decisão do user; o upsell continua com o alerta normal)
     if(!EDIT&&paises[pais]&&String((paises[pais].hotWidget||'')).trim())return;   // página com widget do Hotmart: o "Não obrigado" DELE já faz o downsell -> não mostra o alerta do app (pra não brigar)
     var btn=document.getElementById('recusarBtn'),al=document.getElementById('dsAlert');
     if(!al||typeof descontoPct!=='function')return;
@@ -755,8 +795,108 @@
     var _sck=finalSrc+(p.vid?'~'+p.vid:'');if(wsStage!=='principal')_sck+=(p.vid?'':'~')+'~'+wsStage;   /* sck = atribuicao~video[~funil]; PRINCIPAL fica IGUAL a hoje (sem ~funil) -> nao mexe no rastreamento que funciona */
     u.searchParams.set('sck',_sck);url=u.toString();}catch(e){}   /* a Hotmart SÓ devolve o 'sck' de forma confiável (sem 'off' o 'src' se perde) -> manda a ATRIBUIÇÃO no sck tb, com o vídeo depois do ~. O 'src' continua indo (funciona quando tem 'off'). */
   Array.prototype.forEach.call(document.querySelectorAll('.ctaLink'),function(a){a.href=url;
-    a.addEventListener('click',function(){try{if(window.__track)window.__track('click',window.__trackParams);}catch(e){}});
+    a.addEventListener('click',function(ev){try{if(window.__track)window.__track('click',window.__trackParams);}catch(e){}
+      try{if(window.__popQuero&&window.__popQuero(ev))return;}catch(e){}   /* Passo-1: captura o e-mail ANTES do checkout (só Principal publicado) */
+    });
   });
+  /* ===== POPUPS DE CAPTURA DE E-MAIL (pacote DarkRecover adaptado): Passo-1 no EU QUERO + SAÍDA com cupom.
+     Só no PRINCIPAL publicado (nem editor/preview, nem upsell/downsell, nem país com widget Hotmart).
+     Lead -> POST /api/lead (NOSSO Redis; automação externa lê de lá). O checkout SEMPRE parte da url já
+     montada com o rastreio (src/sck/utm) e só GANHA email/cupom — atribuição preservada. ===== */
+  /*POPUPS_PURE_START*/
+  var POP_I18N={
+    pt:{exitTit:'Espere, não saia agora! 🙏',exitSub1:'Você chegou até aqui pelo <strong>nosso canal</strong> — e por ser da nossa comunidade, guardamos um <span class="dr-dest">presente especial, só pra você e só hoje.</span>',exitSub2:'Deixe seu e-mail e receba <strong>agora</strong> o seu cupom de desconto:',exitSub2nc:'Deixe seu e-mail e garanta a sua oferta especial de hoje:',exitBtn:'QUERO GARANTIR MEU DESCONTO →',exitOkTit:'🎉 Seu desconto está liberado!',exitCupLabel:'SEU CUPOM DE DESCONTO',exitCupSub:'OFF · aplicado automaticamente no checkout',exitUsar:'USAR MEU CUPOM AGORA →',queroRot:'Passo 1 de 2 · quase lá',queroTit:'Só falta o seu e-mail! ✨',queroSub:'É pra lá que enviamos o seu acesso a <span class="dr-livro">{livro}</span> — pra você não perder o seu material.',queroBtn:'GARANTIR MEU LIVRO DIGITAL →',queroMicro:'🔒 Próximo passo: pagamento 100% seguro.',consentExit:'Aceito receber meu cupom e novidades por e-mail.',consentQuero:'Aceito receber meu acesso e novidades por e-mail.',placeholder:'📧 seu melhor e-mail'},
+    en:{exitTit:'Wait, don\'t leave yet! 🙏',exitSub1:'You found us through <strong>our channel</strong> — and as part of our community, we saved a <span class="dr-dest">special gift, just for you and only today.</span>',exitSub2:'Leave your e-mail and get your discount coupon <strong>right now</strong>:',exitSub2nc:'Leave your e-mail and secure today\'s special offer:',exitBtn:'CLAIM MY DISCOUNT →',exitOkTit:'🎉 Your discount is unlocked!',exitCupLabel:'YOUR DISCOUNT COUPON',exitCupSub:'OFF · applied automatically at checkout',exitUsar:'USE MY COUPON NOW →',queroRot:'Step 1 of 2 · almost there',queroTit:'Just your e-mail now! ✨',queroSub:'That\'s where we\'ll send your access to <span class="dr-livro">{livro}</span> — so you never lose your material.',queroBtn:'GET MY DIGITAL BOOK →',queroMicro:'🔒 Next step: 100% secure payment.',consentExit:'I agree to receive my coupon and news by e-mail.',consentQuero:'I agree to receive my access and news by e-mail.',placeholder:'📧 your best e-mail'},
+    es:{exitTit:'Espera, ¡no te vayas todavía! 🙏',exitSub1:'Llegaste hasta aquí por <strong>nuestro canal</strong> — y por ser de nuestra comunidad, guardamos un <span class="dr-dest">regalo especial, solo para ti y solo hoy.</span>',exitSub2:'Deja tu correo y recibe <strong>ahora</strong> tu cupón de descuento:',exitSub2nc:'Deja tu correo y asegura tu oferta especial de hoy:',exitBtn:'QUIERO MI DESCUENTO →',exitOkTit:'🎉 ¡Tu descuento está liberado!',exitCupLabel:'TU CUPÓN DE DESCUENTO',exitCupSub:'OFF · se aplica automáticamente en el pago',exitUsar:'USAR MI CUPÓN AHORA →',queroRot:'Paso 1 de 2 · casi listo',queroTit:'¡Solo falta tu correo! ✨',queroSub:'Ahí te enviaremos tu acceso a <span class="dr-livro">{livro}</span> — para que nunca pierdas tu material.',queroBtn:'ASEGURAR MI LIBRO DIGITAL →',queroMicro:'🔒 Siguiente paso: pago 100% seguro.',consentExit:'Acepto recibir mi cupón y novedades por correo.',consentQuero:'Acepto recibir mi acceso y novedades por correo.',placeholder:'📧 tu mejor correo'},
+    fr:{exitTit:'Attends, ne pars pas ! 🙏',exitSub1:'Tu es arrivé ici par <strong>notre chaîne</strong> — et comme tu fais partie de notre communauté, on t\'a gardé un <span class="dr-dest">cadeau spécial, rien que pour toi et seulement aujourd\'hui.</span>',exitSub2:'Laisse ton e-mail et reçois <strong>tout de suite</strong> ton coupon de réduction :',exitSub2nc:'Laisse ton e-mail et profite de l\'offre spéciale du jour :',exitBtn:'JE VEUX MA RÉDUCTION →',exitOkTit:'🎉 Ta réduction est débloquée !',exitCupLabel:'TON COUPON DE RÉDUCTION',exitCupSub:'OFF · appliqué automatiquement au paiement',exitUsar:'UTILISER MON COUPON →',queroRot:'Étape 1 sur 2 · presque fini',queroTit:'Il ne manque que ton e-mail ! ✨',queroSub:'C\'est là qu\'on t\'enverra ton accès à <span class="dr-livro">{livro}</span> — pour ne jamais perdre ton contenu.',queroBtn:'RECEVOIR MON LIVRE NUMÉRIQUE →',queroMicro:'🔒 Étape suivante : paiement 100% sécurisé.',consentExit:'J\'accepte de recevoir mon coupon et des nouveautés par e-mail.',consentQuero:'J\'accepte de recevoir mon accès et des nouveautés par e-mail.',placeholder:'📧 ton meilleur e-mail'},
+    it:{exitTit:'Aspetta, non andare via! 🙏',exitSub1:'Sei arrivato qui dal <strong>nostro canale</strong> — e siccome fai parte della nostra community, abbiamo un <span class="dr-dest">regalo speciale, solo per te e solo per oggi.</span>',exitSub2:'Lascia la tua e-mail e ricevi <strong>subito</strong> il tuo coupon di sconto:',exitSub2nc:'Lascia la tua e-mail e assicurati l\'offerta speciale di oggi:',exitBtn:'VOGLIO IL MIO SCONTO →',exitOkTit:'🎉 Il tuo sconto è sbloccato!',exitCupLabel:'IL TUO COUPON DI SCONTO',exitCupSub:'OFF · applicato automaticamente al pagamento',exitUsar:'USA IL MIO COUPON ORA →',queroRot:'Passo 1 di 2 · ci siamo quasi',queroTit:'Manca solo la tua e-mail! ✨',queroSub:'È lì che invieremo il tuo accesso a <span class="dr-livro">{livro}</span> — così non perderai il tuo materiale.',queroBtn:'OTTIENI IL MIO LIBRO DIGITALE →',queroMicro:'🔒 Prossimo passo: pagamento 100% sicuro.',consentExit:'Accetto di ricevere il mio coupon e novità via e-mail.',consentQuero:'Accetto di ricevere il mio accesso e novità via e-mail.',placeholder:'📧 la tua migliore e-mail'},
+    de:{exitTit:'Warte, geh noch nicht! 🙏',exitSub1:'Du bist über <strong>unseren Kanal</strong> hier — und weil du zu unserer Community gehörst, haben wir ein <span class="dr-dest">besonderes Geschenk, nur für dich und nur heute.</span>',exitSub2:'Hinterlasse deine E-Mail und erhalte <strong>sofort</strong> deinen Rabatt-Gutschein:',exitSub2nc:'Hinterlasse deine E-Mail und sichere dir das heutige Sonderangebot:',exitBtn:'RABATT SICHERN →',exitOkTit:'🎉 Dein Rabatt ist freigeschaltet!',exitCupLabel:'DEIN RABATT-GUTSCHEIN',exitCupSub:'OFF · wird im Checkout automatisch angewendet',exitUsar:'GUTSCHEIN JETZT NUTZEN →',queroRot:'Schritt 1 von 2 · fast geschafft',queroTit:'Nur noch deine E-Mail! ✨',queroSub:'Dorthin senden wir deinen Zugang zu <span class="dr-livro">{livro}</span> — damit du dein Material nie verlierst.',queroBtn:'MEIN DIGITALES BUCH SICHERN →',queroMicro:'🔒 Nächster Schritt: 100% sichere Zahlung.',consentExit:'Ich bin einverstanden, meinen Gutschein und Neuigkeiten per E-Mail zu erhalten.',consentQuero:'Ich bin einverstanden, meinen Zugang und Neuigkeiten per E-Mail zu erhalten.',placeholder:'📧 deine beste E-Mail'},
+    pl:{exitTit:'Czekaj, nie odchodź! 🙏',exitSub1:'Trafiłeś tu przez <strong>nasz kanał</strong> — a że należysz do naszej społeczności, mamy <span class="dr-dest">wyjątkowy prezent, tylko dla Ciebie i tylko dziś.</span>',exitSub2:'Zostaw swój e-mail i odbierz <strong>od razu</strong> swój kupon rabatowy:',exitSub2nc:'Zostaw swój e-mail i zabezpiecz dzisiejszą ofertę specjalną:',exitBtn:'CHCĘ SWÓJ RABAT →',exitOkTit:'🎉 Twój rabat został odblokowany!',exitCupLabel:'TWÓJ KUPON RABATOWY',exitCupSub:'OFF · zastosowany automatycznie przy płatności',exitUsar:'UŻYJ KUPONU TERAZ →',queroRot:'Krok 1 z 2 · prawie gotowe',queroTit:'Został tylko Twój e-mail! ✨',queroSub:'Tam wyślemy Twój dostęp do <span class="dr-livro">{livro}</span> — żebyś nigdy nie stracił materiału.',queroBtn:'ODBIERZ MOJĄ KSIĄŻKĘ CYFROWĄ →',queroMicro:'🔒 Następny krok: płatność w 100% bezpieczna.',consentExit:'Zgadzam się na otrzymywanie kuponu i nowości e-mailem.',consentQuero:'Zgadzam się na otrzymywanie dostępu i nowości e-mailem.',placeholder:'📧 Twój najlepszy e-mail'},
+    ro:{exitTit:'Stai, nu pleca încă! 🙏',exitSub1:'Ai ajuns aici prin <strong>canalul nostru</strong> — și pentru că faci parte din comunitatea noastră, ți-am păstrat un <span class="dr-dest">cadou special, doar pentru tine și doar azi.</span>',exitSub2:'Lasă-ți e-mailul și primești <strong>acum</strong> cuponul tău de reducere:',exitSub2nc:'Lasă-ți e-mailul și prinde oferta specială de azi:',exitBtn:'VREAU REDUCEREA MEA →',exitOkTit:'🎉 Reducerea ta este deblocată!',exitCupLabel:'CUPONUL TĂU DE REDUCERE',exitCupSub:'OFF · aplicat automat la plată',exitUsar:'FOLOSESC CUPONUL ACUM →',queroRot:'Pasul 1 din 2 · aproape gata',queroTit:'Mai lipsește doar e-mailul tău! ✨',queroSub:'Acolo îți trimitem accesul la <span class="dr-livro">{livro}</span> — ca să nu-ți pierzi materialul.',queroBtn:'PRIMESC CARTEA MEA DIGITALĂ →',queroMicro:'🔒 Pasul următor: plată 100% sigură.',consentExit:'Sunt de acord să primesc cuponul și noutăți pe e-mail.',consentQuero:'Sunt de acord să primesc accesul și noutăți pe e-mail.',placeholder:'📧 cel mai bun e-mail al tău'},
+    hr:{exitTit:'Čekaj, nemoj još otići! 🙏',exitSub1:'Došao si ovdje preko <strong>našeg kanala</strong> — i zato što si dio naše zajednice, čuvamo <span class="dr-dest">poseban poklon, samo za tebe i samo danas.</span>',exitSub2:'Ostavi svoj e-mail i odmah primi svoj <strong>kupon za popust</strong>:',exitSub2nc:'Ostavi svoj e-mail i osiguraj današnju posebnu ponudu:',exitBtn:'ŽELIM SVOJ POPUST →',exitOkTit:'🎉 Tvoj popust je otključan!',exitCupLabel:'TVOJ KUPON ZA POPUST',exitCupSub:'OFF · automatski primijenjen pri plaćanju',exitUsar:'ISKORISTI KUPON ODMAH →',queroRot:'Korak 1 od 2 · skoro gotovo',queroTit:'Nedostaje samo tvoj e-mail! ✨',queroSub:'Tamo šaljemo tvoj pristup za <span class="dr-livro">{livro}</span> — da nikad ne izgubiš svoj materijal.',queroBtn:'OSIGURAJ MOJU DIGITALNU KNJIGU →',queroMicro:'🔒 Sljedeći korak: 100% sigurno plaćanje.',consentExit:'Pristajem primati kupon i novosti e-mailom.',consentQuero:'Pristajem primati pristup i novosti e-mailom.',placeholder:'📧 tvoj najbolji e-mail'},
+    sk:{exitTit:'Počkaj, ešte neodchádzaj! 🙏',exitSub1:'Dostal si sa sem cez <strong>náš kanál</strong> — a keďže patríš do našej komunity, máme pre teba <span class="dr-dest">špeciálny darček, len pre teba a len dnes.</span>',exitSub2:'Nechaj svoj e-mail a <strong>hneď</strong> dostaneš svoj zľavový kupón:',exitSub2nc:'Nechaj svoj e-mail a zaisti si dnešnú špeciálnu ponuku:',exitBtn:'CHCEM SVOJU ZĽAVU →',exitOkTit:'🎉 Tvoja zľava je odomknutá!',exitCupLabel:'TVOJ ZĽAVOVÝ KUPÓN',exitCupSub:'OFF · automaticky použitý pri platbe',exitUsar:'POUŽIŤ KUPÓN TERAZ →',queroRot:'Krok 1 z 2 · takmer hotovo',queroTit:'Chýba už len tvoj e-mail! ✨',queroSub:'Tam ti pošleme prístup k <span class="dr-livro">{livro}</span> — aby si nikdy neprišiel o svoj materiál.',queroBtn:'ZÍSKAŤ MOJU DIGITÁLNU KNIHU →',queroMicro:'🔒 Ďalší krok: 100% bezpečná platba.',consentExit:'Súhlasím so zasielaním kupónu a noviniek e-mailom.',consentQuero:'Súhlasím so zasielaním prístupu a noviniek e-mailom.',placeholder:'📧 tvoj najlepší e-mail'},
+    cs:{exitTit:'Počkej, ještě neodcházej! 🙏',exitSub1:'Dostal ses sem přes <strong>náš kanál</strong> — a protože patříš do naší komunity, máme pro tebe <span class="dr-dest">speciální dárek, jen pro tebe a jen dnes.</span>',exitSub2:'Nech nám svůj e-mail a <strong>hned</strong> dostaneš svůj slevový kupón:',exitSub2nc:'Nech nám svůj e-mail a zajisti si dnešní speciální nabídku:',exitBtn:'CHCI SVOU SLEVU →',exitOkTit:'🎉 Tvoje sleva je odemčená!',exitCupLabel:'TVŮJ SLEVOVÝ KUPÓN',exitCupSub:'OFF · automaticky použit při platbě',exitUsar:'POUŽÍT KUPÓN HNED →',queroRot:'Krok 1 ze 2 · skoro hotovo',queroTit:'Chybí už jen tvůj e-mail! ✨',queroSub:'Tam ti pošleme přístup k <span class="dr-livro">{livro}</span> — abys nikdy nepřišel o svůj materiál.',queroBtn:'ZÍSKAT MOU DIGITÁLNÍ KNIHU →',queroMicro:'🔒 Další krok: 100% bezpečná platba.',consentExit:'Souhlasím se zasíláním kupónu a novinek e-mailem.',consentQuero:'Souhlasím se zasíláním přístupu a novinek e-mailem.',placeholder:'📧 tvůj nejlepší e-mail'},
+    el:{exitTit:'Περίμενε, μην φύγεις ακόμα! 🙏',exitSub1:'Έφτασες εδώ μέσα από <strong>το κανάλι μας</strong> — και επειδή είσαι μέλος της κοινότητάς μας, κρατήσαμε ένα <span class="dr-dest">ξεχωριστό δώρο, μόνο για σένα και μόνο για σήμερα.</span>',exitSub2:'Άφησε το e-mail σου και πάρε <strong>τώρα</strong> το εκπτωτικό σου κουπόνι:',exitSub2nc:'Άφησε το e-mail σου και εξασφάλισε τη σημερινή ειδική προσφορά:',exitBtn:'ΘΕΛΩ ΤΗΝ ΕΚΠΤΩΣΗ ΜΟΥ →',exitOkTit:'🎉 Η έκπτωσή σου ξεκλειδώθηκε!',exitCupLabel:'ΤΟ ΕΚΠΤΩΤΙΚΟ ΣΟΥ ΚΟΥΠΟΝΙ',exitCupSub:'OFF · εφαρμόζεται αυτόματα στην πληρωμή',exitUsar:'ΧΡΗΣΗ ΚΟΥΠΟΝΙΟΥ ΤΩΡΑ →',queroRot:'Βήμα 1 από 2 · σχεδόν έτοιμο',queroTit:'Λείπει μόνο το e-mail σου! ✨',queroSub:'Εκεί θα στείλουμε την πρόσβασή σου στο <span class="dr-livro">{livro}</span> — για να μην χάσεις ποτέ το υλικό σου.',queroBtn:'ΘΕΛΩ ΤΟ ΨΗΦΙΑΚΟ ΜΟΥ ΒΙΒΛΙΟ →',queroMicro:'🔒 Επόμενο βήμα: 100% ασφαλής πληρωμή.',consentExit:'Δέχομαι να λαμβάνω το κουπόνι και νέα μέσω e-mail.',consentQuero:'Δέχομαι να λαμβάνω την πρόσβαση και νέα μέσω e-mail.',placeholder:'📧 το καλύτερό σου e-mail'},
+    bg:{exitTit:'Чакай, не си тръгвай още! 🙏',exitSub1:'Стигна дотук чрез <strong>нашия канал</strong> — и понеже си част от нашата общност, пазим <span class="dr-dest">специален подарък, само за теб и само днес.</span>',exitSub2:'Остави своя имейл и получи <strong>веднага</strong> своя купон за отстъпка:',exitSub2nc:'Остави своя имейл и си осигури днешната специална оферта:',exitBtn:'ИСКАМ ОТСТЪПКАТА СИ →',exitOkTit:'🎉 Твоята отстъпка е отключена!',exitCupLabel:'ТВОЯТ КУПОН ЗА ОТСТЪПКА',exitCupSub:'OFF · прилага се автоматично при плащане',exitUsar:'ИЗПОЛЗВАЙ КУПОНА СЕГА →',queroRot:'Стъпка 1 от 2 · почти готово',queroTit:'Липсва само твоят имейл! ✨',queroSub:'Там ще изпратим достъпа ти до <span class="dr-livro">{livro}</span> — за да не загубиш материала си.',queroBtn:'ВЗЕМИ МОЯТА ДИГИТАЛНА КНИГА →',queroMicro:'🔒 Следваща стъпка: 100% сигурно плащане.',consentExit:'Съгласен съм да получавам купона и новини по имейл.',consentQuero:'Съгласен съм да получавам достъпа и новини по имейл.',placeholder:'📧 твоят най-добър имейл'}
+  };
+  function popLang(idioma){var l=String(idioma||'').slice(0,2).toLowerCase();return POP_I18N[l]?l:'en';}
+  function popUrl(base,email,coupon){var u=String(base||''),sep=u.indexOf('?')>=0?'&':'?';if(email){u+=sep+'email='+encodeURIComponent(email);sep='&';}if(coupon){u+=sep+'coupon='+encodeURIComponent(coupon);}return u;}
+  function popExitAllowed(st){return !st.shown&&!st.buy&&!st.lead;}   /* SEM cupom o popup AINDA captura o e-mail (só pula a tela do cupom) */
+  function popTitulo(cfg,t,ebook,vis){cfg=cfg||{};t=t||{};vis=vis||{};var m=String(cfg.prodNome||'').trim();if(m)return m;var h=['h1a','h1b'].filter(function(k){return vis[k]!==false;}).map(function(k){return String(t[k]||'').trim();}).filter(Boolean).join(' ');if(h)return h;var c=String(t.capaTit||'').trim();if(c)return c;return String(ebook||'');}   /* {livro}: META manual > h1 VISÍVEL da página (parte com display:none fica FORA) > capaTit (pode vir VELHO de clone) > slug */
+  function popLeadPayload(pc,email,org,okc){return {em:String(email||'').toLowerCase().trim(),org:org,pid:String(pc.prodId||''),pnm:String(pc.prodNome||''),lang:pc.lang||'',ok:!!okc,e:String(pc.ebook||''),vs:String(pc.pais||''),c:String(pc.canal||'direto'),ts:Date.now()};}
+  /*POPUPS_PURE_END*/
+  (function(){
+    var ov=document.getElementById('dr-ov'),pop=document.getElementById('dr-pop');
+    var POPS_ON=!!ov&&!!pop&&!EDIT&&p.q.get('preview')!=='1'&&wsStage==='principal'&&!String(cfg.hotWidget||'').trim();
+    function visEl(id){var e=document.getElementById(id);return !!(e&&(e.offsetWidth||e.offsetHeight));}   /* parte do h1 pode estar display:none (ex.: h1b "Frequência Do Sucesso!" escondido pela caixa livre) */
+    var PC={prodId:String(cfg.prodId||''),prodNome:popTitulo(cfg,t,ebook,{h1a:visEl('h1a'),h1b:visEl('h1b')}),lang:popLang(cfg.idioma),cupom:String(cfg.cupom||'').trim(),cupomPct:String(cfg.cupomPct||'').trim(),ebook:ebook,pais:pais,canal:(p.src||'direto')};
+    function pcTitulo(){PC.prodNome=popTitulo(cfg,t,ebook,{h1a:visEl('h1a'),h1b:visEl('h1b')});}   /* o esconde-h1b roda DEPOIS do load -> recalcula na hora de ABRIR o popup */
+    var PT=POP_I18N[PC.lang]||POP_I18N.en;
+    var PSTORE='dr_lead',PEXIT='dr_exit_ts',buyClicked=false,exitShownNow=false;
+    var PFORCE=p.q.get('poptest')==='1';   /* modo TESTE (&poptest=1): ignora e-mail salvo / 1x-por-dia / clique-de-compra — os popups sempre aparecem */
+    function rLead(){try{return JSON.parse(localStorage.getItem(PSTORE));}catch(e){return null;}}
+    function wLead(o){try{localStorage.setItem(PSTORE,JSON.stringify(o));}catch(e){}}
+    function exitRecente(){try{return (Date.now()-(parseInt(localStorage.getItem(PEXIT),10)||0))<86400000;}catch(e){return false;}}   /* 1x por dia por visitante */
+    function sendLead(email,org,okc){try{fetch('/api/lead',{method:'POST',keepalive:true,body:JSON.stringify(popLeadPayload(PC,email,org,okc))});}catch(e){}}
+    function abrir(h){pop.innerHTML=h;ov.classList.add('on');var i=pop.querySelector('.dr-email');if(i)setTimeout(function(){try{i.focus();}catch(e){}},120);}
+    function fechar(){ov.classList.remove('on');if(!rLead())buyClicked=false;}   /* fechou o Passo-1 SEM deixar e-mail = compra abandonada -> REARMA o resgate da saída */
+    if(ov){ov.addEventListener('click',function(e){if(e.target===ov)fechar();});
+      ov.addEventListener('keydown',function(e){if(e.key==='Enter'){var b=pop.querySelector('.dr-btn[data-acao="exit"],.dr-btn[data-acao="quero"]');if(b)b.click();}});}
+    function ckHTML(txt){return '<label class="dr-ck"><input type="checkbox" class="dr-ckbox"><span>'+txt+'</span></label>';}
+    function valida(){var i=pop.querySelector('.dr-email'),c=pop.querySelector('.dr-ckbox');var em=(i&&i.value||'').trim();
+      if(!/.+@.+\..+/.test(em)){if(i){i.style.borderColor='#dc2626';try{i.focus();}catch(e){}}return null;}
+      if(c&&!c.checked){var l=pop.querySelector('.dr-ck');if(l)l.style.color='#f87171';return null;}
+      return em;}
+    function irCheckout(email,comCupom){location.href=popUrl(url,email,comCupom?PC.cupom:'');}
+    /* ---------- Passo-1 (EU QUERO): e-mail antes do checkout; quem já deu NÃO é perguntado de novo ---------- */
+    function mostrarQuero(){
+      pcTitulo();
+      var lead=PFORCE?null:rLead();
+      if(lead&&lead.email){if(lead.stage==='exit_intent'){sendLead(lead.email,'eu_quero',true);lead.stage='eu_quero';wLead(lead);}irCheckout(lead.email,!!lead.cupom);return;}
+      abrir('<button class="dr-x" type="button" aria-label="fechar">×</button>'+
+        '<div class="dr-prog"><div class="rot">'+PT.queroRot+'</div><div class="dr-bar"><i></i></div></div>'+
+        '<div class="dr-tit">'+PT.queroTit+'</div>'+
+        '<p class="dr-sub">'+PT.queroSub.replace('{livro}',esc(PC.prodNome))+'</p>'+
+        '<input class="dr-email" type="email" autocomplete="email" inputmode="email" placeholder="'+PT.placeholder+'">'+
+        ckHTML(PT.consentQuero)+
+        '<button class="dr-btn" type="button" data-acao="quero">'+PT.queroBtn+'</button>'+
+        '<div class="dr-micro">'+PT.queroMicro+'</div>');
+      pop.querySelector('.dr-x').onclick=fechar;
+      pop.querySelector('[data-acao="quero"]').onclick=function(){var em=valida();if(!em)return;
+        wLead({email:em,cupom:false,stage:'eu_quero',ts:Date.now()});sendLead(em,'eu_quero',true);irCheckout(em,false);};
+    }
+    window.__popQuero=function(ev){if(!POPS_ON)return false;if(ev)ev.preventDefault();buyClicked=true;mostrarQuero();return true;};
+    /* ---------- SAÍDA: e-mail -> revela o cupom -> checkout com cupom aplicado. SEM cupom: captura o e-mail e vai direto (copy sem promessa) ---------- */
+    function mostrarExit(){
+      if(!POPS_ON)return;
+      pcTitulo();
+      if(!PFORCE&&!popExitAllowed({shown:exitShownNow||exitRecente(),buy:buyClicked,lead:rLead(),cupom:PC.cupom}))return;
+      if(!PFORCE){exitShownNow=true;try{localStorage.setItem(PEXIT,String(Date.now()));}catch(e){}}
+      abrir('<button class="dr-x" type="button" aria-label="fechar">×</button>'+
+        '<div class="dr-tit">'+PT.exitTit+'</div>'+
+        '<p class="dr-sub">'+PT.exitSub1+'</p>'+
+        '<p class="dr-sub" style="margin-top:10px">'+(PC.cupom?PT.exitSub2:PT.exitSub2nc)+'</p>'+
+        '<input class="dr-email" type="email" autocomplete="email" inputmode="email" placeholder="'+PT.placeholder+'">'+
+        ckHTML(PT.consentExit)+
+        '<button class="dr-btn" type="button" data-acao="exit">'+PT.exitBtn+'</button>');
+      pop.querySelector('.dr-x').onclick=fechar;
+      pop.querySelector('[data-acao="exit"]').onclick=function(){var em=valida();if(!em)return;
+        wLead({email:em,cupom:!!PC.cupom,stage:'exit_intent',ts:Date.now()});sendLead(em,'exit_intent',true);
+        if(!PC.cupom){irCheckout(em,false);return;}   /* sem cupom configurado: e-mail capturado, segue direto pro checkout */
+        pop.innerHTML='<button class="dr-x" type="button" aria-label="fechar">×</button>'+
+          '<div class="dr-tit" style="font-size:20px">'+PT.exitOkTit+'</div>'+
+          '<div class="dr-cup"><div class="l">'+PT.exitCupLabel+'</div><div class="c">'+PC.cupom+'</div><div class="l">'+PC.cupomPct+' '+PT.exitCupSub+'</div></div>'+
+          '<button class="dr-btn" type="button" data-acao="usar" style="margin-top:18px">'+PT.exitUsar+'</button>';
+        pop.querySelector('.dr-x').onclick=fechar;
+        pop.querySelector('[data-acao="usar"]').onclick=function(){irCheckout(em,true);};};
+    }
+    if(POPS_ON){
+      document.addEventListener('mouseout',function(e){if(!e.relatedTarget&&e.clientY<=0)mostrarExit();});   /* desktop: mouse fugindo pro topo */
+      try{history.pushState(null,'',location.href);window.addEventListener('popstate',function(){try{history.pushState(null,'',location.href);}catch(_e){}mostrarExit();});}catch(e){}   /* mobile: botão voltar (o dsAlert foi desligado no Principal, sem pushState duplo) */
+      var inat=null;function arma(){clearTimeout(inat);inat=setTimeout(mostrarExit,30000);}
+      ['mousemove','scroll','keydown','touchstart'].forEach(function(ev){window.addEventListener(ev,arma,{passive:true});});arma();   /* 30s parado */
+    }
+  })();
   /* WIDGET HOTMART (1-clique): se o país tem código, ele SUBSTITUI o(s) botão(ões) EU QUERO na página PUBLICADA. No editor mostra só um aviso (mantém o botão editável). innerHTML NÃO roda <script> -> re-cria os scripts pra executar. */
   (function(){ var wcode=String((cfg.hotWidget||'')).trim(); if(!wcode)return;
     var ctas=document.querySelectorAll('.ctaLink'); if(!ctas.length)return;

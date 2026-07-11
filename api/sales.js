@@ -75,7 +75,7 @@ module.exports = async function (req, res) {
     const receitas = {}; Object.keys(receitasCents).forEach(c => { receitas[c] = receitasCents[c] / 100; });
     const ranks = rankSales(list);   // rankings (pais / src / ebook) sobre as vendas JÁ filtradas (respeita os filtros)
     // VAZAMENTO DO CHECKOUT: agrega o pendlog com os MESMOS filtros (o registro pendente não tem ws/funil)
-    const ck = { wait: 0, exp: 0, can: 0, m: {}, pagos: {}, list: [] };
+    const ck = { wait: 0, exp: 0, can: 0, aband: 0, m: {}, pagos: {}, list: [] };
     resultsP.forEach(day => {
       (day && day.result || []).forEach(s => {
         let o; try { o = JSON.parse(s); } catch (e) { return; }
@@ -88,10 +88,15 @@ module.exports = async function (req, res) {
         if (fTrk === 'nao' && !untrP) return;
         const bd = brDate(o.ts || 0);
         if (!winSet[bd]) return;
+        if (o.ev === 'aband') {   // abandono: sem método de pagamento (não entra no mapa por método) — só conta + vai pra lista (nome/e-mail/telefone/produto p/ recuperação)
+          ck.aband++;
+          if (ck.list.length < 500) ck.list.push({ ev: 'aband', pm: '', rz: '', by: o.by || '', bn: o.bn || '', ph: o.ph || '', pid: o.pid || '', pnm: o.pnm || '', p: o.p || '', v: 0, cur: o.cur || 'BRL', e: o.e || '-', ts: o.ts || 0 });
+          return;
+        }
         if (o.ev === 'wait') ck.wait++; else if (o.ev === 'exp') ck.exp++; else if (o.ev === 'can') ck.can++; else return;
         const k = o.pm || '?'; if (!ck.m[k]) ck.m[k] = { w: 0, x: 0, c: 0 };
         if (o.ev === 'wait') ck.m[k].w++; else if (o.ev === 'exp') ck.m[k].x++; else ck.m[k].c++;
-        if (ck.list.length < 500) ck.list.push({ ev: o.ev, pm: k, rz: o.rz || '', by: o.by || '', p: o.p || '', v: o.v || 0, cur: o.cur || 'BRL', e: o.e || '-', ts: o.ts || 0 });   // registros p/ o drill-down (motivos, país, comprador)
+        if (ck.list.length < 500) ck.list.push({ ev: o.ev, pm: k, rz: o.rz || '', by: o.by || '', bn: o.bn || '', ph: o.ph || '', pid: o.pid || '', pnm: o.pnm || '', p: o.p || '', v: o.v || 0, cur: o.cur || 'BRL', e: o.e || '-', ts: o.ts || 0 });   // registros p/ o drill-down (motivos, país, comprador nome+email+telefone, produto)
       });
     });
     list.forEach(o => { if (o.pm && o.st !== 'estorno') ck.pagos[o.pm] = (ck.pagos[o.pm] || 0) + 1; });   // pagos por método (só as vendas novas carregam pm)

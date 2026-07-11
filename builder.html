@@ -686,7 +686,7 @@ var TEMA_GRUPOS=[
   {h:'📣 Faixa de bônus',items:['giftBg']},
   {h:'💰 Preços',items:['priceNow','priceOld']}
 ];
-var META=[{k:'nome',label:'Nome do país',ph:'Brasil'},{k:'flag',label:'Sigla do botão',ph:'BR',small:true},{k:'idioma',label:'Idioma (html lang)',ph:'pt-BR',small:true},{k:'hotmart',label:'Link do checkout Hotmart (deste país)',ph:'https://pay.hotmart.com/XXXX?off=brl'},{k:'hotWidget',label:'🛒 WIDGET HOTMART (1-clique) — cola o código aqui; SUBSTITUI o botão EU QUERO na página publicada e desliga o alerta de saída',area:true,ph:'Cole o trecho que o Hotmart dá no funil (1-clique). Pode ter <script>.'}];
+var META=[{k:'nome',label:'Nome do país',ph:'Brasil'},{k:'flag',label:'Sigla do botão',ph:'BR',small:true},{k:'idioma',label:'Idioma (html lang)',ph:'pt-BR',small:true},{k:'hotmart',label:'Link do checkout Hotmart (deste país)',ph:'https://pay.hotmart.com/XXXX?off=brl'},{k:'prodId',label:'🧾 ID do produto Hotmart (vai junto no lead dos popups)',ph:'7827537',small:true},{k:'prodNome',label:'📖 Nome do livro (aparece no popup de e-mail; vazio = usa o título da capa)',ph:'Os 27 Obstáculos Espirituais...'},{k:'cupom',label:'🎟️ Cupom do popup de SAÍDA — crie o código na Hotmart; VAZIO = popup de saída desligado',ph:'CANAL25',small:true},{k:'cupomPct',label:'Rótulo do desconto (só visual)',ph:'25%',small:true},{k:'hotWidget',label:'🛒 WIDGET HOTMART (1-clique) — cola o código aqui; SUBSTITUI o botão EU QUERO na página publicada e desliga o alerta de saída E os popups',area:true,ph:'Cole o trecho que o Hotmart dá no funil (1-clique). Pode ter <script>.'}];
 /* campos de imagem agora sao montados direto no renderForm */
 var REDES=[{k:'instagram',label:'Instagram (URL)'},{k:'facebook',label:'Facebook (URL)'},{k:'whatsapp',label:'WhatsApp (link wa.me/55...)'}];
 var TXT=[
@@ -3118,8 +3118,8 @@ function vdWeekHour(list){
 /* 💧 painel "Checkout": chips do total + UMA LINHA POR MÉTODO (gerados → pagos · exp · cancelados · no prazo) — os desistentes que antes eram invisíveis */
 function vdLeakPaint(){
   var b=$('vdLeak');if(!b)return;var ck=vdCheckout;
-  var tot=ck?((ck.wait||0)+(ck.exp||0)+(ck.can||0)):0;
-  if(!tot){b.innerHTML='<div style="font-size:12.5px;color:var(--muted);padding:6px 0;line-height:1.6">Sem dados ainda — os eventos <b style="color:var(--txt)">aguardando pagamento</b>, <b style="color:var(--txt)">compra expirada</b> e <b style="color:var(--txt)">compra cancelada</b> do webhook preenchem aqui sozinhos.</div>';return;}
+  var tot=ck?((ck.wait||0)+(ck.exp||0)+(ck.can||0)+(ck.aband||0)):0;
+  if(!tot){b.innerHTML='<div style="font-size:12.5px;color:var(--muted);padding:6px 0;line-height:1.6">Sem dados ainda — os eventos <b style="color:var(--txt)">aguardando pagamento</b>, <b style="color:var(--txt)">compra expirada</b>, <b style="color:var(--txt)">compra cancelada</b> e <b style="color:var(--txt)">abandono de carrinho</b> do webhook preenchem aqui sozinhos.</div>';return;}
   function chip(lbl,n,col){return '<span style="background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:8px;padding:5px 12px;font-size:12.5px;color:'+col+';font-weight:700;white-space:nowrap">'+lbl+' <b>'+n+'</b></span>';}
   var NOME={pix:'Pix',boleto:'Boleto',cartao:'Cartão',paypal:'PayPal',banktransfer:'Transf. bancária (SEPA)',directbanktransfer:'Transf. bancária (SEPA)',sepa:'SEPA',directdebit:'SEPA (débito automático)',mercadopago:'MercadoPago',mbway:'MB Way',cashpayment:'Dinheiro (cash)',googlepay:'Google Pay',applepay:'Apple Pay','?':'Outros'};
   var m=ck.m||{},pg=ck.pagos||{},keys={};
@@ -3133,9 +3133,16 @@ function vdLeakPaint(){
       (r.ab?(' · '+r.ab+' no prazo'):'');
     return '<div style="display:flex;align-items:baseline;gap:12px;padding:8px 2px;border-bottom:1px solid rgba(255,255,255,.05)"><span style="flex:0 0 150px;font-size:13px;color:var(--txt);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(NOME[r.k]||ehEsc(r.k))+'</span><span style="flex:1;font-size:12.5px;color:#9fb0d0;line-height:1.5">'+st+'</span></div>';
   }).join('');
+  var abandos=(ck.list||[]).filter(function(x){return x.ev==='aband';}).sort(function(a,b2){return (b2.ts||0)-(a.ts||0);});
+  var abHtml='';
+  if(abandos.length){
+    abHtml='<div style="font-size:10px;color:var(--muted);font-weight:800;letter-spacing:.06em;margin:10px 0 2px">🛒 ABANDONOU COM OS DADOS PREENCHIDOS ('+(ck.aband||abandos.length)+') — dá pra recuperar</div>'+
+      abandos.slice(0,8).map(function(x){return '<div style="display:flex;gap:8px;align-items:baseline;padding:3px 2px"><span style="flex:1;font-size:12px;color:var(--txt);line-height:1.4">'+(flagOf(x.p)?flagOf(x.p)+' ':'')+ehEsc(x.by||'sem e-mail')+(x.bn?(' <span style="color:var(--muted)">— '+ehEsc(x.bn)+'</span>'):'')+(x.ph?(' <span style="color:#9fb0d0">📱 '+ehEsc(x.ph)+'</span>'):'')+(x.pnm?(' <span style="color:var(--muted)">· 📖 '+ehEsc(x.pnm)+'</span>'):'')+'</span></div>';}).join('')+
+      (abandos.length>8?('<div style="font-size:11px;color:var(--muted);padding:2px 2px">e mais '+(abandos.length-8)+'…</div>'):'');
+  }
   b.innerHTML='<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px">'+
-    chip('pagamento gerado',ck.wait||0,'#9fb0d0')+chip('expirados',ck.exp||0,'#f5c518')+chip('cancelados',ck.can||0,'#ff8f8f')+'</div>'+lista+
-    '<div style="font-size:10.5px;color:var(--muted);padding-top:8px;line-height:1.5">"no prazo" = gerou e ainda pode pagar (boleto compensa em 1-3 dias; pix expira em horas). Motivos das recusas: card Taxa de aprovação → clique no método.</div>';
+    chip('pagamento gerado',ck.wait||0,'#9fb0d0')+chip('expirados',ck.exp||0,'#f5c518')+chip('cancelados',ck.can||0,'#ff8f8f')+chip('🛒 abandonos',ck.aband||0,'#c98bff')+'</div>'+lista+abHtml+
+    '<div style="font-size:10.5px;color:var(--muted);padding-top:8px;line-height:1.5">"no prazo" = gerou e ainda pode pagar (boleto compensa em 1-3 dias; pix expira em horas) · abandono = digitou o contato no checkout e saiu (quem só ABRE a página não gera evento — o proxy é o clique do funil, a "Intenção"). Motivos das recusas: card Taxa de aprovação → clique no método.</div>';
 }
 /* ✅ Taxa de aprovação por método (anéis estilo dashboard): pagos ÷ desfechos conhecidos (pago + expirado + cancelado).
    Usa o vdCheckout (pendlog) + pagos por método (só vendas pós-deploy têm pm). Recusa de cartão CHEGA como
@@ -3176,13 +3183,13 @@ function vdAprovPaint(){
     if(pk.length){html+=sec('🌍 PAÍSES DAS RECUSAS');
       html+=pk.sort(function(a,b2){return gp[b2]-gp[a];}).slice(0,8).map(function(p){var n=gp[p],pc=tot?Math.round(n/tot*100):0;
         return '<div style="display:flex;gap:8px;align-items:baseline;padding:3px 2px"><span style="flex:1;font-size:12px;color:var(--txt)">'+(flagOf(p)?flagOf(p)+' ':'')+ehEsc(paisNome(p)||p)+'</span><span style="font-size:12px;font-weight:800;color:#9fb0d0;white-space:nowrap">×'+n+' ('+pc+'%)</span></div>';}).join('');}
-    var gb={},idn=0;ents.forEach(function(x){if(x.ev!=='can'||!x.by)return;idn++;if(!gb[x.by])gb[x.by]={n:0,p:x.p||''};gb[x.by].n++;});
+    var gb={},idn=0;ents.forEach(function(x){if(x.ev!=='can'||!x.by)return;idn++;if(!gb[x.by])gb[x.by]={n:0,p:x.p||'',bn:''};gb[x.by].n++;if(x.bn)gb[x.by].bn=x.bn;});
     var pessoas=Object.keys(gb);
     if(idn){
       html+=sec('👤 MESMA PESSOA? ('+idn+' tentativas identificadas = '+pessoas.length+' pessoa'+(pessoas.length===1?'':'s')+' diferente'+(pessoas.length===1?'':'s')+')');
       var reps=pessoas.filter(function(e){return gb[e].n>=2;}).sort(function(a,b2){return gb[b2].n-gb[a].n;});
-      if(reps.length){html+=reps.slice(0,6).map(function(e){var o=gb[e];var a=String(e).split('@');var mask=(a[0]||'').slice(0,3)+'***@'+(a[1]||'');
-        return '<div style="display:flex;gap:8px;align-items:baseline;padding:3px 2px"><span style="flex:1;font-size:12px;color:var(--txt)">'+(flagOf(o.p)?flagOf(o.p)+' ':'')+ehEsc(mask)+'</span><span style="font-size:12px;font-weight:800;color:#f5c518;white-space:nowrap">×'+o.n+' tentativas</span></div>';}).join('');}
+      if(reps.length){html+=reps.slice(0,6).map(function(e){var o=gb[e];
+        return '<div style="display:flex;gap:8px;align-items:baseline;padding:3px 2px"><span style="flex:1;font-size:12px;color:var(--txt);line-height:1.4">'+(flagOf(o.p)?flagOf(o.p)+' ':'')+ehEsc(e)+(o.bn?(' <span style="color:var(--muted)">— '+ehEsc(o.bn)+'</span>'):'')+'</span><span style="font-size:12px;font-weight:800;color:#f5c518;white-space:nowrap">×'+o.n+' tentativas</span></div>';}).join('');}
       else html+='<div style="font-size:12px;color:var(--muted);padding:3px 2px">ninguém repetiu — cada tentativa foi de uma pessoa diferente.</div>';
     } else if(tot){ html+='<div style="font-size:10.5px;color:var(--muted);padding:5px 2px 0">identificação do comprador só existe nas tentativas novas (pós-deploy).</div>'; }
     if(nx)html+='<div style="display:flex;gap:8px;align-items:baseline;padding:7px 2px 3px"><span style="color:#f5c518">⌛</span><span style="flex:1;font-size:12px;color:var(--txt)">expirados (gerou e não pagou a tempo)</span><span style="font-size:12px;font-weight:800;color:#f5c518">×'+nx+'</span></div>';
