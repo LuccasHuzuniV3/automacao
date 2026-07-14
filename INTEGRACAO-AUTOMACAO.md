@@ -72,6 +72,7 @@ Prioridade: quem tem mais de um evento fica com o MAIS forte (ex.: recusou ontem
 
 ## Observações
 
+- **pid/pnm garantidos (12/07/2026):** o servidor mantém um MAPA ebook→produto aprendido automaticamente dos webhooks da Hotmart. Leads novos são **carimbados na gravação** e leads antigos ganham pid/pnm **retroativamente na leitura da jornada**. Um lead só fica sem `pid` se aquele ebook/versão nunca gerou NENHUM evento de checkout rastreado (raríssimo e temporário: no primeiro evento, todos os leads dele ganham o pid).
 - E-mails de venda aprovada e telefone só existem nos registros **novos** (pós 10/07/2026) — o histórico antigo não tem.
 - Tem 2 leads de teste `...@example.com` no banco ("pode apagar") — filtrar `@example.com` se incomodar.
 - O e-mail do lead = e-mail da transação Hotmart (o popup pré-preenche o checkout), então o cruzamento é confiável.

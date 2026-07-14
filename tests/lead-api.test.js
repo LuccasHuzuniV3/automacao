@@ -12,11 +12,13 @@ process.env.KV_REST_API_URL = 'http://mock';
 process.env.KV_REST_API_TOKEN = 'tok';
 delete process.env.VIEW_TOKEN;
 
-let cmds = [], setFail = {}, LR = {};   // LR = respostas do LRANGE por chave (leadlog / pendlog:dia / salelog:dia)
+let cmds = [], setFail = {}, LR = {}, HG = {}, HALL = {};   // LR = LRANGE por chave; HG = HGET (chave:campo); HALL = HGETALL (pares [campo,valor,...])
 global.fetch = async (u, o) => {
   const c = JSON.parse(o.body); cmds.push(c);
   if (c[0] === 'SET' && setFail[c[1]]) return { json: async () => ({ result: null }) };
   if (c[0] === 'LRANGE') return { json: async () => ({ result: LR[c[1]] || [] }) };
+  if (c[0] === 'HGET') return { json: async () => ({ result: HG[c[1] + ':' + c[2]] || null }) };
+  if (c[0] === 'HGETALL') return { json: async () => ({ result: HALL[c[1]] || [] }) };
   return { json: async () => ({ result: 'OK' }) };
 };
 const h = require('../api/lead.js');
@@ -101,6 +103,54 @@ function req(method, url, body) { return { method: method, url: url, headers: {}
   ok(by['comprou@x.com'] && by['comprou@x.com'].estagio === 'comprou', 'quem COMPROU vence qualquer recusa anterior (automação exclui)');
   ok(by['ev4@x.com'] && /saldo/i.test(by['ev4@x.com'].motivo || ''), 'motivo original vai junto');
   ok(by['ev3@x.com'] && by['ev3@x.com'].pnm === 'Livro' === false || true, 'campos de produto presentes quando existem');
+
+  // 7) PRODUTO EM TODO LEAD (pedido da automação): lead SEM pid ganha pid/pnm do MAPA pidmap
+  //    (o mapa é aprendido dos webhooks pelo api/hotmart.js: ebook:versao -> {pid,pnm})
+  HG['pidmap:obstaculos:ph'] = JSON.stringify({ pid: '112233', pnm: 'Ang 27 na hadlang' });
+  cmds = []; r = res();
+  await h(req('POST', '/api/lead', { em: 'sem-pid@x.com', org: 'eu_quero', lang: 'tl', e: 'obstaculos', vs: 'ph', ok: true }), r);
+  let lpA = cmds.find(c => c[0] === 'LPUSH' && c[1] === 'leadlog');
+  let recA = lpA ? JSON.parse(lpA[2]) : {};
+  ok(recA.pid === '112233' && /hadlang/i.test(recA.pnm || ''), 'lead sem pid é CARIMBADO com pid/pnm do pidmap (ebook:versao)');
+  HG['pidmap:novoebook'] = JSON.stringify({ pid: '99', pnm: 'Novo' });
+  cmds = []; r = res();
+  await h(req('POST', '/api/lead', { em: 'sem-pid2@x.com', org: 'eu_quero', e: 'novoebook', vs: 'zz', ok: true }), r);
+  lpA = cmds.find(c => c[0] === 'LPUSH' && c[1] === 'leadlog'); recA = lpA ? JSON.parse(lpA[2]) : {};
+  ok(recA.pid === '99', 'sem entrada ebook:versao -> fallback pelo ebook sozinho');
+  cmds = []; r = res();
+  await h(req('POST', '/api/lead', { em: 'com-pid@x.com', org: 'eu_quero', pid: '777', pnm: 'Manual', e: 'liv', vs: 'br', ok: true }), r);
+  lpA = cmds.find(c => c[0] === 'LPUSH' && c[1] === 'leadlog'); recA = lpA ? JSON.parse(lpA[2]) : {};
+  const ensinou = cmds.find(c => c[0] === 'HSET' && c[1] === 'pidmap');
+  ok(recA.pid === '777' && recA.pnm === 'Manual', 'lead COM pid (META) não é sobrescrito');
+  ok(!!ensinou && ensinou.indexOf('liv:br') > 0, 'lead COM pid ENSINA o mapa (HSET pidmap liv:br)');
+
+  // 8) JORNADA também backfilla pid/pnm dos leads ANTIGOS (na leitura, via HGETALL pidmap)
+  HALL.pidmap = ['liv:br', JSON.stringify({ pid: '424242', pnm: 'Livro Real' })];
+  LR.leadlog = [JSON.stringify({ em: 'antigo@x.com', org: 'eu_quero', e: 'liv', vs: 'br', lang: 'pt', ts: Date.now() - 500 })];
+  LR['pendlog:' + HOJE] = []; LR['salelog:' + HOJE] = [];
+  r = res();
+  await h(req('GET', '/api/lead?journey=1&days=7'), r);
+  const jj2 = JSON.parse(r.out);
+  const antigo = (jj2.list || []).find(x => x.em === 'antigo@x.com');
+  ok(!!antigo && antigo.pid === '424242' && antigo.pnm === 'Livro Real', 'journey CARIMBA lead antigo sem pid via pidmap (retroativo, na leitura)');
+
+  // 9) HÍFEN no nome do ebook: o lead manda e="jesusdiz3-rede3" mas o webhook grava slug SEM hífen
+  //    -> o e do lead é NORMALIZADO na gravação e o lookup do pidmap casa nos dois sentidos
+  HG['pidmap:jesusdiz3rede3:ph'] = JSON.stringify({ pid: '445566', pnm: 'Ang 27 na hadlang' });
+  cmds = []; r = res();
+  await h(req('POST', '/api/lead', { em: 'hifen@x.com', org: 'eu_quero', e: 'jesusdiz3-rede3', vs: 'ph', lang: 'tl', ok: true }), r);
+  lpA = cmds.find(c => c[0] === 'LPUSH' && c[1] === 'leadlog'); recA = lpA ? JSON.parse(lpA[2]) : {};
+  ok(recA.e === 'jesusdiz3rede3', 'e do lead sai NORMALIZADO (sem hífen), igual ao slug do webhook');
+  ok(recA.pid === '445566', 'lead de ebook com hífen é carimbado pelo pidmap');
+  // lead ANTIGO já gravado COM hífen ainda acha o mapa na jornada (normaliza no lookup)
+  HALL.pidmap = ['jesusdiz3rede3:ph', JSON.stringify({ pid: '445566', pnm: 'Ang 27 na hadlang' })];
+  LR.leadlog = [JSON.stringify({ em: 'antigo-hifen@x.com', org: 'exit_intent', e: 'jesusdiz3-rede3', vs: 'ph', lang: 'tl', ts: Date.now() - 100 })];
+  LR['pendlog:' + HOJE] = []; LR['salelog:' + HOJE] = [];
+  r = res();
+  await h(req('GET', '/api/lead?journey=1&days=7'), r);
+  const jj3 = JSON.parse(r.out);
+  const antigoH = (jj3.list || []).find(x => x.em === 'antigo-hifen@x.com');
+  ok(!!antigoH && antigoH.pid === '445566', 'journey backfilla lead ANTIGO gravado com hífen (normaliza no lookup)');
 
   // 6) OPTIONS 204 + CORS
   r = res();

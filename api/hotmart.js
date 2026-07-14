@@ -10,7 +10,9 @@ const { parse } = require('url');
 function pickEnv(re) { const ks = Object.keys(process.env); for (let i = 0; i < ks.length; i++) { if (re.test(ks[i]) && !/READ_?ONLY/i.test(ks[i])) return process.env[ks[i]]; } return ''; }
 const RURL = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL || pickEnv(/REST_API_URL$|REST_URL$/);
 const RTOK = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || pickEnv(/REST_API_TOKEN$|REST_TOKEN$/);
-const TOKEN = process.env.HOTMART_TOKEN || process.env.HOTMART_HOTTOK || '';   // opcional (trava anti-fraude)
+// trava anti-fraude opcional. MULTI-CONTA: cada conta Hotmart (junin, theuzim...) tem o PRÓPRIO hottok —
+// a env aceita a lista separada por vírgula: HOTMART_TOKEN="tok_junin,tok_theuzim". Vazio = gate desligado.
+const TOKENS = String(process.env.HOTMART_TOKEN || process.env.HOTMART_HOTTOK || '').split(/[,;\s]+/).filter(Boolean);
 
 function clean(s, max) { return String(s == null ? '' : s).replace(/[^a-zA-Z0-9._-]/g, '').slice(0, max || 40); }
 function slug(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '').slice(0, 40); }
@@ -19,7 +21,7 @@ function findSrc(obj) {
   let found = '';
   (function walk(o, d) {
     if (found || d > 7 || o == null) return;
-    if (typeof o === 'string') { if (o.length < 80 && /^[a-z0-9]+_[a-z]{2,3}_[a-z0-9_]+$/i.test(o)) found = o; return; }
+    if (typeof o === 'string') { if (o.length < 80 && /^[a-z0-9-]+_[a-z]{2,3}_[a-z0-9_-]+$/i.test(o)) found = o; return; }   // aceita HÍFEN no nome do ebook (clones -redeN); o slug() tira depois
     if (typeof o === 'object') { for (const k in o) { if (found) return; walk(o[k], d + 1); } }
   })(obj, 0);
   return found;
@@ -49,7 +51,7 @@ module.exports = async function (req, res) {
 
     const q = parse(req.url, true).query || {};
     const hottok = body.hottok || q.hottok || req.headers['x-hotmart-hottok'] || '';
-    if (TOKEN && String(hottok) !== String(TOKEN)) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: 'token' })); return; }
+    if (TOKENS.length && TOKENS.indexOf(String(hottok).trim()) < 0) { res.statusCode = 200; res.end(JSON.stringify({ ok: false, error: 'token' })); return; }
 
     const event = String(body.event || body.status || (body.data && body.data.purchase && body.data.purchase.status) || '').toUpperCase();
     const data = body.data || body;
@@ -59,7 +61,7 @@ module.exports = async function (req, res) {
     const src = (purchase.origin && purchase.origin.src) || tracking.source || tracking.src || data.src || q.src || '';
     const sckRaw = ((purchase.origin && purchase.origin.sck) || tracking.source_sck || tracking.sck || data.sck || q.sck || '');
     // A Hotmart so devolve o 'sck' de forma confiavel (sem 'off' o 'src' nao volta). Por isso a landing manda a ATRIBUICAO no sck: <ebook_pais_pessoa_rede>~<video>.
-    const isAttr = function (s) { return /^[a-z0-9]+_[a-z]{2,3}_/i.test(String(s)); };
+    const isAttr = function (s) { return /^[a-z0-9-]+_[a-z]{2,3}_/i.test(String(s)); };   // hífen permitido: "jesusdiz3-rede3_ph_..." é atribuição válida
     const KNOWN_WS = { upsell: 1, downsell: 1, downsell2: 1, upsell2: 1, downsell3: 1, principal: 1 };   // etapas do funil
     const _sk = String(sckRaw).split('~'); const sckAttr = _sk[0] || '';
     let sckVid = '', sckStage = '';
@@ -108,6 +110,19 @@ module.exports = async function (req, res) {
     const prodD = data.product || {};
     const pid = String(prodD.id || '').replace(/[^0-9]/g, '').slice(0, 20);
     const pnm = String(prodD.name || '').replace(/[<>]/g, '').trim().slice(0, 80);
+    // identidade do PRODUTOR da conta que vendeu (junin OU theuzim): na conta do theuzim os papéis
+    // PRODUCER/COPRODUCER se INVERTEM — o painel dos sócios usa o pr pra saber de quem é o vn e o vc
+    const prName = slug((data.producer && data.producer.name) || '').slice(0, 30);
+    // MAPA ebook->produto (pidmap): todo webhook RASTREADO ensina "qual pid é este ebook/versão".
+    // O /api/lead usa pra carimbar pid/pnm nos leads dos popups (a automação de recuperação exige o produto em TODO lead).
+    if (pid && ebook !== '-') {
+      try {
+        const pv = JSON.stringify({ pid: pid, pnm: pnm });
+        const hargs = ['HSET', 'pidmap', ebook, pv];
+        if (versao !== '-') hargs.push(ebook + ':' + versao, pv);   // versões (países) podem ser produtos Hotmart DIFERENTES
+        await redis(hargs);
+      } catch (e) {}
+    }
 
     let sign = 0;
     if (/APPROV|APROVAD/.test(event)) sign = 1;                          // SO a aprovacao conta a venda
@@ -156,17 +171,24 @@ module.exports = async function (req, res) {
     //   PRODUCER   = parte do dono da conta (junin)   -> vn/cn
     //   COPRODUCER = parte do coprodutor (theuzim/COIMBRA MKT) -> vc/cc
     // CUIDADO: 'COPRODUCER' contém a palavra PRODUCER -> comparação EXATA por ===.
-    let vnCents = 0, curN = '', vcCents = 0, curC = '';
+    let vnCents = 0, curN = '', vcCents = 0, curC = '', vaCents = 0, curA = '';
     const comms = (data.commissions && Array.isArray(data.commissions)) ? data.commissions : [];
+    const cops = [];   // pode haver MAIS DE UM coprodutor (ex.: rede3 = sócio + dono da rede como "afiliado de página")
     for (let ci = 0; ci < comms.length; ci++) {
       const srcC = String((comms[ci] && comms[ci].source) || '').toUpperCase().trim();
       const valC = Math.round((parseFloat(comms[ci] && comms[ci].value) || 0) * 100);
       const monC = String((comms[ci] && (comms[ci].currency_value || comms[ci].currency_code)) || '').toUpperCase().replace(/[^A-Z]/g, '').slice(0, 3) || moeda;
       if (srcC === 'PRODUCER') { vnCents = valC; curN = monC; }
-      else if (srcC === 'COPRODUCER') { vcCents = valC; curC = monC; }
+      else if (srcC === 'COPRODUCER') { cops.push({ v: valC, m: monC }); }
+      else if (srcC === 'AFFILIATE') { vaCents += valC; if (!curA) curA = monC; }   // afiliado oficial da Hotmart -> comissão de rede
     }
+    // sócio = o MAIOR coprodutor (a metade do junin/theuzim é sempre maior que o corte da rede);
+    // os DEMAIS coprodutores são donos de rede ("afiliados de página") -> somam na comissão de rede (va)
+    cops.sort(function (a, b) { return b.v - a.v; });
+    if (cops.length) { vcCents = cops[0].v; curC = cops[0].m; }
+    for (let ck = 1; ck < cops.length; ck++) { vaCents += cops[ck].v; if (!curA) curA = cops[ck].m; }
     // registro individual (p/ a lista de Vendas), no máximo 1000 por dia
-    const rec = JSON.stringify({ tx: tx, st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, vn: vnCents, cn: curN, vc: vcCents, cc: curC, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, ws: (slug(sckStage) || 'principal'), vid: slug(vidRaw), p: pais, pm: pm, by: by, bn: bn, ts: Date.now() });
+    const rec = JSON.stringify({ tx: tx, st: sign > 0 ? 'aprovada' : 'estorno', v: cents, cur: moeda, vn: vnCents, cn: curN, vc: vcCents, cc: curC, va: vaCents, ca: curA, pr: prName, e: ebook, vs: versao, c: canalSo, t: tema, tit: titulo, ws: (slug(sckStage) || 'principal'), vid: slug(vidRaw), p: pais, pm: pm, by: by, bn: bn, ts: Date.now() });
     await redis(['LPUSH', 'salelog:' + date, rec]);
     await redis(['LTRIM', 'salelog:' + date, '0', '999']);
     res.statusCode = 200; res.end(JSON.stringify({ ok: true }));

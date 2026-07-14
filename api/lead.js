@@ -24,6 +24,7 @@ async function readBody(req) {
   try { return JSON.parse(raw || '{}'); } catch (e) { return {}; }
 }
 function clean(s, max) { return String(s == null ? '' : s).replace(/[<>]/g, '').trim().slice(0, max || 80); }
+function slugE(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[^a-z0-9]+/g, '').slice(0, 40); }   // mesmo slug do webhook: "jesusdiz3-rede3" -> "jesusdiz3rede3" (chaves do pidmap casam)
 
 module.exports = async function (req, res) {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
@@ -48,9 +49,24 @@ module.exports = async function (req, res) {
         em: em, org: org,
         pid: clean(b.pid, 20), pnm: clean(b.pnm, 80), lang: clean(b.lang, 8),
         ok: !!b.ok,
-        e: clean(b.e, 40), vs: clean(b.vs, 8), c: clean(b.c, 40), p: clean(b.p, 4),
+        e: slugE(b.e), vs: clean(b.vs, 8), c: clean(b.c, 40), p: clean(b.p, 4),
         ts: Date.now()
       };
+      // PRODUTO EM TODO LEAD (pedido da automação): sem pid -> carimba do MAPA pidmap (aprendido dos
+      // webhooks pelo api/hotmart.js); com pid (META do builder) -> ENSINA o mapa pros próximos.
+      try {
+        if (rec.e && !rec.pid) {
+          let m = null;
+          if (rec.vs) { const r1 = await redis(['HGET', 'pidmap', rec.e + ':' + rec.vs]); m = r1 && r1.result; }
+          if (!m) { const r2 = await redis(['HGET', 'pidmap', rec.e]); m = r2 && r2.result; }
+          if (m) { const o = JSON.parse(m); if (o.pid) rec.pid = String(o.pid).slice(0, 20); if (!rec.pnm && o.pnm) rec.pnm = String(o.pnm).slice(0, 80); }
+        } else if (rec.e && rec.pid) {
+          const pv = JSON.stringify({ pid: rec.pid, pnm: rec.pnm });
+          const hargs = ['HSET', 'pidmap', rec.e, pv];
+          if (rec.vs) hargs.push(rec.e + ':' + rec.vs, pv);
+          await redis(hargs);
+        }
+      } catch (e) {}
       await redis(['LPUSH', 'leadlog', JSON.stringify(rec)]);
       await redis(['LTRIM', 'leadlog', '0', '4999']);
       res.statusCode = 200; res.end(JSON.stringify({ ok: true })); return;
@@ -79,7 +95,7 @@ module.exports = async function (req, res) {
         let o; try { o = JSON.parse(s); } catch (e) { return; }
         if (!o.em || (o.ts || 0) < corte) return; const nd = noDe(o.em);
         nd.lead = true; if (o.org === 'eu_quero') nd.leadQuero = true; else nd.leadExit = true;
-        ['pid', 'pnm', 'lang', 'e', 'p'].forEach(k => { if (o[k] && !nd[k]) nd[k] = o[k]; });
+        ['pid', 'pnm', 'lang', 'e', 'p', 'vs'].forEach(k => { if (o[k] && !nd[k]) nd[k] = o[k]; });
         if ((o.ts || 0) > nd.ts) nd.ts = o.ts;
       });
       pendRes.forEach(day => (day && day.result || []).forEach(s => {
@@ -92,6 +108,7 @@ module.exports = async function (req, res) {
         if (o.bn && !nd.bn) nd.bn = o.bn; if (o.ph && !nd.ph) nd.ph = o.ph;
         if (o.pnm && !nd.pnm) nd.pnm = o.pnm; if (o.pid && !nd.pid) nd.pid = o.pid;
         if (o.p && !nd.p) nd.p = o.p; if (o.e && o.e !== '-' && !nd.e) nd.e = o.e;
+        if (o.vs && o.vs !== '-' && !nd.vs) nd.vs = o.vs;
         if ((o.ts || 0) > nd.ts) nd.ts = o.ts;
       }));
       saleRes.forEach(day => (day && day.result || []).forEach(s => {
@@ -100,6 +117,22 @@ module.exports = async function (req, res) {
         nd.sale = true; if (o.bn && !nd.bn) nd.bn = o.bn;
         if ((o.ts || 0) > nd.ts) nd.ts = o.ts;
       }));
+      // backfill RETROATIVO do produto: lead antigo sem pid ganha pid/pnm do MAPA pidmap na LEITURA
+      // (o mapa é alimentado pelos webhooks e pelos leads com META — 1 HGETALL cobre a lista toda)
+      const PMAP = {};
+      try {
+        const pmr = (await redis(['HGETALL', 'pidmap'])).result;
+        if (Array.isArray(pmr)) { for (let i = 0; i + 1 < pmr.length; i += 2) PMAP[pmr[i]] = pmr[i + 1]; }
+        else if (pmr && typeof pmr === 'object') { Object.keys(pmr).forEach(k => { PMAP[k] = pmr[k]; }); }
+      } catch (e) {}
+      Object.keys(M).forEach(em => {
+        const nd = M[em];
+        if (nd.pid || !nd.e) return;
+        const eKey = slugE(nd.e);   // lead ANTIGO pode ter sido gravado com hífen -> normaliza no lookup
+        const raw = PMAP[eKey + ':' + (nd.vs || '')] || PMAP[eKey];
+        if (!raw) return;
+        try { const o = JSON.parse(raw); if (o.pid) nd.pid = String(o.pid); if (!nd.pnm && o.pnm) nd.pnm = String(o.pnm); } catch (e) {}
+      });
       function estagio(nd) {
         if (nd.sale) return 'comprou';
         if (nd.can) {

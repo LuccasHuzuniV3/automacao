@@ -42,16 +42,19 @@ if (P) {
   ok(P.popLang('xx-YY') === 'en', 'idioma desconhecido -> en (fallback)');
   ok(P.popLang('') === 'en', 'vazio -> en');
 
-  /* ---- popUrl: preserva o rastreio e soma email/cupom ---- */
+  /* ---- popUrl: preserva o rastreio e soma email/cupom ----
+     ATENÇÃO: o parâmetro que AUTO-APLICA cupom no checkout da Hotmart é offDiscount= (NÃO coupon= —
+     provado ao vivo em 14/jul/2026: ?coupon= é ignorado; ?offDiscount=25OFF aplica na hora). */
   const base = 'https://pay.hotmart.com/A1?src=ebook_br_duzin_rede2&sck=ebook_br_duzin_rede2~vid7';
   const u1 = P.popUrl(base, 'fulano@gmail.com', '');
   ok(u1.indexOf('src=ebook_br_duzin_rede2') > 0 && u1.indexOf('sck=') > 0, 'rastreio src/sck PRESERVADO');
   ok(u1.indexOf('email=fulano%40gmail.com') > 0, 'email vai codificado');
-  ok(u1.indexOf('coupon=') < 0, 'sem cupom quando não pedido');
+  ok(u1.indexOf('offDiscount=') < 0 && u1.indexOf('coupon=') < 0, 'sem cupom quando não pedido');
   const u2 = P.popUrl(base, 'fulano@gmail.com', 'CANAL25');
-  ok(u2.indexOf('email=fulano%40gmail.com') > 0 && u2.indexOf('coupon=CANAL25') > 0, 'email + cupom juntos');
+  ok(u2.indexOf('email=fulano%40gmail.com') > 0 && u2.indexOf('offDiscount=CANAL25') > 0, 'email + cupom juntos (offDiscount=)');
+  ok(u2.indexOf('coupon=CANAL25') < 0 || u2.indexOf('offDiscount=CANAL25') > 0, 'NÃO usa o param antigo coupon= (a Hotmart ignora ele)');
   const u3 = P.popUrl('https://pay.hotmart.com/A1', '', 'CANAL25');
-  ok(u3.indexOf('?coupon=CANAL25') > 0 && u3.indexOf('email=') < 0, 'só cupom (primeiro parâmetro usa ?)');
+  ok(u3.indexOf('?offDiscount=CANAL25') > 0 && u3.indexOf('email=') < 0, 'só cupom (primeiro parâmetro usa ?)');
 
   /* ---- popExitAllowed: as regras do popup de saída ---- */
   ok(P.popExitAllowed({ shown: false, buy: false, lead: null, cupom: 'CANAL25' }) === true, 'saída permitida no caso base');
