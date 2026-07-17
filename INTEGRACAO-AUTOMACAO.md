@@ -57,6 +57,11 @@ Prioridade: quem tem mais de um evento fica com o MAIS forte (ex.: recusou ontem
 
 ## Endpoints auxiliares
 
+- **Catálogo de produtos aprendido:** `GET /api/lead?pidmap=1&token=...` → `{ok, total, map}` onde `map` é
+  `{"ebook:versao": {pid, pnm}, "ebook": {pid, pnm}, ...}` (ex.: `escorpiao1:ru` → pid do produto russo do
+  Escorpião). O mapa se alimenta SOZINHO dos webhooks — todo produto com pelo menos 1 evento de checkout
+  rastreado aparece aqui. Use pra descobrir os pids de uma linha inteira (zodíaco etc.) sem pedir manualmente.
+
 - **Leads crus (sem classificação):** `GET /api/lead?token=...&n=1000` → cada captura dos popups
   (`org` = `exit_intent` | `eu_quero`; pode ter 2 registros da mesma pessoa se ela "esquentou").
 - **Gravação (usado pelos popups — a automação NÃO precisa):** `POST /api/lead` body JSON

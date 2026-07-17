@@ -152,6 +152,18 @@ function req(method, url, body) { return { method: method, url: url, headers: {}
   const antigoH = (jj3.list || []).find(x => x.em === 'antigo-hifen@x.com');
   ok(!!antigoH && antigoH.pid === '445566', 'journey backfilla lead ANTIGO gravado com hífen (normaliza no lookup)');
 
+  // 10) ?pidmap=1: a automação consulta TODOS os produtos que o sistema já aprendeu (ebook:versao -> pid/pnm)
+  //     — token-gated igual ao resto do GET; acaba com o "me manda os pids" manual
+  HALL.pidmap = [
+    'escorpiao1:br', JSON.stringify({ pid: '8109146', pnm: 'O Grande Segredo... Escorpião' }),
+    'escorpiao1:ru', JSON.stringify({ pid: '8123456', pnm: 'Великая тайна... Скорпиона' })
+  ];
+  r = res();
+  await h(req('GET', '/api/lead?pidmap=1'), r);
+  const pmj = JSON.parse(r.out);
+  ok(pmj.ok === true && pmj.map && pmj.map['escorpiao1:ru'] && pmj.map['escorpiao1:ru'].pid === '8123456', 'pidmap=1 devolve o mapa completo ebook:versao -> {pid,pnm}');
+  ok(pmj.total === 2, 'pidmap=1 informa o total de produtos aprendidos');
+
   // 6) OPTIONS 204 + CORS
   r = res();
   await h(req('OPTIONS', '/api/lead'), r);

@@ -76,6 +76,18 @@ module.exports = async function (req, res) {
     const q = parse(req.url, true).query || {};
     if (VIEW && String(q.token || '') !== String(VIEW)) { res.statusCode = 401; res.end(JSON.stringify({ ok: false, auth: true, error: 'token' })); return; }
 
+    if (q.pidmap === '1') {
+      // CATÁLOGO APRENDIDO: devolve o mapa ebook[:versao] -> {pid,pnm} que os webhooks/leads ensinaram.
+      // A automação consulta aqui os IDs de produto (ex.: linha zodíaco) em vez de pedir manualmente.
+      const cat = {};
+      try {
+        const pr = (await redis(['HGETALL', 'pidmap'])).result;
+        if (Array.isArray(pr)) { for (let i = 0; i + 1 < pr.length; i += 2) { try { cat[pr[i]] = JSON.parse(pr[i + 1]); } catch (e) {} } }
+        else if (pr && typeof pr === 'object') { Object.keys(pr).forEach(k => { try { cat[k] = JSON.parse(pr[k]); } catch (e) {} }); }
+      } catch (e) {}
+      res.statusCode = 200; res.end(JSON.stringify({ ok: true, pidmap: true, total: Object.keys(cat).length, map: cat })); return;
+    }
+
     if (q.journey === '1') {
       // JORNADA DA RECUPERAÇÃO: cruza leads (popups) + checkout (pendlog) + vendas (salelog) pelo E-MAIL e
       // devolve cada pessoa JÁ CLASSIFICADA no evento certo — a automação consome UMA lista e sabe o que disparar:
