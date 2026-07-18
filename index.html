@@ -998,7 +998,7 @@
       fin.forEach(function(n){parent.insertBefore(n,ref);});
     }
     /* cor de fundo POR SEÇÃO numa SUBCAMADA (z0): fica embaixo das decorações (z1) e do conteúdo (z2) */
-    (function(){var SBG=(MOBILE&&t._secBgM)?Object.assign({},t._secBg,t._secBgM):(t._secBg||{});var keys=Object.keys(SBG);if(!keys.length)return;   /* mobile: mescla _secBgM (cor de seção SÓ do mobile) sobre o desktop */
+    (function(){var SBG=((MOBILE||t.colCentral)&&t._secBgM)?Object.assign({},t._secBg,t._secBgM):(t._secBg||{});var keys=Object.keys(SBG);if(!keys.length)return;   /* mobile: mescla _secBgM (cor SÓ do mobile) sobre o desktop. MODO COLUNA (upsell): a página é IGUAL nos 2 dispositivos -> mescla SEMPRE (resgata cor que caiu no campo mobile; sem isso a cor "sumia" no desktop) */
       var host=document.createElement('div');host.id='secbgs';host.style.cssText='position:absolute;left:0;top:0;width:100%;height:0;z-index:0;pointer-events:none';
       document.body.insertBefore(host,document.body.firstChild);
       function place(){host.innerHTML='';

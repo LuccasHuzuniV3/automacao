@@ -1865,11 +1865,11 @@ function wireInlineEdit(){
           var bottom=(idx>=0&&idx<all.length-1)?all[idx+1].top:(rr.bottom+sy2);   /* estende até a PRÓXIMA seção (sem buraco) */
           u.style.cssText='position:absolute;left:0;width:100%;top:'+Math.round(top)+'px;height:'+Math.max(Math.round(rr.height),Math.round(bottom-top))+'px;background:'+v;
         }
-        function sbgF(){return curDevice==='mobile'?'_secBgM':'_secBg';}   /* Modo celular: cor de fundo da seção SÓ no mobile (não mexe no desktop) */
-        function secVal(){var f=sbgF();return (t[f]&&t[f][sk])||'';}
+        function sbgF(){return (curDevice==='mobile'&&!t.colCentral)?'_secBgM':'_secBg';}   /* Modo celular: cor SÓ no mobile. MODO COLUNA (upsell): página igual nos 2 -> cor é ÚNICA (_secBg sempre; separar por dispositivo só confundia — a cor "sumia" no desktop) */
+        function secVal(){var f=sbgF();var v=(t[f]&&t[f][sk])||'';if(!v&&t.colCentral&&t._secBgM)v=t._secBgM[sk]||'';return v;}   /* coluna: mostra também cor antiga presa no campo mobile */
         function secCols(){var m=String(secVal()).match(/#[0-9a-fA-F]{3,8}/g);if(m&&m.length>=2)return [m[0],m[1]];if(m&&m.length===1)return [m[0],m[0]];return ['#0b0a1a','#0b0a1a'];}
-        function secApply(c1,c2){var val=(String(c1).toLowerCase()===String(c2).toLowerCase())?c1:('linear-gradient(90deg,'+c1+','+c2+')');var f=sbgF();if(!t[f])t[f]={};t[f][sk]=val;paintUnder(val);save();}
-        function secReset(){var f=sbgF();if(t[f])delete t[f][sk];var u=doc.querySelector('[data-secbg="'+sk+'"]');if(u&&u.parentNode)u.parentNode.removeChild(u);el.style.background='';var dv=el.querySelector('.divider');if(dv)dv.style.background='';save();}
+        function secApply(c1,c2){var val=(String(c1).toLowerCase()===String(c2).toLowerCase())?c1:('linear-gradient(90deg,'+c1+','+c2+')');var f=sbgF();if(!t[f])t[f]={};t[f][sk]=val;if(t.colCentral&&t._secBgM)delete t._secBgM[sk];paintUnder(val);save();}   /* coluna: repaint MIGRA a cor antiga do campo mobile (senão o resgate do render faria a velha vencer a nova) */
+        function secReset(){var f=sbgF();if(t[f])delete t[f][sk];if(t.colCentral&&t._secBgM)delete t._secBgM[sk];var u=doc.querySelector('[data-secbg="'+sk+'"]');if(u&&u.parentNode)u.parentNode.removeChild(u);el.style.background='';var dv=el.querySelector('.divider');if(dv)dv.style.background='';save();}   /* coluna: reset limpa os DOIS campos */
         pc.onclick=function(e){e.preventDefault();e.stopPropagation();
           var old=doc.getElementById('secgradpop');if(old&&old.parentNode)old.parentNode.removeChild(old);
           var pop=doc.createElement('div');pop.id='secgradpop';var r=pc.getBoundingClientRect();
