@@ -453,7 +453,7 @@
     </div>
     <div class="ptrust">
       <span class="hot"><svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M13.5 2c1.2 3.2-1 4.4-2.1 6.4-.9 1.7-.2 3.4 1 3.4 1.7 0 2.6-1.7 2.6-3.4 1.8 1.9 3 4.7 3 7.1a8.1 8.1 0 11-13.2-6.3c.9 3.7 3 2.9 3 .9 0-2.8-1.2-4.9 2.7-8.1z" fill="#ff4d00"/></svg>hotmart</span>
-      <span class="seal"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.6 8.6-8 11-4.4-2.4-8-6-8-11V5z" fill="#1a8f3c"/><path d="M8 12l3 3 5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>COMPRA 100% SEGURA</span>
+      <span class="seal"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 2l8 3v6c0 5-3.6 8.6-8 11-4.4-2.4-8-6-8-11V5z" fill="#1a8f3c"/><path d="M8 12l3 3 5-6" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><span id="paySealTxt">COMPRA 100% SEGURA</span></span>
     </div>
   </section>
 
@@ -569,6 +569,7 @@
   document.documentElement.lang=cfg.idioma||'pt-BR';
   try{document.title=[t.h1a,t.h1b].filter(Boolean).join(' ')||t.capaTit||'Pagina de venda';}catch(e){}
   if(t.colCentral){document.body.classList.add('colcentral');}else{document.body.classList.remove('colcentral');}   /* MODO COLUNA: página vira coluna estreita centralizada (igual Canva) em qualquer tela */
+  try{var _pst=document.getElementById('paySealTxt');if(_pst)_pst.textContent=paySealTxt(cfg.idioma);}catch(e){}   /* selo "compra segura" no idioma da página (função hoisted do bloco puro) */
   set('banner',t.banner);show('banner',!!t.banner);set('eyebrow',t.eyebrow);show('eyebrow',!!t.eyebrow);
   set('garantBadge',t.garantBadge);show('garantBadge',!!t.garantBadge);   /* selo verde "pedido garantido" no topo */
   set('h1a',t.h1a);set('h1b',t.h1b);set('sub',t.sub);set('precoDe',t.precoDe);set('precoLbl',t.precoLbl);set('preco',t.preco);
@@ -820,6 +821,7 @@
     bg:{exitTit:'Чакай, не си тръгвай още! 🙏',exitSub1:'Стигна дотук чрез <strong>нашия канал</strong> — и понеже си част от нашата общност, пазим <span class="dr-dest">специален подарък, само за теб и само днес.</span>',exitSub2:'Остави своя имейл и получи <strong>веднага</strong> своя купон за отстъпка:',exitSub2nc:'Остави своя имейл и си осигури днешната специална оферта:',exitBtn:'ИСКАМ ОТСТЪПКАТА СИ →',exitOkTit:'🎉 Твоята отстъпка е отключена!',exitCupLabel:'ТВОЯТ КУПОН ЗА ОТСТЪПКА',exitCupSub:'OFF · прилага се автоматично при плащане',exitUsar:'ИЗПОЛЗВАЙ КУПОНА СЕГА →',queroRot:'Стъпка 1 от 2 · почти готово',queroTit:'Липсва само твоят имейл! ✨',queroSub:'Там ще изпратим достъпа ти до <span class="dr-livro">{livro}</span> — за да не загубиш материала си.',queroBtn:'ВЗЕМИ МОЯТА ДИГИТАЛНА КНИГА →',queroMicro:'🔒 Следваща стъпка: 100% сигурно плащане.',consentExit:'Съгласен съм да получавам купона и новини по имейл.',consentQuero:'Съгласен съм да получавам достъпа и новини по имейл.',placeholder:'📧 твоят най-добър имейл'}
   };
   function popLang(idioma){var l=String(idioma||'').slice(0,2).toLowerCase();return POP_I18N[l]?l:'en';}
+  function paySealTxt(idioma){var D={pt:'COMPRA 100% SEGURA',en:'100% SECURE PURCHASE',es:'COMPRA 100% SEGURA',fr:'ACHAT 100% SÉCURISÉ',it:'ACQUISTO 100% SICURO',de:'100% SICHERER KAUF',pl:'100% BEZPIECZNY ZAKUP',ro:'CUMPĂRARE 100% SIGURĂ',hr:'100% SIGURNA KUPNJA',sk:'100% BEZPEČNÝ NÁKUP',cs:'100% BEZPEČNÝ NÁKUP',el:'100% ΑΣΦΑΛΗΣ ΑΓΟΡΑ',bg:'100% СИГУРНА ПОКУПКА',ru:'100% БЕЗОПАСНАЯ ПОКУПКА',fil:'100% LIGTAS NA PAGBILI',tl:'100% LIGTAS NA PAGBILI'};var li=String(idioma||'').toLowerCase();var l=(li.slice(0,3)==='fil')?'fil':li.slice(0,2);return D[l]||D.en;}   /* selo "compra segura" era PT FIXO no template -> traduz pelo idioma da página */
   function popUrl(base,email,coupon){var u=String(base||''),sep=u.indexOf('?')>=0?'&':'?';if(email){u+=sep+'email='+encodeURIComponent(email);sep='&';}if(coupon){u+=sep+'offDiscount='+encodeURIComponent(coupon);}return u;}   /* offDiscount= é o param que AUTO-APLICA cupom no checkout (coupon= a Hotmart IGNORA — testado ao vivo 14/jul/2026) */
   function popExitAllowed(st){return !st.shown&&!st.buy&&!st.lead;}   /* SEM cupom o popup AINDA captura o e-mail (só pula a tela do cupom) */
   function popTitulo(cfg,t,ebook,vis){cfg=cfg||{};t=t||{};vis=vis||{};var m=String(cfg.prodNome||'').trim();if(m)return m;var h=['h1a','h1b'].filter(function(k){return vis[k]!==false;}).map(function(k){return String(t[k]||'').trim();}).filter(Boolean).join(' ');if(h)return h;var c=String(t.capaTit||'').trim();if(c)return c;return String(ebook||'');}   /* {livro}: META manual > h1 VISÍVEL da página (parte com display:none fica FORA) > capaTit (pode vir VELHO de clone) > slug */

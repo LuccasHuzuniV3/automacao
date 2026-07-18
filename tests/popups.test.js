@@ -17,7 +17,7 @@ ok(mIni > 0 && mFim > mIni, 'marcadores POPUPS_PURE_START/END existem no index.h
 let P = null;
 try {
   const src = html.slice(mIni, mFim);
-  P = new Function(src + '; return {POP_I18N:POP_I18N, popLang:popLang, popUrl:popUrl, popExitAllowed:popExitAllowed, popLeadPayload:popLeadPayload, popTitulo:popTitulo};')();
+  P = new Function(src + '; return {POP_I18N:POP_I18N, popLang:popLang, popUrl:popUrl, popExitAllowed:popExitAllowed, popLeadPayload:popLeadPayload, popTitulo:popTitulo, paySealTxt:paySealTxt};')();
 } catch (e) { console.log('  x bloco puro não avaliou: ' + e.message); }
 ok(!!P, 'bloco puro extraído e avaliado');
 
@@ -75,6 +75,16 @@ if (P) {
   ok(P.popTitulo({}, { h1a: 'Parte A', h1b: 'Parte B' }, 'e', { h1a: false, h1b: true }) === 'Parte B', 'h1a oculto -> usa só o h1b visível');
   ok(P.popTitulo({}, { h1a: 'A', h1b: 'B', capaTit: 'Capa' }, 'e', { h1a: false, h1b: false }) === 'Capa', 'h1 todo oculto -> cai pro capaTit');
   ok(P.popTitulo({ prodNome: 'Manual' }, { h1a: 'A', h1b: 'B' }, 'e', { h1a: false, h1b: false }) === 'Manual', 'META manual vence mesmo com h1 oculto');
+
+  /* ---- paySealTxt: selo "COMPRA 100% SEGURA" traduzido pelo idioma da página (era PT fixo no template) ---- */
+  ok(P.paySealTxt('pl') === '100% BEZPIECZNY ZAKUP', 'selo em POLONÊS (o caso do upsell)');
+  ok(P.paySealTxt('pt-BR') === 'COMPRA 100% SEGURA', 'pt continua igual');
+  ok(P.paySealTxt('fil-PH').indexOf('LIGTAS') >= 0, 'tagalo/filipino (fil-PH) tem tradução própria');
+  ok(P.paySealTxt('ru').indexOf('БЕЗОПАСНАЯ') >= 0, 'russo coberto (páginas /ru existem)');
+  ok(P.paySealTxt('xx-YY') === P.paySealTxt('en'), 'idioma desconhecido cai pro inglês');
+  ['pt', 'en', 'es', 'fr', 'it', 'de', 'pl', 'ro', 'hr', 'sk', 'cs', 'el', 'bg', 'ru'].forEach(function (lg) {
+    ok(String(P.paySealTxt(lg) || '').length >= 8, 'selo traduzido não-vazio: ' + lg);
+  });
 
   /* ---- popLeadPayload ---- */
   const cfg = { prodId: '7827537', prodNome: 'Os 27 Obstáculos', lang: 'pt', ebook: 'obstaculos', pais: 'br', canal: 'duzin' };
