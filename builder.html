@@ -2268,7 +2268,7 @@ $('btnZip').onclick=function(){
 $('btnImport').onclick=function(){$('impText').value='';$('modal').classList.add('on');};
 /* PUXAR MOLDE DO LINK: baixa dados + imagens de um site publicado e mescla aqui (ebook de mesmo nome = sobrescrito; outros ficam) */
 (function(){var _bpm=$('btnPullMolde');if(!_bpm)return;_bpm.onclick=function(){
-  var url=(prompt('Cole o LINK publicado do molde (ex.: https://seu-site.vercel.app):','')||'').trim();
+  var url=(prompt('Cole o LINK publicado do molde (ex.: https://seu-site.vercel.app — link com /upsell/ puxa o molde do UPSELL, e por aí vai):','')||'').trim();
   if(!url)return;
   if(!confirm('Puxar o molde de:\n'+url+'\n\nIsso baixa os DADOS + as IMAGENS e MESCLA aqui (ebooks com o MESMO nome são SOBRESCRITOS; os outros ficam). Dá pra desfazer com Ctrl+Z. Continuar?'))return;
   _bpm.disabled=true;var _ol=_bpm.textContent;_bpm.textContent='Puxando...';toast('Puxando o molde do link...');
@@ -2276,6 +2276,8 @@ $('btnImport').onclick=function(){$('impText').value='';$('modal').classList.add
     .then(function(r){return r.json();}).then(function(d){
       _bpm.disabled=false;_bpm.textContent=_ol;
       if(!d||!d.ok){toast('⚠️ '+((d&&d.error)||'não consegui puxar'));return;}
+      var dws=d.ws||'principal';   /* o molde veio de QUAL workspace? tem que bater com o aberto (senão upsell cairia dentro do principal) */
+      if(dws!==WS){toast('⚠️ Esse link é do workspace "'+((WS_DEFS[dws]||{}).label||dws)+'" — abre esse workspace no menu da esquerda e puxa o molde LÁ.');return;}
       undoPush(undoSnap());
       Object.keys(d.ebooks).forEach(function(k){model[k]=d.ebooks[k];});
       var first=Object.keys(d.ebooks)[0];if(first){curEbook=first;if(model[curEbook]&&model[curEbook].paises)curPais=Object.keys(model[curEbook].paises)[0];}

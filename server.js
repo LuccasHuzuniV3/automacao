@@ -397,16 +397,20 @@ const server = http.createServer(async function (req, res) {
     let raw = '';
     try { raw = String(JSON.parse(body.toString('utf8')).url || '').trim(); } catch (e) {}
     if (raw && !/^https?:\/\//i.test(raw)) raw = 'https://' + raw;   // aceita colar sem o https://
-    let src = '', wantEbook = '';
-    try { const _u = new URL(raw); src = _u.origin; wantEbook = (_u.searchParams.get('ebook') || '').trim(); } catch (e) {}   // src = dominio; wantEbook = o ebook que o link aponta (?ebook=) -> puxa SO ele
+    let src = '', wantEbook = '', wsPull = 'principal';
+    try { const _u = new URL(raw); src = _u.origin; wantEbook = (_u.searchParams.get('ebook') || '').trim();
+      const _m = String(_u.pathname || '').toLowerCase().match(/^\/(upsell2|downsell3|downsell2|upsell|downsell)(\/|$)/);   // link de workspace (/upsell/...) -> puxa o molde DAQUELE workspace
+      if (_m) wsPull = _m[1];
+    } catch (e) {}
     if (!src) { json(res, 200, { ok: false, error: 'link invalido — cole a URL do site publicado (ex.: https://seu-projeto.vercel.app)' }); return; }
+    const wsPath = (wsPull === 'principal') ? '' : ('/' + wsPull);
     try {
-      const r = await fetch(src + '/ebooks.js', { cache: 'no-store' });
-      if (!r.ok) { json(res, 200, { ok: false, error: 'nao achei o ebooks.js em ' + src + ' (esse link ja foi publicado?)' }); return; }
+      const r = await fetch(src + wsPath + '/ebooks.js', { cache: 'no-store' });
+      if (!r.ok) { json(res, 200, { ok: false, error: 'nao achei o ebooks.js em ' + src + wsPath + ' (esse link ja foi publicado?)' }); return; }
       const txt = await r.text();
       let data = {};
       try { const g = {}; (new Function('window', txt))(g); data = g.EBOOKS || {}; } catch (e) {}
-      if (!data || !Object.keys(data).length) { json(res, 200, { ok: false, error: 'nao li ebooks em ' + src + '/ebooks.js (confira se e a URL do site publicado)' }); return; }
+      if (!data || !Object.keys(data).length) { json(res, 200, { ok: false, error: 'nao li ebooks em ' + src + wsPath + '/ebooks.js (confira se e a URL do site publicado)' }); return; }
       if (wantEbook) {   // o link aponta um ebook especifico (?ebook=) -> puxa SO ele
         if (data[wantEbook]) { const _one = {}; _one[wantEbook] = data[wantEbook]; data = _one; }
         else { json(res, 200, { ok: false, error: 'o ebook "' + wantEbook + '" nao esta nos dados desse link. La tem: ' + Object.keys(data).join(', ') }); return; }
@@ -422,7 +426,7 @@ const server = http.createServer(async function (req, res) {
           .then(function (ab) { fs.mkdirSync(path.dirname(dst), { recursive: true }); fs.writeFileSync(dst, Buffer.from(ab)); okImg++; })
           .catch(function () { failImg++; });
       }));
-      json(res, 200, { ok: true, ebooks: data, ebooksCount: Object.keys(data).length, imgs: okImg, imgsFail: failImg });
+      json(res, 200, { ok: true, ws: wsPull, ebooks: data, ebooksCount: Object.keys(data).length, imgs: okImg, imgsFail: failImg });   // ws: de qual workspace o molde veio (o builder confere se bate com o aberto)
     } catch (e) { json(res, 200, { ok: false, error: String(e).slice(0, 200) }); }
     return;
   }
@@ -466,7 +470,7 @@ const server = http.createServer(async function (req, res) {
     function finish(ok, url, hint, log) { json(res, 200, { ok: ok, url: url || '', hint: hint || '', log: String(log || '').slice(-4000) }); }
 
     function deployNow() {
-      execFile('vercel', ['dist', '--prod', '--yes'], { cwd: ROOT, shell: true, timeout: 180000, maxBuffer: 1024 * 1024 * 30 },
+      execFile('vercel', ['dist', '--prod', '--yes'], { cwd: ROOT, shell: true, timeout: 420000, maxBuffer: 1024 * 1024 * 30 },   /* 7min: build frio na Vercel + 2000+ arquivos + upload lento estourava os 3min e dava alarme falso */
         function (err, stdout, stderr) {
           const out = String(stdout || '') + '\n' + String(stderr || '');
           const ok = !err && /"readyState":\s*"READY"|\.vercel\.app/i.test(out);
@@ -474,7 +478,7 @@ const server = http.createServer(async function (req, res) {
           if (!ok) {
             if (/log ?in|credential|authenticat|vercel login|not logged|no existing|missing_scope/i.test(out))
               hint = 'Faca o login uma vez: rode o "login-vercel.bat" e tente de novo.';
-            else if (err && err.killed) hint = 'O deploy demorou demais. Tente de novo.';
+            else if (err && err.killed) hint = 'O deploy passou do tempo de espera AQUI — mas se o log abaixo mostra "Production/Building", a Vercel CONTINUA terminando sozinha: espere 1-2 min e confira o site antes de repetir.';
             else hint = 'Falha no deploy — veja o log abaixo.';
           }
           // URL publica = dominio de producao estavel (a URL com hash do output e protegida pela Vercel)
