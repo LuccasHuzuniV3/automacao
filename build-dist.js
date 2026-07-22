@@ -91,7 +91,7 @@ async function writeSite(sub, localAll, onlyKeys, globalName) {
   const plan = await planFor(localAll, onlyKeys, baseUrl + '/ebooks.js', isMain ? 'principal' : sub);
   if (!Object.keys(plan.out).length) { if (isMain) { console.error('Nenhum ebook valido. Disponiveis: ' + Object.keys(localAll).join(', ')); process.exit(1); } console.log(sub.toUpperCase() + ' vazio -> /' + sub + ' nao publicado'); return; }
   // imagens de ebooks do AR = protegidas; e DES-COLIDE as do(s) ebook(s) local(is) que reusam o mesmo nome de arquivo
-  const protect = new Set(protectedImages(plan.out, plan.fromLive));
+  const protect = new Set(protectedImages(plan.out, plan.fromLive, plan.preservedPaises));   // inclui imagens dos países preservados do ar (merge país-a-país)
   const dc = decollide(plan.out, plan.updated, Array.from(protect));
   const out = dc.out, keys = Object.keys(out);
 

@@ -360,10 +360,6 @@
     <button class="railb on" data-view="ebooks"><i>📚</i><span>Ebooks</span></button>
     <button class="railb" id="navPrincipal" data-view="editor"><i>✏️</i><span>Principal</span></button>
     <button class="railb" id="navUpsell"><i>⬆️</i><span>UPSELL</span></button>
-    <button class="railb" id="navDownsell"><i>⬇️</i><span>DOWNSELL</span></button>
-    <button class="railb" id="navDownsell2"><i>⏬</i><span>DOWNSELL 2</span></button>
-    <button class="railb" id="navUpsell2"><i>⏫</i><span>UPSELL 2</span></button>
-    <button class="railb" id="navDownsell3"><i>🔻</i><span>DOWNSELL 3</span></button>
     <button class="railb" data-view="analytics"><i>📊</i><span>Analytics</span></button>
     <button class="railb" data-view="vendas"><i>💰</i><span>Vendas</span></button>
     <button class="railb" data-view="config"><i>⚙️</i><span>Config</span></button>
@@ -385,7 +381,7 @@
   </section>
   <section class="preview">
     <div class="pbar"><span class="lbl">Prévia:</span><span class="lbl" id="pvLabel" style="color:var(--gold)"></span><span class="lbl" style="color:var(--teal)">✏️ clique no texto pra editar</span>
-      <span class="sep"></span><button class="btn" id="btnAddEl" title="Adicionar elemento livre: degradê, caixa de fundo ou texto">➕ Elemento</button><button class="btn" id="btnDsAlert" style="display:none" title="Ver/editar o alerta de 50% no preview — clica nos textos pra editar (só no upsell)">👁 Alerta 50%</button><button class="btn" id="btnOcultos" style="display:none" title="Elementos escondidos deste idioma — clique pra restaurar">👁 Ocultos (0)</button><button class="btn" id="btnUndo" title="Desfazer o último movimento (Ctrl+Z)">↩ Desfazer</button><button class="btn" id="btnFocus">⛶ Modo edição (largura real)</button><button class="btn" id="wDesk">🖥️</button><button class="btn" id="wMob">📱</button><button class="btn" id="btnOpen">Abrir ↗</button></div>
+      <span class="sep"></span><button class="btn" id="btnCores" style="display:none" title="Paleta de cores do tema — muda a página inteira de uma vez">🎨 Cores</button><button class="btn" id="btnAddEl" title="Adicionar elemento livre: degradê, caixa de fundo ou texto">➕ Elemento</button><button class="btn" id="btnDsAlert" style="display:none" title="Ver/editar o alerta de 50% no preview — clica nos textos pra editar (só no upsell)">👁 Alerta 50%</button><button class="btn" id="btnOcultos" style="display:none" title="Elementos escondidos deste idioma — clique pra restaurar">👁 Ocultos (0)</button><button class="btn" id="btnUndo" title="Desfazer o último movimento (Ctrl+Z)">↩ Desfazer</button><button class="btn" id="btnFocus">⛶ Modo edição (largura real)</button><button class="btn" id="wDesk">🖥️</button><button class="btn" id="wMob">📱</button><button class="btn" id="btnOpen">Abrir ↗</button></div>
     <div class="frameWrap"><iframe id="frame"></iframe></div>
   </section>
   </main>
@@ -707,6 +703,68 @@ var TXT=[
 ];
 /* listas (blocos/bonus/bundle/trust) agora sao montadas no renderForm */
 
+/* ===== LAYOUT V2 "ESCOLHIDOS" (ebook "model" e clones com layout2) =====
+   Os campos e2* moram no index.html (#lay2v, data-edit) — edição é clicando na página.
+   Esta lista existe SÓ pra tradução (translatePais concatena quando o ebook é layout2). */
+var E2TXT=(function(){
+  var ks=['e2Badge','e2Title','e2Sub','e2Pill','e2AprTit','e2AprSub','e2Card1','e2Card2','e2Card3','e2Card4','e2Card5','e2Card6','e2Extra','e2Cta1',
+    'e2AboutQuote','e2AboutTit','e2AboutTxt','e2RecLabel1','e2RecDesc1','e2RecLabel2','e2RecDesc2','e2RecLabel3','e2RecDesc3','e2Cta2','e2DepoTit','e2DepoSub','e2Cta3',
+    'e2FeatTitA','e2FeatTitB','e2Feat1t','e2Feat1p','e2Feat2t','e2Feat2p','e2Feat3t','e2Feat3p',
+    'e2Depo2Tit','e2Depo2Sub','e2ColTitA','e2ColTitB','e2AcesTit','e2AcesP1','e2AcesP2','e2AcesP3',
+    'e2PriTit','e2Roi','e2RoiSub','e2Why','e2VagasLbl','e2VagasTxt',
+    'e2P1Tit','e2P1Desc','e2P1i1','e2P1i2','e2P1i3','e2P1i4','e2P1i5','e2P1Preco','e2P1De','e2P1Btn','e2P1BtnSub','e2P1Safe',
+    'e2P2Badge','e2P2Tit','e2P2Desc','e2P2i1','e2P2i2','e2P2i3','e2P2i4','e2P2i5','e2P2i6','e2P2i7','e2P2i8','e2P2Preco','e2P2De','e2P2Btn','e2P2BtnSub','e2P2Note','e2P2Safe',
+    'e2GarSelo','e2GarTit','e2GarTxt','e2FaqTit','e2FaqSub',
+    'e2Faq1q','e2Faq1a','e2Faq2q','e2Faq2a','e2Faq3q','e2Faq3a','e2Faq4q','e2Faq4a','e2Faq5q','e2Faq5a','e2Faq6q','e2Faq6a',
+    'e2Foot1','e2Foot2','e2Sticky'];
+  return ks.map(function(k){return {k:k,label:'V2 · '+k};});
+})();
+/* campos do template V2 do UPSELL ("Obrigado/Coleção" — #lay3v no index) */
+var E3TXT=(function(){
+  var ks=['e3Confirm','e3Tit','e3Sub','e3Unica','e3VslLabel','e3Unmute','e3De','e3Por','e3Cond','e3Cta','e3CtaSub','e3Safe',
+    'e3OfTit','e3OfDesc','e3OfI1','e3OfI2','e3OfI3','e3OfI4','e3OfI5','e3OfI6','e3OfI7','e3Aviso','e3AccessTxt','e3Foot'];
+  return ks.map(function(k){return {k:k,label:'V2up · '+k};});
+})();
+function isLay2(ek){try{return !!(model&&model[ek]&&model[ek].layout2)||ek==='model';}catch(e){return false;}}
+/* materializa os DEFAULTS do markup em t (fonte única = o próprio #lay2v do iframe) — a tradução só pega campo que EXISTE em t */
+function e2Fill(tt,idoc){
+  if(!tt||!idoc)return 0;var n=0;
+  var sel=(idoc.body&&idoc.body.classList.contains('lay3'))?'#lay3v [data-edit]':'#lay2v [data-edit]';   /* só o template ATIVO (upsell não ganha os campos do principal) */
+  try{Array.prototype.forEach.call(idoc.querySelectorAll(sel),function(el){
+    var k=el.getAttribute('data-edit');if(!k||/^e[23]/.test(k)===false)return;
+    if(tt[k]!=null&&String(tt[k]).trim()!=='')return;
+    var v=el.hasAttribute('data-html')?String(el.innerHTML||'').trim():String(el.textContent||'').trim();
+    if(v){tt[k]=v;n++;}
+  });}catch(e){}
+  return n;
+}
+function e2MigraModel(){
+  if(!model)return;
+  if(WS==='principal'&&model.model&&!model.model.layout2)model.model.layout2=true;   /* grava a flag no model -> DUPLICATAS/clones herdam o layout novo */
+  if(WS==='upsell'&&!model.model){   /* UPSELL: cria o model do template "Obrigado/Coleção" JÁ PRONTO (sem precisar clonar nada) — textos padrão vêm do próprio template; grava no arquivo no 1º save */
+    model.model={layout2:true,tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}};
+  }
+  /* LIMPA lixo do template ANTIGO nos ebooks da família V2: extras/decor da prancheta 1280 não existem
+     na coluna do layout novo (era o "hexágono/shape fantasma" travado por cima dos cards). Roda em TODOS
+     os países. Rodar aqui (builder.html = página TOPO, sempre recarregada no Ctrl+Shift+R) vence o cache do iframe. */
+  Object.keys(model).forEach(function(ek){var eb=model[ek];if(!eb||!(eb.layout2||ek==='model'))return;
+    var _unhideRec=!eb._recHojeShown;   /* UMA vez: mostra o título/subtítulo "receber hoje" (estava oculto do texto antigo). Flag deixa o user re-ocultar depois. */
+    var ps=eb.paises||{};Object.keys(ps).forEach(function(p){var t=(ps[p]||{}).t;if(!t)return;
+      if(_unhideRec&&t._hide){delete t._hide.e2AboutTit;delete t._hide.e2AboutTxt;}
+      if(t.extras)delete t.extras; if(t.decor)delete t.decor; if(t.capaX)delete t.capaX;
+      /* LAYOUT ÚNICO (Canva): posição/largura são as MESMAS no PC e no celular. Dobra o campo-mobile no campo-único
+         (mobile ganha = preserva o que aparece hoje no publicado) e apaga o mobile — mata o "movi e mudou de lugar ao trocar de dispositivo". */
+      /* copy "receber hoje": troca o título/subtítulo ANTIGO da seção pelo novo, SÓ se não foi editado (== default antigo) */
+      if(t.e2AboutTit==='Um guia espiritual completo para quem sente o peso de ser <span>um escolhido</span>')t.e2AboutTit='O que você vai <span>receber hoje</span>';
+      if(t.e2AboutTxt&&/^Cada capítulo foi escrito de forma clara/.test(t.e2AboutTxt))t.e2AboutTxt='Ao garantir o seu acesso hoje, você leva o guia principal + 2 bônus exclusivos:';
+      if(t._posM){if(!t._pos)t._pos={};Object.keys(t._posM).forEach(function(k){t._pos[k]=t._posM[k];});delete t._posM;}
+      if(t._pos&&t._pos.e2GarSelo)delete t._pos.e2GarSelo;   /* selo "15 dias" fica SEMPRE centrado na bolinha (não movível) */
+      if(t._wM){if(!t._w)t._w={};Object.keys(t._wM).forEach(function(k){t._w[k]=t._wM[k];});delete t._wM;}
+      if(t._secHM){if(!t._secH)t._secH={};Object.keys(t._secHM).forEach(function(k){t._secH[k]=t._secHM[k];});delete t._secHM;}
+    });
+    eb._recHojeShown=true;});
+}
+
 var DEFAULT=(WS_SRC&&Object.keys(WS_SRC).length)?JSON.parse(JSON.stringify(WS_SRC)):{salomao:{tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}}};
 
 var model,curEbook,curPais,nonce=0,imgCounter=0,$=function(id){return document.getElementById(id)};
@@ -860,6 +918,7 @@ function renderSizes(){
   sel.onchange=function(){tema.titleFont=sel.value;save();updatePreview();};
   ff.appendChild(sel);w.appendChild(ff);
   var t=model[curEbook].paises[curPais].t;
+  if(!isLay2(curEbook)){   /* degradê do título é do layout v1 (#h1a/#h1b); a família usa o degradê FIXO do template — controles escondidos pra não confundir */
   var dh=document.createElement('div');dh.className='f';
   var dl=document.createElement('label');dl.textContent='Degradê do título (onde fica o destaque)';dh.appendChild(dl);
   var dsel=document.createElement('select');dsel.style.cssText=sel.style.cssText;
@@ -873,6 +932,7 @@ function renderSizes(){
   dmsel.onchange=function(){t.hlMode=dmsel.value;if(t.hlMode==='livre'&&!t.hlBox)t.hlBox={x:0,y:70,w:420,h:72};save();updatePreview();};
   dm.appendChild(dmsel);w.appendChild(dm);
   var hint=document.createElement('div');hint.style.cssText='font-size:11px;color:var(--muted);margin-top:4px';hint.textContent='Caixa livre: na prévia, arraste a faixa de degradê (alça roxa = mover, alça azul no canto = aumentar/expandir). Tamanho dos textos: passe o mouse no texto e arraste a bolinha do canto.';w.appendChild(hint);
+  }
   return w;
 }
 function group(title){var w=document.createElement('div');w.className='group';var h=document.createElement('div');h.className='gh';h.textContent=title;w.appendChild(h);return w;}
@@ -898,14 +958,107 @@ function renderList(name,title,fields,container){if(!container[name])container[n
     fields.forEach(function(f){card.appendChild(field(f,function(){return item[f.k]},function(v){item[f.k]=v}));});w.appendChild(card);});
   var add=document.createElement('button');add.className='btn';add.textContent='+ adicionar';
   add.onclick=function(){var o={};fields.forEach(function(f){o[f.k]='';});arr.push(o);save();renderForm();updatePreview();};w.appendChild(add);return w;}
+function getByPath(o,path){var ks=path.split('.');for(var i=0;i<ks.length;i++){if(o==null)return undefined;var k=/^\d+$/.test(ks[i])?+ks[i]:ks[i];o=o[k];}return o;}
+/* ===== IMAGENS/VIDEOS do template FAMILIA (lay2 = principal / lay3 = upsell) — editaveis aqui na esquerda, igual as imagens do v1.
+   Fonte da verdade: os data-img "e2i / e2v / e3i / e3v" do #lay2v/#lay3v no index.html. (e2i.colecao fica de fora: a secao .certificado e escondida no lay2.) */
+var FAM_IMGS_LAY2=[
+  {p:'e2i.mockup',label:'Capa / Mockup (topo)'},
+  {p:'e2i.guia',label:'Imagem do guia (seção "receber hoje")'},
+  {p:'e2i.rec1',label:'Receber hoje ① — Guia Principal'},
+  {p:'e2i.rec2',label:'Receber hoje ② — Bônus 1'},
+  {p:'e2i.rec3',label:'Receber hoje ③ — Bônus 2'},
+  {p:'e2v.v1',label:'Vídeo depoimento 1',vid:true},
+  {p:'e2v.v2',label:'Vídeo depoimento 2',vid:true},
+  {p:'e2i.depo1',label:'Print de depoimento 1'},
+  {p:'e2i.depo2',label:'Print de depoimento 2'},
+  {p:'e2i.depo3',label:'Print de depoimento 3'}
+];
+var FAM_IMGS_LAY3=[
+  {p:'e3v.vsl',label:'Vídeo VSL (topo do upsell)',vid:true},
+  {p:'e3i.colecao',label:'Imagem da coleção'}
+];
+function renderFamilyImages(P){
+  var w=group('🖼️ Imagens e vídeos desta página');
+  var hint=document.createElement('div');hint.style.cssText='font-size:11.5px;color:var(--muted);margin:-2px 2px 9px';
+  hint.textContent='Troque aqui ou clique direto na imagem na prévia. Tamanho e posição você ajusta arrastando na prévia.';
+  w.appendChild(hint);
+  var list=(WS==='upsell')?FAM_IMGS_LAY3:FAM_IMGS_LAY2;
+  list.forEach(function(it){
+    var get=(function(pp){return function(){return getByPath(P.t,pp)||'';};})(it.p);
+    var set=(function(pp){return function(v){setByPath(P.t,pp,v);};})(it.p);
+    if(it.vid){var vf=videoField(get,set);var lb=vf.querySelector('label');if(lb)lb.textContent=it.label;w.appendChild(vf);}
+    else{w.appendChild(field({k:it.p,label:it.label,img:true},get,set));}
+  });
+  return w;
+}
+/* ===== PREÇOS POR MOEDA (família / lay2 principal) — ao traduzir, cada país já sai na moeda certa =====
+   País -> moeda. (Espanha=USD e Inglês=USD conforme o padrão passado; desconhecido cai em EUR.) */
+var MOEDA_PAIS={
+  br:'BRL',
+  de:'EUR', bg:'EUR', hr:'EUR', fi:'EUR', fr:'EUR', gr:'EUR', hu:'EUR', it:'EUR', pl:'EUR', ro:'EUR',
+  kr:'USD', es:'USD', en:'USD', us:'USD', gb:'USD', uk:'USD', ru:'USD'
+};
+/* Preços por moeda: p1/p2 = "por" (foto 1 = Guia, foto 2 = Coleção); p1de/p2de = riscado (ANCORA — ajuste à vontade).
+   Só os valores "por" vieram no padrão; o riscado usei 37/97 com o símbolo local (mesma % de desconto do euro). */
+var PRECOS_FAM={
+  BRL:{cur:'BRL', p1:'R$ 12,90', p2:'R$ 19,90', p1de:'R$ 37,00', p2de:'R$ 97,00'},
+  EUR:{cur:'EUR', p1:'€12,00',   p2:'€20,00',   p1de:'€37,00',   p2de:'€97,00'},
+  USD:{cur:'USD', p1:'$12,90',   p2:'$19,90',   p1de:'$37,00',   p2de:'$97,00'}
+};
+/* Todas as formas textuais de cada "slot" de preço, em qualquer moeda -> troca a copy (ROI, botão) seja qual for a moeda de origem.
+   Ex.: BR já em R$? traduziu pro alemão? o €/R$/$ vira a moeda do país de destino do mesmo jeito. */
+var PRECO_TOKENS=[
+  ['p1',  ['€12,00','€10,00','R$ 12,90','R$12,90','$12,90','€12','€10']],
+  ['p2',  ['€20,00','R$ 19,90','R$19,90','$19,90','€20']],
+  ['p1de',['€37,00','R$ 37,00','R$37,00','$37,00','€37']],
+  ['p2de',['€97,00','R$ 97,00','R$97,00','$97,00','€97']]
+];
+/* Copy do bloco da oferta (ROI) com PLACEHOLDERS: {colecao}=preço da Coleção, {guia}=preço do Guia, {diff}=diferença.
+   O index.html preenche na hora por moeda -> a diferença (€8 / R$7 / $7) nunca fica errada. Traduz junto (os {x} são preservados). */
+var OFFER_COPY_PT={
+  e2Roi:'Por apenas <strong>{colecao}</strong> você leva a <strong>Coleção Completa</strong>: o guia principal + 2 bônus + 2 ebooks extras. Toda a sua blindagem espiritual, de uma vez — e <strong>para o resto da vida.</strong>',
+  e2RoiSub:'Só <strong>{diff} a mais</strong> que o guia sozinho — e você não fica com nada pela metade.',
+  e2Why:'Por que a Coleção Completa vale muito mais a pena? Porque o guia sozinho é só o começo — é a coleção inteira que blinda cada área da sua vida espiritual. Por só <strong>{diff} a mais</strong> você leva tudo agora e não precisa voltar depois comprando pedaço por pedaço. Quem quer resultado de verdade escolhe a Coleção — e as <strong>condições deste lote são limitadas</strong>.'
+};
+function precoMoedaFam(code,idioma){
+  var cur=MOEDA_PAIS[String(code||'').toLowerCase()];
+  if(!cur){var lg=String(idioma||'').toLowerCase();cur=/pt-?br/.test(lg)?'BRL':(/^en|-us|_us/.test(lg)?'USD':'EUR');}   /* fallback pela língua, senão EUR */
+  return PRECOS_FAM[cur]||null;
+}
+/* Aplica os preços da moeda do país nos campos do lay2 principal (boxes) e troca os € da copy (ROI/botões/etc).
+   Só principal (o upsell/lay3 tem preço próprio — e3Por/e3De — fora deste padrão). Retorna true se aplicou. */
+function aplicarPrecosFamilia(T,code){
+  if(!isLay2(curEbook)||!T)return false;
+  var m=precoMoedaFam(code,T.idioma);if(!m)return false;
+  T.t=T.t||{};
+  /* 1) copy (ROI, subtítulo do botão, etc.): troca qualquer forma de preço conhecida pela moeda deste país.
+     Uma passada só (regex único, alternativas mais longas primeiro) -> não re-mexe no que já trocou. Roda em e2* (principal) e e3* (upsell). */
+  var toks=[],mp={};
+  PRECO_TOKENS.forEach(function(row){var slot=row[0];row[1].forEach(function(tok){ if(tok!==m[slot]){toks.push(tok);mp[tok]=m[slot];} });});
+  toks.sort(function(a,b){return b.length-a.length;});   /* €10,00 antes de €10 (senão sobra ",00") */
+  if(toks.length){
+    var re=new RegExp(toks.map(function(x){return x.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'(?![.,\\d])';}).join('|'),'g');   /* fronteira de número: '€12' NÃO casa dentro de '€12,00' (senão vira '€12,00,00') */
+    Object.keys(T.t).forEach(function(k){ if(/^e[23]/.test(k)&&typeof T.t[k]==='string'){ T.t[k]=T.t[k].replace(re,function(m0){return mp[m0];}); } });
+  }
+  /* 2) as caixas de preço: valor exato da moeda (determinístico). */
+  if(WS==='upsell'){
+    T.t.e3Por=m.p1; T.t.e3De=m.p2de;   /* upsell = 1 preço só: à vista na MESMA faixa do guia (12,90/12/12,90); riscado = âncora 97 */
+  }else{
+    T.t.e2P1Preco=m.p1; T.t.e2P1De=m.p1de;   /* foto 1 = Guia Principal */
+    T.t.e2P2Preco=m.p2; T.t.e2P2De=m.p2de;   /* foto 2 = Coleção Completa */
+  }
+  return true;
+}
 function renderForm(){var form=$('form');form.innerHTML='';var P=model[curEbook].paises[curPais];var tema=model[curEbook].tema||(model[curEbook].tema={});
   if(!P.img)P.img={};if(!P.redes)P.redes={};if(!P.t)P.t={};
   form.appendChild(transBar());
   var dica=document.createElement('div');dica.style.cssText='font-size:11.5px;color:var(--teal);background:rgba(45,212,191,.08);border:1px solid rgba(45,212,191,.3);border-radius:9px;padding:9px 11px;margin-bottom:10px';
   dica.textContent='✏️ Textos: edite clicando direto na prévia. 🖼️ Imagens: clique na imagem na prévia pra trocar, ou escolha aqui e ajuste o tamanho.';
   form.appendChild(dica);
-  form.appendChild(renderTema());
+  if(!isLay2(curEbook))form.appendChild(renderTema());   /* modelo família usa a paleta 🎨 Cores; o painel de cores v1 (swatches) fica escondido pra não duplicar */
   form.appendChild(renderSizes());
+  if(isLay2(curEbook)){form.appendChild(renderFamilyImages(P));}   /* FAMILIA: imagens/videos do template (e2 / e3) — NAO usa os campos de imagem do v1 abaixo */
+  else{
   var gi=group('Imagens — escolher e dimensionar');
   gi.appendChild(field({k:'hero',label:'Capa / Herói',img:true},function(){return P.img.hero},function(v){P.img.hero=v}));
   gi.appendChild(sizeInput('↕ Tamanho da capa (px)',function(){return tema.szHero},function(v){tema.szHero=v}));
@@ -929,7 +1082,33 @@ function renderForm(){var form=$('form');form.innerHTML='';var P=model[curEbook]
   gi.appendChild(field({k:'atendente',label:'Atendente',img:true},function(){return P.img.atendente},function(v){P.img.atendente=v}));
   gi.appendChild(sizeInput('↕ Tamanho do atendente (px)',function(){return tema.szAtend},function(v){tema.szAtend=v}));
   form.appendChild(gi);
+  }
   form.appendChild(groupFields('Configuração do país',META,P));
+  if(isLay2(curEbook)){   /* 💰 preços por moeda: principal (Guia+Coleção) e upsell (1 oferta). Botão aplica no país aberto; ao traduzir já sai automático */
+    var gpm=group('💰 Preços por moeda');
+    var mi=precoMoedaFam(curPais,P.idioma);
+    var hpm=document.createElement('div');hpm.style.cssText='font-size:11.5px;color:var(--muted);margin:-2px 2px 9px;line-height:1.5';
+    var _precoInfo=(WS==='upsell')?('Oferta do upsell <b>'+(mi?mi.p1:'?')+'</b>'):('Guia <b>'+(mi?mi.p1:'?')+'</b> · Coleção <b>'+(mi?mi.p2:'?')+'</b>');
+    hpm.innerHTML='Moeda deste país: <b style="color:var(--teal)">'+(mi?mi.cur:'?')+'</b> — '+_precoInfo+'.<br>Ao <b>traduzir</b>, cada país já sai na moeda certa. Este botão aplica no país aberto agora (útil pro Brasil, que é a origem).';
+    gpm.appendChild(hpm);
+    var bpm=document.createElement('button');bpm.className='btn';bpm.style.width='100%';bpm.textContent='💰 Aplicar preços da moeda neste país';
+    bpm.onclick=function(){ if(aplicarPrecosFamilia(P,curPais)){save();renderForm();updatePreview();toast('Preços da moeda aplicados ✓');}else{toast('Sem moeda definida pra este país');} };
+    gpm.appendChild(bpm);
+    if(WS!=='upsell'){   /* a copy da oferta (ROI) é só do principal; o upsell tem estrutura própria (1 preço) */
+      var boc=document.createElement('button');boc.className='btn';boc.style.width='100%';boc.style.marginTop='7px';boc.textContent='📝 Aplicar copy + preços da oferta';
+      boc.title='Seta os preços da moeda E troca a copy do bloco do preço pela versão com {colecao}/{guia}/{diff} — a diferença (€8/R$7/$7) se ajusta sozinha. Aplique no BR e traduza.';
+      boc.onclick=function(){undoPush(undoSnap());aplicarPrecosFamilia(P,curPais);P.t.e2Roi=OFFER_COPY_PT.e2Roi;P.t.e2RoiSub=OFFER_COPY_PT.e2RoiSub;P.t.e2Why=OFFER_COPY_PT.e2Why;save();renderForm();updatePreview();toast('Copy + preços da oferta aplicados ✓ (traduza pros outros países) — Ctrl+Z desfaz');};
+      gpm.appendChild(boc);
+    }
+    form.appendChild(gpm);
+    var popFields=[
+      {k:'popTit',label:'Título',ph:'Espere, não saia agora! 🙏'},
+      {k:'popSub1',label:'Primeira linha',area:true,ph:'Você chegou até aqui pelo nosso canal...'},
+      {k:'popSub2',label:'Chamada pro e-mail',area:true,ph:'Deixe seu e-mail e garanta a sua oferta especial de hoje:'},
+      {k:'popBtn',label:'Texto do botão',ph:'QUERO GARANTIR MEU DESCONTO →'}
+    ];
+    form.appendChild(groupFields('✉️ Mensagem do popup de saída',popFields,P.t,'Aparece SÓ quando a pessoa tenta sair da página. Vazio = usa o texto padrão traduzido do idioma. Ao traduzir, o que você escrever aqui vai junto.'));
+  }
   if(WS==='upsell'||WS==='principal'){   /* PAINEL do alerta de saída: textos (traduzíveis) + % + cores. Principal (→DS1) e Upsell (→DS2). */
     var _dsT=TXT.filter(function(f){return /^dsAlert(Tit|Msg|Val|Cta|No)$/.test(f.k);});
     var _dsX=[{k:'dsAlertPct',label:'% de desconto (padrão 50)',small:true},{k:'dsAlertScale',label:'Tamanho do card % (50–150)',small:true},
@@ -938,6 +1117,7 @@ function renderForm(){var form=$('form');form.innerHTML='';var P=model[curEbook]
     form.appendChild(groupFields('🎁 Alerta de saída',_dsT.concat(_dsX),P.t,'Aparece quando o visitante tenta VOLTAR/SAIR ou clica em "negar" → vai pro downsell ('+(WS==='principal'?'DS1':'DS2')+'). Vazio = texto automático no idioma; {pct} vira a %. Editar visual: botão "👁 Alerta 50%" na barra de cima. O botão "negar" da página é o campo "Botão recusar e sair" (abaixo).'));
   }
   form.appendChild(groupFields('Redes sociais (rodapé)',REDES,P.redes));
+  if(!isLay2(curEbook)){   /* listas de imagem do v1 (confiança/blocos/bônus/bundle/oferta/última) — a família usa as imagens do template lá em cima */
   form.appendChild(renderList('trust','Barra de confiança (ícone; texto na prévia)',[{k:'icon',label:'Ícone: lock, play, thumb, shield, clock, check'}],P.t));
   form.appendChild(renderImgList('blocos','Blocos — imagem + tamanho (texto na prévia)',P.t,{titulo:'',texto:'',img:'',sz:''}));
   (function(){var sc=group('Tamanho dos cards de bônus');var f=document.createElement('div');f.className='f';
@@ -950,6 +1130,7 @@ function renderForm(){var form=$('form');form.innerHTML='';var P=model[curEbook]
   form.appendChild(renderImgList('bundle','Bundle — imagem + tamanho (preços na prévia)',P.t,{titulo:'',img:'',precoDe:'',precoPor:'',sz:''}));
   if(!P.t.colCentral){var go=group('Capa da oferta');go.appendChild(field({k:'oferta',label:'Imagem (vazio = usa a capa do topo)',img:true},function(){return P.img.oferta},function(v){P.img.oferta=v}));form.appendChild(go);}   /* ordem = ordem da página: a oferta fica lá embaixo -> campo no FIM do formulário (depois do Bundle). Tamanho pelas alças na tela. Some no upsell (colCentral). */
   if(WS==='upsell'){var gu=group('🖼️ Imagem da última chance (antes do preço) — só upsell');gu.appendChild(field({k:'ultima',label:'Imagem (aparece antes do preço, lá embaixo na última chance)',img:true},function(){return P.img.ultima},function(v){P.img.ultima=v}));gu.appendChild(sizeInput('↕ Tamanho (px)',function(){return tema.szUltima},function(v){tema.szUltima=v}));form.appendChild(gu);}   /* render em index.html (#ultimaBook, data-img="img.ultima"); tamanho via --szUltima. Só no upsell. */
+  }
   buildSecNav();}
 
 // ---- TRADUCAO AUTOMATICA (gratis, via MyMemory, sem chave) ----
@@ -1063,14 +1244,17 @@ function translatePais(srcCode,tgtCode,onStep){
     if(!T.img||!T.img.hero){T.img=JSON.parse(JSON.stringify(S.img||{}));}
     if(!T.redes||!T.redes.instagram){T.redes=JSON.parse(JSON.stringify(S.redes||{}));}
     if(!T.t)T.t={};
-    var skip={precoDe:1,preco:1,garantiaDias:1,videoUrl:1,statNum:1};
+    var skip={precoDe:1,preco:1,garantiaDias:1,videoUrl:1,statNum:1,e2P1Preco:1,e2P1De:1,e2P2Preco:1,e2P2De:1,e3De:1,e3Por:1};   /* preços do V2 (principal e upsell) não traduzem (copiam iguais) */
     var tasks=[];
-    TXT.forEach(function(f){ if(!skip[f.k]&&S.t[f.k]){ var _v=String(S.t[f.k]); if(f.k==='giftBar')_v=(_v.split(String.fromCodePoint(0x1F381))[0]||'').trim()||_v; tasks.push({set:function(v){T.t[f.k]=v;},val:_v}); } });   /* giftBar pode estar inchado (texto repetido c/ 🎁 salvo de volta) — manda só a 1a unidade pra traduzir */
+    var _lay2=isLay2(curEbook);
+    if(_lay2){try{var _fd=document.getElementById('frame');if(_fd&&_fd.contentDocument)e2Fill(S.t,_fd.contentDocument);}catch(e){}}   /* V2: garante os defaults em t antes de traduzir */
+    TXT.concat(_lay2?E2TXT.concat(E3TXT):[]).forEach(function(f){ if(!skip[f.k]&&S.t[f.k]){ var _v=String(S.t[f.k]); if(f.k==='giftBar')_v=(_v.split(String.fromCodePoint(0x1F381))[0]||'').trim()||_v; tasks.push({set:function(v){T.t[f.k]=v;},val:_v}); } });   /* giftBar pode estar inchado (texto repetido c/ 🎁 salvo de volta) — manda só a 1a unidade pra traduzir */
     /* "De"/"Von" do preco antigo: precoDe fica no SKIP (nao traduz o NUMERO/moeda), mas a PALAVRA inicial ("De") deve traduzir.
        Traduz SO o prefixo de letras e recola o numero. Se precoDe comeca com numero (ex.: "500 zl"), nao mexe (regex nao casa). */
     (function(){ var v=S.t.precoDe; if(!v)return; var p=String(v).match(/^(\D+?)\s+([\d$€£R].*)$/); if(p&&p[1].trim()) tasks.push({set:function(x){T.t.precoDe=(x||p[1].trim())+' '+p[2];},val:p[1].trim()}); })();
     /* rotulos do selo de garantia (NAO estao no TXT, mas APARECEM pro cliente: "dias"/"Garantia") */
     ['garantiaDiasLbl','garantiaSelo'].forEach(function(k){ if(S.t[k]) tasks.push({set:function(v){T.t[k]=v;},val:S.t[k]}); });
+    ['popTit','popSub1','popSub2','popBtn'].forEach(function(k){ if(S.t[k]) tasks.push({set:function(v){T.t[k]=v;},val:S.t[k]}); });   /* mensagem do popup de saída (editada no builder) traduz junto */
     ['blocos','bonus'].forEach(function(list){
       if(S.t[list]&&S.t[list].length){ T.t[list]=S.t[list].map(function(it){return {titulo:it.titulo,texto:it.texto,img:it.img,sz:it.sz,dx:it.dx,dy:it.dy,bg1:it.bg1,bg2:it.bg2};});   /* bg1/bg2 = cor do card do bônus -> puxa do BR (base) tb */
         S.t[list].forEach(function(it,idx){ if(it.titulo)tasks.push({set:function(v){T.t[list][idx].titulo=v;},val:it.titulo}); if(it.texto)tasks.push({set:function(v){T.t[list][idx].texto=v;},val:it.texto}); }); }
@@ -1084,7 +1268,8 @@ function translatePais(srcCode,tgtCode,onStep){
     aplicarLayoutMolde(S.t,T.t);   /* copia TAMANHO+POSICAO do molde (imagens, combo, botoes, decor); texto traduzido flui */
     /* MOEDA: ao traduzir pra FORA do Brasil, troca R$ -> US$ no preço (Brasil mantém R$). Só o SÍMBOLO; o valor numérico você ajusta. */
     var ehBR=/pt-?br/i.test(String(T.idioma||tgtCode||''));
-    function aplicarMoeda(){ if(ehBR)return; var sw=function(v){return String(v).split('R$').join('US$');};
+    function aplicarMoeda(){ try{aplicarPrecosFamilia(T,tgtCode);}catch(e){}   /* V2 família: preços do lay2 na moeda do país de destino (roda mesmo pra BR/EUR; a função decide) */
+      if(ehBR)return; var sw=function(v){return String(v).split('R$').join('US$');};
       ['precoDe','preco'].forEach(function(k){ if(T.t[k]) T.t[k]=sw(T.t[k]); });   /* preço da OFERTA (antigo/novo) */
       if(T.t.bundle&&T.t.bundle.length) T.t.bundle.forEach(function(b){ if(b&&b.precoDe)b.precoDe=sw(b.precoDe); if(b&&b.precoPor)b.precoPor=sw(b.precoPor); });   /* preços dos COMBOS: precoDe (antigo) + precoPor (novo) de CADA combo */
     }
@@ -1159,7 +1344,7 @@ var curDevice='desktop';   /* 'desktop' | 'mobile' — pré-visualização/ediç
 function loadFrame(){
   var fr=$('frame'),sc=0;
   try{sc=fr.contentDocument.documentElement.scrollTop||0;}catch(e){}   /* guarda onde você estava */
-  fr.src='index.html?preview=1&edit=1&device='+curDevice+'&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais)+(DSALERT_OPEN?'&dsalert=1':'')+'&n='+(++nonce);
+  fr.src='index.html?preview=1&edit=1&ws='+encodeURIComponent(WS)+'&device='+curDevice+'&ebook='+encodeURIComponent(curEbook)+'&pais='+encodeURIComponent(curPais)+(DSALERT_OPEN?'&dsalert=1':'')+'&n='+(++nonce);   /* ws= : o template da família model muda por workspace (principal=Escolhidos, upsell=Obrigado) */
   if(sc>0){var f2=function(){try{fr.contentDocument.documentElement.scrollTop=sc;}catch(e){}fr.removeEventListener('load',f2);};fr.addEventListener('load',f2);}   /* volta pro MESMO lugar (sem pulo pro topo) */
 }
 function setByPath(o,path,val){var ks=path.split('.');for(var i=0;i<ks.length-1;i++){var k=/^\d+$/.test(ks[i])?+ks[i]:ks[i];if(o[k]==null)o[k]=/^\d+$/.test(ks[i+1])?[]:{};o=o[k];}var last=/^\d+$/.test(ks[ks.length-1])?+ks[ks.length-1]:ks[ks.length-1];o[last]=val;}
@@ -1358,7 +1543,7 @@ function wireInlineEdit(){
         if(tlabel){tlabel.style.left=r.l+'px';tlabel.style.top=(r.t-30)+'px';}}
       function thide(){[tbox,thandle,tmove,twidth,tdup,tdel,tlabel].forEach(function(x){if(x&&x.parentNode)x.parentNode.removeChild(x);});tbox=thandle=tmove=twidth=tdup=tdel=tlabel=null;}
       function tmaybe(){setTimeout(function(){if(EDSEL===el)return;if(!tdrag&&tbox&&!el.matches(':hover')&&!thandle.matches(':hover')&&(!tmove||!tmove.matches(':hover'))&&(!twidth||!twidth.matches(':hover'))&&(!tdup||!tdup.matches(':hover'))&&(!tdel||!tdel.matches(':hover')))thide();},180);}
-      function tposF(){return curDevice==='mobile'?'_posM':'_pos';}   /* Modo celular grava posição/escala SÓ no mobile */
+      function tposF(){return (curDevice==='mobile'&&!isLay2(curEbook))?'_posM':'_pos';}   /* Modo celular grava posição/escala SÓ no mobile */
       function getTP(){var pm=t[tposF()],p=pm&&pm[fpath];return p?{x:p.x||0,y:p.y||0,s:p.s||1}:{x:0,y:0,s:1};}
       function applyTP(p){var v='translate('+p.x+'px,'+p.y+'px) scale('+(p.s||1)+')';var dsp=(fpath==='dsAlertCta')?'block':'inline-block';if(curDevice==='mobile'){el.style.setProperty('display',dsp,'important');el.style.setProperty('transform',v,'important');el.style.transformOrigin='top left';}else{el.style.display=dsp;el.style.transform=v;}}   /* botão do alerta fica BLOCK (transform num bloco não refluí o card -> mover/escalar não empurra os vizinhos) */
       function saveTP(p){var f=tposF();if(!t[f])t[f]={};t[f][fpath]={x:p.x,y:p.y,s:p.s||1};}
@@ -1412,7 +1597,7 @@ function wireInlineEdit(){
         thandle=mkHandle(doc,'⤢','#2dd4bf','#06251f','nwse-resize','aumentar/diminuir tudo junto');
         twidth=mkHandle(doc,'↔','#ff9f1c','#5a3500','ew-resize','arraste para a LARGURA (expandir lateral)');
         tmove=mkHandle(doc,'✛','#f5c518','#3a2a02','move','arraste para mover');
-        if(fpath==='giftBar'){thandle.style.display='none';twidth.style.display='none';tmove.style.display='none';}   /* fitinha é full-width/fixa: mover/escalar/largura livre a quebram (vira filete). Edita o TEXTO clicando; altura pelo ↕ da barra de SEÇÃO. */
+        if((fpath==='giftBar'||fpath==='e2GarSelo'||fpath==='e3Unmute')){thandle.style.display='none';twidth.style.display='none';tmove.style.display='none';}   /* fitinha é full-width/fixa: mover/escalar/largura livre a quebram (vira filete). Edita o TEXTO clicando; altura pelo ↕ da barra de SEÇÃO. */
         if(fpath==='dsAlertCta'||fpath==='dsAlertBigVal'){twidth.style.display='none';}   /* botão e valor do alerta: SÓ ⤢ escala proporcional + ✛ mover. A largura solta (↔) deformava (só largura) e transbordava o card -> "cada coisa independente". */
         tlabel=mkTag(doc,'✏️ '+niceName(fpath));
         doc.body.appendChild(tbox);doc.body.appendChild(thandle);doc.body.appendChild(twidth);doc.body.appendChild(tmove);
@@ -1429,9 +1614,9 @@ function wireInlineEdit(){
         twidth.addEventListener('mousedown',twStart);twidth.addEventListener('mouseleave',tmaybe);
         tmove.addEventListener('mousedown',tmoveStart);tmove.addEventListener('mouseleave',tmaybe);}
       /* arrastar CLICANDO no texto (igual imagem): clique simples = editar · arrastar = mover */
-      el.style.cursor=(fpath==='giftBar')?'text':'move';
+      el.style.cursor=((fpath==='giftBar'||fpath==='e2GarSelo'||fpath==='e3Unmute'))?'text':'move';
       el.addEventListener('mousedown',function(e){
-        if(fpath==='giftBar')return;                 /* fitinha: clicar só EDITA o texto (sem arrastar/mover -> não colapsa num filete); altura pelo ↕ da SEÇÃO */
+        if((fpath==='giftBar'||fpath==='e2GarSelo'||fpath==='e3Unmute'))return;                 /* fitinha: clicar só EDITA o texto (sem arrastar/mover -> não colapsa num filete); altura pelo ↕ da SEÇÃO */
         if(doc.activeElement===el)return;            /* já editando: deixa selecionar o texto normal */
         if(e.button!==0)return;
         e.preventDefault();
@@ -1446,17 +1631,24 @@ function wireInlineEdit(){
         }
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);
       });
-      if(fpath!=='giftBar')el.__edNudge=function(dx,dy){var p=getTP();p.x=Math.round((p.x||0)+dx);p.y=Math.round((p.y||0)+dy);applyTP(p);saveTP(p);tlayout();};   /* fitinha não é movível (full-width): sem nudge por seta */
+      if(fpath!=='giftBar'&&fpath!=='e2GarSelo'&&fpath!=='e3Unmute')el.__edNudge=function(dx,dy){var p=getTP();p.x=Math.round((p.x||0)+dx);p.y=Math.round((p.y||0)+dy);applyTP(p);saveTP(p);tlayout();};   /* fitinha, selo do 15 dias e botão de som não são movíveis: sem nudge por seta */
       el.addEventListener('mouseenter',tshow);
       el.addEventListener('mouseleave',tmaybe);
     });
+    /* ===== V2: ao abrir um ebook layout2, materializa os defaults do markup em t (a tradução precisa deles em t) ===== */
+    if(isLay2(curEbook)){try{var _n2=e2Fill(t,doc);if(_n2){save();}}catch(e){}
+      /* campos RICOS (data-html): salvam innerHTML (preserva <b>/<strong> dourados) — registrado DEPOIS do blur genérico, então vence */
+      Array.prototype.forEach.call(doc.querySelectorAll('#lay2v [data-edit][data-html],#lay3v [data-edit][data-html]'),function(el2){
+        el2.addEventListener('blur',function(){setByPath(t,el2.getAttribute('data-edit'),String(el2.innerHTML||'').trim());save();});
+      });
+    }
     Array.prototype.forEach.call(doc.querySelectorAll('[data-move]'),function(el){
       var mkey=el.getAttribute('data-move');var mbox=null,mgrip=null,mlabel=null,mres=null,mbar=null,mdel=null,mdup=null,mhh=null,mdrag=false;
       function mri(){var r=el.getBoundingClientRect();var sx=doc.documentElement.scrollLeft||0,sy=doc.documentElement.scrollTop||0;return {l:r.left+sx,t:r.top+sy,w:r.width,h:r.height};}
       function mlay(){if(!mbox)return;var r=mri();var isCard=/^bcard/.test(mkey);mbox.style.left=r.l+'px';mbox.style.top=r.t+'px';mbox.style.width=r.w+'px';mbox.style.height=r.h+'px';if(mgrip){mgrip.style.left=(r.l-11)+'px';mgrip.style.top=(r.t-11)+'px';}if(mlabel){mlabel.style.left=r.l+'px';mlabel.style.top=(r.t+r.h+5)+'px';}if(mres){mres.style.left=(isCard?(r.l-12):(r.l+r.w-9))+'px';mres.style.top=(r.t+r.h-12)+'px';}if(mdel){mdel.style.left=(r.l+r.w-9)+'px';mdel.style.top=(r.t-11)+'px';}if(mdup){mdup.style.left=(r.l+r.w-45)+'px';mdup.style.top=(r.t-11)+'px';}if(mhh){mhh.style.left=(r.l+r.w/2-15)+'px';mhh.style.top=(r.t+r.h-10)+'px';}if(mbar){mbar.style.left=(r.l+Math.max(0,r.w-235))+'px';mbar.style.top=(r.t-48)+'px';}}
       function mhide(){[mbox,mgrip,mlabel,mres,mbar,mdel,mdup,mhh].forEach(function(x){if(x&&x.parentNode)x.parentNode.removeChild(x);});mbox=mgrip=mlabel=mres=mbar=mdel=mdup=mhh=null;}
       function mmaybe(){setTimeout(function(){if(EDSEL===el)return;if(!mdrag&&mbox&&!el.matches(':hover')&&(!mgrip||!mgrip.matches(':hover'))&&(!mres||!mres.matches(':hover'))&&(!mbar||!mbar.matches(':hover'))&&(!mdel||!mdel.matches(':hover'))&&(!mdup||!mdup.matches(':hover'))&&(!mhh||!mhh.matches(':hover')))mhide();},180);}
-      function mposF(){return curDevice==='mobile'?'_posM':'_pos';}   /* Modo celular: CTA/cards gravam posição SÓ no mobile (_posM); desktop usa _pos (mob -> idêntico ao original) */
+      function mposF(){return (curDevice==='mobile'&&!isLay2(curEbook))?'_posM':'_pos';}   /* Modo celular: CTA/cards gravam posição SÓ no mobile (_posM); desktop usa _pos (mob -> idêntico ao original) */
       function getMP(){var pm=t[mposF()],p=pm&&pm[mkey];return p?{x:p.x||0,y:p.y||0,s:p.s||1}:{x:0,y:0,s:1};}
       function applyMP(p){if(curDevice==='mobile'){el.style.setProperty('position','relative','important');el.style.setProperty('left',p.x+'px','important');el.style.setProperty('top',p.y+'px','important');if(p.s&&p.s!=1){el.style.setProperty('transform','scale('+p.s+')','important');el.style.transformOrigin='top left';}}else{el.style.position='relative';el.style.left=p.x+'px';el.style.top=p.y+'px';if(p.s&&p.s!=1){el.style.transformOrigin='top left';el.style.transform='scale('+p.s+')';}}}
       function saveMP(p){var f=mposF();if(!t[f])t[f]={};t[f][mkey]={x:p.x,y:p.y,s:p.s||1};}
@@ -1524,7 +1716,7 @@ function wireInlineEdit(){
       function setSz(val){var P=model[curEbook].paises[curPais];
         if(imgPath.indexOf('img.')===0){var map={'img.hero':'szHero','img.blocos':'szBlocos','img.garantia':'szSeal','img.atendente':'szAtend','img.ultima':'szUltima'};var k=map[imgPath];if(k){if(!model[curEbook].tema)model[curEbook].tema={};model[curEbook].tema[k]=val;}}
         else{setByPath(P.t,imgPath.replace(/\.img$/,'.sz'),val);}}
-      function posF(){return curDevice==='mobile'?'_posM':'_pos';}   /* no Modo celular grava posição/escala SÓ no mobile (_posM); desktop intacto */
+      function posF(){return (curDevice==='mobile'&&!isLay2(curEbook))?'_posM':'_pos';}   /* no Modo celular grava posição/escala SÓ no mobile (_posM); desktop intacto */
       function getP(){var pm=model[curEbook].paises[curPais].t[posF()],p=pm&&pm[imgPath];return p?{x:p.x||0,y:p.y||0,s:p.s||1}:{x:0,y:0,s:1};}
       function applyT(p){var v='translate('+p.x+'px,'+p.y+'px) scale('+(p.s||1)+')';if(curDevice==='mobile'){el.style.setProperty('transform',v,'important');el.style.transformOrigin='top left';}else{el.style.transform=v;}}   /* mobile: !important pra vencer o transform:none!important das regras mobile */
       function savePos(p){var P=model[curEbook].paises[curPais],f=posF();if(!P.t[f])P.t[f]={};P.t[f][imgPath]={x:p.x,y:p.y,s:p.s||1};}
@@ -1547,10 +1739,10 @@ function wireInlineEdit(){
       /* BARRA LATERAL (largura) da imagem — estreita/alarga pela direita, salvo em _w[imgPath].
          Mesma mecânica do texto e da caixa de fundo; height:auto mantém proporção (sem distorcer). */
       function iwStart(e){e.preventDefault();e.stopPropagation();dragging=true;
-        var p0=getP(),s=p0.s||1,r0=el.getBoundingClientRect(),w0=r0.width/s,h0=Math.round(r0.height/s),sx0=e.clientX,mob=(curDevice==='mobile');
-        if(!mob){el.style.height=h0+'px';el.style.objectFit='cover';}   /* desktop: TRAVA a altura (recorta). mobile: altura automática (sem cortar) */
+        var isL2=isLay2(curEbook),p0=getP(),s=p0.s||1,r0=el.getBoundingClientRect(),w0=r0.width/s,h0=Math.round(r0.height/s),sx0=e.clientX,mob=(curDevice==='mobile'||isL2);   /* lay2 = coluna: render mobile (largura+altura auto) mas GRAVA no campo ÚNICO _w */
+        if(!mob){el.style.height=h0+'px';el.style.objectFit='cover';}   /* desktop non-lay2: TRAVA a altura (recorta). mobile/lay2: altura automática (sem cortar) */
         function mm(ev){var nw=Math.max(40,Math.round(w0+(ev.clientX-sx0)/s));var P=model[curEbook].paises[curPais];
-          if(mob){el.style.setProperty('width',nw+'px','important');el.style.setProperty('max-width','100%','important');el.style.setProperty('height','auto','important');if(!P.t._wM)P.t._wM={};P.t._wM[imgPath]=nw+'px';}   /* mobile: !important pro arraste aparecer ao vivo (vence .art img width!important) */
+          if(mob){el.style.setProperty('width',nw+'px','important');el.style.setProperty('max-width','100%','important');el.style.setProperty('height','auto','important');var f=isL2?'_w':'_wM';if(!P.t[f])P.t[f]={};P.t[f][imgPath]=nw+'px';}   /* !important pro arraste aparecer ao vivo. lay2 -> _w (único); mobile non-lay2 -> _wM */
           else{el.style.width=nw+'px';el.style.maxWidth='none';if(!P.t._w)P.t._w={};P.t._w[imgPath]=nw+'px '+h0+'px';}layout();}
         function mu(){doc.removeEventListener('mousemove',mm,true);doc.removeEventListener('mouseup',mu,true);dragging=false;save();}
         doc.addEventListener('mousemove',mm,true);doc.addEventListener('mouseup',mu,true);}
@@ -2092,6 +2284,20 @@ function resetLayout(){
 function pickImageFor(path){
   if(path==='offerCapa')path='img.oferta';   /* capa da OFERTA tem imagem própria (não mexe na do topo) */
   var P=model[curEbook].paises[curPais];
+  if(/^e[23]v\./.test(path)){   /* V2 (principal e upsell): slot de VÍDEO — sobe o mp4 cru via /api/file (base64 de vídeo estouraria) */
+    if(!APP){toast('Vídeo só funciona no app local (start.bat)');return;}
+    var vin=document.createElement('input');vin.type='file';vin.accept='video/mp4,video/webm';
+    vin.onchange=function(){var fl=vin.files[0];if(!fl)return;
+      var ext=(fl.name.split('.').pop()||'mp4').toLowerCase().replace(/[^a-z0-9]/g,'');
+      var nm=slugify(curEbook)+'-'+slugify(curPais)+'-'+slugify(path)+'-'+(++imgCounter)+'.'+ext;
+      toast('Subindo o vídeo...');
+      fl.arrayBuffer().then(function(ab){return fetch('/api/file?name='+encodeURIComponent(nm),{method:'POST',headers:shareHeaders({}),body:ab});})
+        .then(function(r){return r.json();}).then(function(r){
+          if(r&&r.ok){setByPath(P.t,path,r.path);save();updatePreview();toast('Vídeo trocado 🎬');}else toast('Erro ao salvar o vídeo');
+        }).catch(function(){toast('Erro ao subir o vídeo');});
+    };
+    vin.click();return;
+  }
   var root=(path.indexOf('img.')===0)?P:P.t;
   var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
   inp.onchange=function(){var fl=inp.files[0];if(!fl)return;
@@ -2111,7 +2317,7 @@ function updatePreview(){
     try{localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(clone));}catch(e){}
     loadFrame();});
 }
-function render(){renderEbookTabs();renderPaisTabs();renderForm();updatePreview();}
+function render(){renderEbookTabs();renderPaisTabs();renderForm();updatePreview();try{if(window.__refreshCores)window.__refreshCores();}catch(e){}}
 function buildSecNav(){var nav=$('secNav');if(!nav)return;nav.innerHTML='';var n=0;
   $('form').querySelectorAll('.group').forEach(function(g){var h=g.querySelector('.gh');if(!h)return;n++;var num=n;
     var it=document.createElement('div');it.className='navitem';it.innerHTML='<span class="num">'+num+'</span>'+h.textContent;
@@ -2159,6 +2365,19 @@ function clonarDaPrincipal(){
   if(!prin[slug]){toast('Ebook "'+slug+'" não existe em '+srcLabel);return;}
   if(model[slug]&&!confirm('Já existe "'+slug+'" no '+WS_DEF.label+'. Sobrescrever com a cópia de '+srcLabel+'?'))return;
   undoPush(undoSnap());
+  /* FAMÍLIA MODEL (upsell lay3): a ESTRUTURA vem do MODEL local (template do upsell); da principal puxa SÓ AS CORES (tema).
+     Assim o upsell nasce com o layout de obrigado/coleção + a paleta idêntica à página principal daquele ebook. */
+  if(model.model && model.model.layout2){
+    var novoUp=JSON.parse(JSON.stringify(model.model));                              /* template do upsell (lay3) */
+    novoUp.tema=JSON.parse(JSON.stringify((prin[slug]&&prin[slug].tema)||{}));       /* SÓ as cores, da principal */
+    novoUp.layout2=true; novoUp.nome=(prin[slug]&&prin[slug].nome)||slug;
+    model[slug]=novoUp;
+    if(model.salomao&&slug!=='salomao'){var st0=model.salomao,vz0=st0&&st0.paises&&Object.keys(st0.paises).every(function(c){var tt=(st0.paises[c]||{}).t||{};return !tt.h1a&&!tt.preco&&!tt.sub&&!tt.e3Tit;});if(vz0)delete model.salomao;}
+    curEbook=slug;curPais=Object.keys(model[slug].paises)[0];
+    save();render();showView('editor');
+    toast('Upsell de "'+slug+'" criado: modelo do UPSELL + cores da Principal ✓');
+    return;
+  }
   var copy=JSON.parse(JSON.stringify(prin[slug]));
   var _pct=50, _descOk=false;
   if(WS_DEF.discount && typeof descontoPct==='function'){   /* DOWNSELL/DOWNSELL 2 = desconto automático (pergunta a %, padrão 50): preço cheio vira o "De" riscado e o "por" cai pela %. descontoPct preserva R$/zł/US$. GUARD: se faltar o desconto.js (update incompleto) NÃO quebra o clone — traz o ebook sem desconto e avisa. */
@@ -2323,14 +2542,113 @@ $('btnOpen').onclick=function(){
     try{ apiSave().then(open,open); }catch(e){ open(); }             /* espera gravar o disco; abre de qualquer jeito */
   }else{
     try{localStorage.setItem('EBOOKS_PREVIEW',JSON.stringify(model));}catch(e){}
-    window.open('index.html?preview=1&'+qs,'_blank');               /* file:// sem servidor: usa o rascunho */
+    window.open('index.html?preview=1&ws='+encodeURIComponent(WS)+'&'+qs,'_blank');               /* file:// sem servidor: usa o rascunho */
   }
 };
 /* ➕ Elemento livre: menu visual (degradê, caixa de fundo, texto) */
 (function(){var b=$('btnDsAlert');if(!b)return;if(WS!=='upsell'&&WS!=='principal'){b.style.display='none';return;}b.style.display='';function lbl(){return DSALERT_OPEN?'✕ Fechar alerta':'👁 Alerta 50%';}b.textContent=lbl();b.onclick=function(){DSALERT_OPEN=!DSALERT_OPEN;b.textContent=lbl();b.classList.toggle('on',DSALERT_OPEN);loadFrame();};})();   /* Fase 2: ver/editar o alerta no preview — só no upsell */
+/* ===== 🎨 PALETA DE CORES (tema) do V2 — muda a página INTEIRA. Só na família model (lay2/lay3).
+   6 cores-mestra derivam a paleta completa; grava em model[ebook].tema; preview AO VIVO por postMessage;
+   "gerar da capa" amostra as cores do mockup via canvas. ===== */
+(function(){
+  var btn=$('btnCores'); if(!btn) return;
+  var MASTERS=[['fundo','Fundo','#14062B'],['ouro','Dourado / destaque','#FFD27A'],['acento','Acento (roxo)','#a855f7'],['lilas','Lilás','#C9A7FF'],['texto','Texto','#E3D7FA'],['alerta','Alerta','#FF9B9B']];
+  function clamp(n){return Math.max(0,Math.min(255,Math.round(n)));}
+  function h2r(h){h=String(h||'').replace('#','');if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];var n=parseInt(h,16)||0;return [(n>>16)&255,(n>>8)&255,n&255];}
+  function r2h(r,g,b){return '#'+[r,g,b].map(function(x){return clamp(x).toString(16).padStart(2,'0');}).join('');}
+  function lite(h,a){var c=h2r(h);return r2h(c[0]+(255-c[0])*a,c[1]+(255-c[1])*a,c[2]+(255-c[2])*a);}
+  function dark(h,a){var c=h2r(h);return r2h(c[0]*(1-a),c[1]*(1-a),c[2]*(1-a));}
+  function hsl2hex(h,s,l){h=((h%360)+360)%360;s/=100;l/=100;var c=(1-Math.abs(2*l-1))*s,x=c*(1-Math.abs((h/60)%2-1)),m=l-c/2,r,g,b;
+    if(h<60){r=c;g=x;b=0;}else if(h<120){r=x;g=c;b=0;}else if(h<180){r=0;g=c;b=x;}else if(h<240){r=0;g=x;b=c;}else if(h<300){r=x;g=0;b=c;}else{r=c;g=0;b=x;}
+    return r2h((r+m)*255,(g+m)*255,(b+m)*255);}
+  /* mestras -> paleta completa (23 chaves) */
+  function derive(m){return {
+    fundo:m.fundo,fundoSecao:lite(m.fundo,.06),fundoSecao2:lite(m.fundo,.12),card:lite(m.fundo,.17),card2:lite(m.fundo,.05),card3:lite(m.fundo,.11),rodape:dark(m.fundo,.35),
+    gradTopo:lite(m.fundo,.30),grad2:lite(m.fundo,.17),grad3:dark(m.fundo,.12),
+    ouro:m.ouro,ouroClaro:lite(m.ouro,.12),ouroEscuro:dark(m.ouro,.28),ouroSuave:lite(m.ouro,.38),
+    acento:m.acento,acento2:dark(m.acento,.22),acentoClaro:lite(m.acento,.18),
+    lilas:m.lilas,texto:m.texto,textoClaro:lite(m.texto,.10),textoApagado:dark(m.texto,.22),alerta:m.alerta
+  };}
+  function curTema(){try{return (model[curEbook]&&model[curEbook].tema)||{};}catch(e){return {};}}
+  function curMasters(){var TM=curTema();var o={};MASTERS.forEach(function(m){o[m[0]]=/^#[0-9a-f]{6}$/i.test(String(TM[m[0]]||''))?TM[m[0]]:m[2];});return o;}
+  function frameWin(){var f=$('frame');return f&&f.contentWindow;}
+  function livePreview(t){try{var w=frameWin();if(w)w.postMessage({tipo:'tema',tema:t},'*');}catch(e){}}
+  function aplicar(masters,persist){aplicarTema(derive(masters),persist);}
+  function aplicarTema(t,persist){livePreview(t);
+    if(persist){try{if(!model[curEbook].tema)model[curEbook].tema={};Object.keys(t).forEach(function(k){model[curEbook].tema[k]=t[k];});save();}catch(e){}}}
+  /* ===== GERADOR HARMÔNICO (algoritmo do parceiro): histograma de matiz ponderado -> 2 famílias -> reconstrói 22 cores por HSL.
+     Hb = hue dominante (fundos/base). Ha = hue >=60° distante (o "ouro"/destaque). Sempre legível, independe da imagem. ===== */
+  function paletaDaImagem(px){
+    var hist=new Array(24).fill(0);   /* baldes de 15° */
+    for(var p=0;p<px.length;p+=4){var r=px[p]/255,g=px[p+1]/255,b=px[p+2]/255,a=px[p+3];if(a<120)continue;
+      var mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,c=mx-mn;
+      if(c<0.14)continue; if(l<0.08||l>0.95)continue;                 /* neutro / quase-preto-branco não votam */
+      var s=c/(1-Math.abs(2*l-1)||1);
+      var h=0;if(mx===r)h=((g-b)/c)%6;else if(mx===g)h=(b-r)/c+2;else h=(r-g)/c+4;h*=60;if(h<0)h+=360;
+      hist[Math.floor(h/15)%24]+=s*(1-Math.abs(l-0.5));               /* peso = saturação × meio-tom */
+    }
+    var ordem=hist.map(function(v,i){return [v,i*15+7];}).filter(function(o){return o[0]>0;}).sort(function(a,b){return b[0]-a[0];});
+    if(!ordem.length)return null;
+    var Hb=ordem[0][1],Ha=null;
+    for(var i=1;i<ordem.length;i++){var dd=Math.abs(ordem[i][1]-Hb);dd=Math.min(dd,360-dd);if(dd>=60){Ha=ordem[i][1];break;}}
+    if(Ha==null)Ha=(Hb+165)%360;
+    var H=hsl2hex;
+    return {fundo:H(Hb,68,10),fundoSecao:H(Hb,66,14),fundoSecao2:H(Hb,66,18),card:H(Hb,62,20),card2:H(Hb,66,15),card3:H(Hb,60,18),rodape:H(Hb,68,8),
+      gradTopo:H(Hb,54,36),grad2:H(Hb,62,25),grad3:H(Hb,66,13),
+      ouro:H(Ha,100,74),ouroClaro:H(Ha,100,65),ouroEscuro:H(Ha,85,49),ouroSuave:H(Ha,100,86),
+      acento:H(Hb,90,63),acento2:H(Hb,80,55),acentoClaro:H(Hb,85,73),lilas:H(Hb,92,83),
+      texto:H(Hb,55,92),textoClaro:H(Hb,60,94),textoApagado:H(Hb,24,70),alerta:'#FF9B9B'};
+  }
+  function refreshBtn(){btn.style.display=isLay2(curEbook)?'':'none';}
+  window.__refreshCores=refreshBtn; refreshBtn();
+  var pop=null;
+  function fechar(){if(pop&&pop.parentNode)pop.parentNode.removeChild(pop);pop=null;btn.classList.remove('on');}
+  btn.onclick=function(){
+    if(pop){fechar();return;}
+    btn.classList.add('on');
+    var M=curMasters();
+    pop=document.createElement('div');
+    pop.style.cssText='position:fixed;top:150px;right:18px;z-index:100000;width:250px;background:#10182a;border:1px solid rgba(150,170,205,.5);border-radius:14px;padding:14px;box-shadow:0 18px 54px rgba(0,0,0,.6);font:600 12.5px Inter,system-ui;color:#e8eef9';
+    var h='<div style="position:relative"><button id="coresFechar" type="button" title="Fechar" style="position:absolute;top:-4px;right:-4px;width:26px;height:26px;border-radius:50%;border:1px solid rgba(150,170,205,.45);background:#0a1322;color:#cfd8ea;font-size:16px;line-height:1;cursor:pointer">×</button><div style="font-weight:800;font-size:14px;margin-bottom:3px;padding-right:26px">🎨 Cores do tema</div><div style="font-size:11px;color:#9fb0c9;margin-bottom:11px">Muda a página inteira. As demais tonalidades saem sozinhas destas.</div></div>';
+    MASTERS.forEach(function(m){
+      h+='<label style="display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;cursor:pointer"><span>'+m[1]+'</span><input type="color" data-mk="'+m[0]+'" value="'+M[m[0]]+'" style="width:44px;height:30px;border:1px solid rgba(150,170,205,.5);border-radius:7px;background:none;cursor:pointer;padding:0"></label>';
+    });
+    h+='<button id="coresCapa" class="btn" style="width:100%;margin-top:6px">🖼️ Gerar da capa</button>'+
+       '<button id="coresReset" class="btn" style="width:100%;margin-top:7px">↺ Voltar ao padrão</button>'+
+       '<div id="coresMsg" style="font-size:10.5px;color:#9fb0c9;margin-top:8px;min-height:12px"></div>';
+    pop.innerHTML=h;
+    document.body.appendChild(pop);
+    var inputs=pop.querySelectorAll('input[data-mk]');
+    function readM(){var o={};[].forEach.call(inputs,function(i){o[i.getAttribute('data-mk')]=i.value;});return o;}
+    [].forEach.call(inputs,function(i){
+      i.addEventListener('input',function(){aplicar(readM(),false);});   /* arrastando: preview ao vivo */
+      i.addEventListener('change',function(){undoPush&&undoPush(undoSnap());aplicar(readM(),true);});   /* soltou: grava */
+    });
+    $('coresFechar').onclick=function(e){e.preventDefault();e.stopPropagation();fechar();};
+    $('coresReset').onclick=function(){undoPush&&undoPush(undoSnap());try{if(model[curEbook])delete model[curEbook].tema;save();}catch(e){}livePreview({});var d=curMasters();[].forEach.call(inputs,function(i){i.value=d[i.getAttribute('data-mk')];});$('coresMsg').textContent='Voltou ao tema padrão.';};
+    $('coresCapa').onclick=function(){
+      var msg=$('coresMsg');msg.textContent='Lendo a capa...';
+      var cfg=model[curEbook]&&model[curEbook].paises[curPais];var src=cfg&&cfg.t&&cfg.t.e2i&&cfg.t.e2i.mockup;
+      if(!src){msg.textContent='Sem imagem de capa (mockup) neste país.';return;}
+      var im=new Image();im.crossOrigin='anonymous';
+      im.onload=function(){try{
+        var W=90,H=Math.max(1,Math.round(90*im.height/im.width));var cv=document.createElement('canvas');cv.width=W;cv.height=H;
+        var cx=cv.getContext('2d');cx.drawImage(im,0,0,W,H);var px=cx.getImageData(0,0,W,H).data;
+        var tema=paletaDaImagem(px);
+        if(!tema){msg.textContent='A capa é muito neutra (sem cor forte) — escolha as cores na mão.';return;}
+        [].forEach.call(inputs,function(i){var k=i.getAttribute('data-mk');if(tema[k])i.value=tema[k];});   /* pickers mestres refletem a paleta gerada */
+        undoPush&&undoPush(undoSnap());aplicarTema(tema,true);msg.textContent='Paleta harmônica gerada da capa ✓ (ajuste na mão se quiser)';
+      }catch(e){msg.textContent='Não consegui ler a capa (CORS/erro).';}};
+      im.onerror=function(){msg.textContent='Não consegui carregar a imagem da capa.';};
+      im.src=src+((/^data:/.test(src)||src.indexOf('?')>=0)?'':('?cb='+Date.now()));   /* cache-buster só em caminho de arquivo; data: URL não leva query */
+    };
+    if(!window.__coresDoc){window.__coresDoc=1;document.addEventListener('mousedown',function(e){if(pop&&!pop.contains(e.target)&&e.target!==btn){fechar();}});}
+  };
+})();
 (function(){var b=$('btnAddEl');if(!b)return;var menu=null;
   function close(){if(menu&&menu.parentNode)menu.parentNode.removeChild(menu);menu=null;}
   function add(kind){
+    if(isLay2(curEbook)){toast('➕ Elemento livre ainda não funciona no template novo (model) — os textos/imagens/blocos da página já são editáveis e móveis');close();return;}   /* v2: extra criado nem renderizaria (o publicado ignora) */
     var T=model[curEbook].paises[curPais].t;if(!T.extras)T.extras=[];
     var fr=$('frame'),sc=0;try{sc=fr.contentDocument.documentElement.scrollTop||0;}catch(e){}
     undoPush(undoSnap());
@@ -3611,7 +3929,7 @@ function bootGuest(){
 }
 
 if(SHARE){ bootGuest(); }
-else { load();save(true);render();renderEbooksHome(); try{ if(new URLSearchParams(location.search).get('go')==='editor') showView('editor'); }catch(e){} }   /* save(true): boot NÃO grava disco (anti-clobber). trocar de workspace (Principal/UPSELL/DOWNSELL) abre direto no editor, sem cair na lista Ebooks */
+else { load();try{e2MigraModel();}catch(e){}save(true);render();renderEbooksHome(); try{ if(new URLSearchParams(location.search).get('go')==='editor') showView('editor'); }catch(e){} }   /* save(true): boot NÃO grava disco (anti-clobber). trocar de workspace (Principal/UPSELL/DOWNSELL) abre direto no editor, sem cair na lista Ebooks */
 </script>
 </body>
 </html>

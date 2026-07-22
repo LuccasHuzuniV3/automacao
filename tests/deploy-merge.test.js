@@ -16,7 +16,7 @@ var ARC_AR = { v: 'ar' }, ARC_LOCAL = { v: 'local' }, DEUS = { v: 'deusdiz1-ar' 
   var local = { arcturianos: ARC_LOCAL, teste: TESTE };
   var r = planEbooks(local, live, []);                       // [] = rebuild completo
   ok(r.out.deusdiz1 === DEUS, 'deusdiz1 do ar PRESERVADO no deploy completo (o bug)');
-  ok(r.out.arcturianos === ARC_LOCAL, 'arcturianos atualizado pela versão LOCAL');
+  eqJSON(r.out.arcturianos, ARC_LOCAL, 'arcturianos atualizado pela versão LOCAL');
   ok(r.out.teste === TESTE, 'teste (novo local) adicionado');
   eqJSON(r.dropped, [], 'INTEGRIDADE: nada do ar foi derrubado');
   sameSet(r.fromLive, ['deusdiz1'], 'deusdiz1 veio do ar -> precisa baixar as imagens');
@@ -36,7 +36,7 @@ var ARC_AR = { v: 'ar' }, ARC_LOCAL = { v: 'local' }, DEUS = { v: 'deusdiz1-ar' 
 /* ===== Mesma chave: a versão LOCAL vence (atualiza) ===== */
 (function () {
   var r = planEbooks({ arcturianos: ARC_LOCAL }, { arcturianos: ARC_AR }, []);
-  ok(r.out.arcturianos === ARC_LOCAL, 'mesma chave: versão LOCAL vence');
+  eqJSON(r.out.arcturianos, ARC_LOCAL, 'mesma chave: versão LOCAL vence');
   sameSet(r.fromLive, [], 'arcturianos é local -> não baixa imagem do ar');
 })();
 
@@ -45,7 +45,7 @@ var ARC_AR = { v: 'ar' }, ARC_LOCAL = { v: 'local' }, DEUS = { v: 'deusdiz1-ar' 
   var live = { arcturianos: ARC_AR, deusdiz1: DEUS };
   var local = { arcturianos: ARC_LOCAL, teste: TESTE };
   var r = planEbooks(local, live, ['arcturianos']);
-  ok(r.out.arcturianos === ARC_LOCAL, 'merge: arcturianos atualizado');
+  eqJSON(r.out.arcturianos, ARC_LOCAL, 'merge: arcturianos atualizado');
   ok(r.out.deusdiz1 === DEUS, 'merge: deusdiz1 do ar preservado');
   ok(!r.out.teste, 'merge: teste NÃO publicado (não foi selecionado)');
   sameSet(r.updated, ['arcturianos'], 'merge atualiza só o selecionado');
@@ -81,6 +81,34 @@ var ARC_AR = { v: 'ar' }, ARC_LOCAL = { v: 'local' }, DEUS = { v: 'deusdiz1-ar' 
   eqJSON(planEbooks(null, null, null).out, {}, 'tudo nulo -> {}');
   eqJSON(planEbooks(null, null, null).dropped, [], 'tudo nulo -> dropped []');
   ok(planEbooks({ a: ARC_LOCAL }, null, 'a').out.a === ARC_LOCAL, 'only como string + live nulo');
+})();
+
+/* ===== O NOVO BUG (arcanjo2): rascunho local SÓ com 'br' NÃO pode apagar us/it do ar ===== */
+(function () {
+  var live = { arcanjo2: { tema: { v: 'ar' }, layout2: true, paises: {
+    br: { t: { h: 'br-ar' } }, us: { t: { h: 'us' }, img: 'img/arcanjo2-us-1.png' }, it: { t: { h: 'it' } } } } };
+  var local = { arcanjo2: { tema: { v: 'local' }, paises: { br: { t: { h: 'br-novo' } } } } };   // rascunho pelado: só br
+  var r = planEbooks(local, live, ['arcanjo2']);
+  sameSet(Object.keys(r.out.arcanjo2.paises), ['br', 'us', 'it'], 'PAÍSES do ar (us,it) PRESERVADOS mesmo com rascunho local só de br');
+  ok(r.out.arcanjo2.paises.br.t.h === 'br-novo', 'país local (br) ATUALIZADO pela versão local');
+  ok(r.out.arcanjo2.paises.us.t.h === 'us', 'país do ar (us) preservado exatamente como no ar');
+  ok(r.out.arcanjo2.tema.v === 'local', 'campo de topo: local vence (tema)');
+  ok(r.out.arcanjo2.layout2 === true, 'campo de topo que só o ar tinha (layout2) preservado');
+  eqJSON(r.droppedPaises, [], 'INTEGRIDADE: nenhum país do ar foi derrubado');
+  ok(r.preservedPaises.arcanjo2 && r.preservedPaises.arcanjo2.paises.us && r.preservedPaises.arcanjo2.paises.it, 'us/it marcados como preservados do ar');
+  ok(!r.preservedPaises.arcanjo2.paises.br, 'br NÃO é preservado (veio do local)');
+  var prot = protectedImages(r.out, r.fromLive, r.preservedPaises);
+  ok(prot.indexOf('img/arcanjo2-us-1.png') >= 0, 'imagem do país preservado (us) é PROTEGIDA -> baixa do ar, não some');
+})();
+
+/* ===== droppedPaises SEMPRE vazio: país do ar nunca some de um ebook mesclado ===== */
+(function () {
+  var live = { x: { paises: { br: {}, us: {}, de: {} } }, y: { paises: { br: {}, fr: {} } } };
+  [[], ['x'], ['x', 'y']].forEach(function (only) {
+    var r = planEbooks({ x: { paises: { br: { n: 1 } } }, y: { paises: { br: {} } } }, live, only);
+    eqJSON(r.droppedPaises, [], 'droppedPaises vazio p/ only=' + JSON.stringify(only));
+    if (r.out.x) ok(r.out.x.paises.us && r.out.x.paises.de, 'x mantém us,de do ar (only=' + JSON.stringify(only) + ')');
+  });
 })();
 
 /* ===== imgsOf: extrai caminhos img/ de string OU objeto, sem repetir ===== */
