@@ -2332,8 +2332,9 @@ function addEbook(defDono,defRede){var n=prompt('Nome do ebook:');if(n===null||!
   var same=Object.keys(model).filter(function(k){return (((model[k]&&model[k].nome)||k)===nome)&&(((model[k]&&model[k].rede)||'').trim()===rede);})[0];
   if(same){curEbook=same;curPais=Object.keys(model[same].paises)[0];render();showView('editor');return;}   /* mesmo NOME na MESMA rede = abre (não duplica) */
   var key=slug;if(model[key]){var rs=slugify(rede)||'r';key=slug+'-'+rs;var c=2;while(model[key]){key=slug+'-'+rs+'-'+(c++);}}   /* CHAVE ÚNICA (é a URL/rastreamento — NUNCA colide). Nome igual em rede diferente -> chave nova. */
-  /* Puxa o MOLDE do ebook atual (layout + estrutura + posicoes + tema), mas SO com o pais fonte (1o = BR). */
-  var base=JSON.parse(JSON.stringify(model[curEbook]));
+  /* MOLDE: ebook novo sai do "model" (layout NOVO/lay2) -> NUNCA herda os v1 antigos, em qualquer conta/rede. Só o país fonte (1o = BR). Fallback = ebook aberto, se por algum motivo não houver model. */
+  var moldeKey=(model.model)?'model':curEbook;
+  var base=JSON.parse(JSON.stringify(model[moldeKey]));
   var srcCode=Object.keys(base.paises)[0];
   var fonte=base.paises[srcCode];fonte.hotmart='https://pay.hotmart.com/XXXXXXXX';
   base.paises={};base.paises[srcCode]=fonte;

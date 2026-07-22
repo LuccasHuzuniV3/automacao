@@ -255,5 +255,8 @@ ok(/#lay2v \.plan-btn \.b-main\{display:flex!important/.test(idx), 'botão .b-ma
 /* ---- 22) e2MigraModel CRIA o molde (model) no PRINCIPAL se faltar (colega que só atualizou o sistema ganha o layout novo) ---- */
 ok(/if\(WS==='principal'\)\{[\s\S]{0,120}if\(!model\.model\)\{model\.model=\{layout2:true/.test(bld), 'e2MigraModel cria o model no principal quando não existe -> quem atualiza o sistema já tem o molde pra clonar');
 
+/* ---- 23) "+ Ebook" sai do MOLDE "model" (layout novo), não do ebook aberto -> não herda os v1 antigos ---- */
+ok(/var moldeKey=\(model\.model\)\?'model':curEbook;/.test(bld) && /var base=JSON\.parse\(JSON\.stringify\(model\[moldeKey\]\)\)/.test(bld), 'addEbook clona o "model" (não o ebook aberto) -> ebook novo já sai no layout novo em qualquer conta');
+
 console.log('\n' + pass + ' passou, ' + fail + ' falhou');
 process.exit(fail ? 1 : 0);
