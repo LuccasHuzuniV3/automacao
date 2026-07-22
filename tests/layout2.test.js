@@ -258,5 +258,8 @@ ok(/if\(WS==='principal'\)\{[\s\S]{0,120}if\(!model\.model\)\{model\.model=\{lay
 /* ---- 23) "+ Ebook" sai do MOLDE "model" (layout novo), não do ebook aberto -> não herda os v1 antigos ---- */
 ok(/var moldeKey=\(model\.model\)\?'model':curEbook;/.test(bld) && /var base=JSON\.parse\(JSON\.stringify\(model\[moldeKey\]\)\)/.test(bld), 'addEbook clona o "model" (não o ebook aberto) -> ebook novo já sai no layout novo em qualquer conta');
 
+/* ---- 24) link com &amp; (codificado por anúncio/encurtador) ainda lê p/s -> não cai no idioma automático (PT) ---- */
+ok(/location\.search[^;]*\.replace\(\/&amp;\/gi,'&'\)/.test(idx), "getParams decodifica &amp; -> & antes de ler os parâmetros (link torto ainda força o país certo)");
+
 console.log('\n' + pass + ' passou, ' + fail + ' falhou');
 process.exit(fail ? 1 : 0);

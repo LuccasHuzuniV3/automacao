@@ -973,7 +973,8 @@
 (function(){
   var EB=window.EBOOKS||{};
   try{ if(new URLSearchParams(location.search).get('preview')==='1'){var pv=localStorage.getItem('EBOOKS_PREVIEW');if(pv)EB=JSON.parse(pv);} }catch(e){}
-  function getParams(){var q=new URLSearchParams(location.search),pais=q.get('p')||q.get('pais'),ebook=q.get('ebook');
+  function getParams(){var _qs=String(location.search||'').replace(/&amp;/gi,'&');   /* link postado com &amp; (codificado em HTML por anúncio/encurtador) -> decodifica pra 'p'/'s' serem lidos, senão o país cai no automático (PT) */
+    var q=new URLSearchParams(_qs),pais=q.get('p')||q.get('pais'),ebook=q.get('ebook');
     if(location.protocol!=='file:'){var s=location.pathname.split('/').filter(function(x){return x&&!/\.html?$/i.test(x)});if(!pais&&s[0])pais=s[0];if(!ebook&&s[1])ebook=s[1];}
     var _sP=q.get('s'),_srcP=q.get('src');
     return {pais:pais,ebook:ebook,src:(_sP||_srcP||''),vid:(_sP&&_srcP?_srcP:''),q:q};}   /* s = rede (canal); src appendado POR CIMA do s = o vídeo (vai no sck) */
