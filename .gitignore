@@ -14,6 +14,11 @@ _chk.js
 .imgcache.json
 # versoes .webp das imagens (geradas pelo OTIMIZAR-IMAGENS.bat) — LOCAIS, nao versionar (nao vao pro manifest nem pro colega)
 *.webp
+# VIDEOS: vao pro Vercel pelo deploy (build-dist), NAO pro git. GitHub avisa >50MB e BLOQUEIA >100MB.
+*.mp4
+*.webm
+*.mov
+*.m4v
 *.log
 .DS_Store
 Thumbs.db

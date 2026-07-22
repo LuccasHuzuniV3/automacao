@@ -740,7 +740,10 @@ function e2Fill(tt,idoc){
 }
 function e2MigraModel(){
   if(!model)return;
-  if(WS==='principal'&&model.model&&!model.model.layout2)model.model.layout2=true;   /* grava a flag no model -> DUPLICATAS/clones herdam o layout novo */
+  if(WS==='principal'){
+    if(!model.model){model.model={layout2:true,tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}};}   /* CRIA o molde se não existir -> quem só ATUALIZOU O SISTEMA (sem receber o ebooks.js) já ganha o layout novo pra clonar. Textos padrão vêm do próprio template. */
+    else if(!model.model.layout2){model.model.layout2=true;}   /* model já existe -> só grava a flag (DUPLICATAS/clones herdam o layout novo) */
+  }
   if(WS==='upsell'&&!model.model){   /* UPSELL: cria o model do template "Obrigado/Coleção" JÁ PRONTO (sem precisar clonar nada) — textos padrão vêm do próprio template; grava no arquivo no 1º save */
     model.model={layout2:true,tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}};
   }

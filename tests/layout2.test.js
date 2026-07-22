@@ -248,5 +248,12 @@ ok(/offDiscount='\+cup/.test(idx), 'aplica o cupom via offDiscount= (auto-aplica
 ok(/\.dr-ov\{position:fixed;inset:0;z-index:99998;display:none/.test(idx), 'popup: .dr-ov escondido por padrão (evita o quadrado vazio do #dr-pop)');
 ok(!idx.includes('--c-*/'), 'CSS do popup: sem "*/" acidental no comentário (esse "*/" fechava o comentário e derrubava .dr-ov)');
 
+/* ---- 21) selo "15 DIAS" (garantia-selo) centralizado na bolinha no MOBILE (regra v1 div[data-edit]{display:block} vazava) ---- */
+ok(/#lay2v \.garantia-selo\{[^}]*display:flex!important/.test(idx), 'garantia-selo blindado com display:flex!important -> "15 DIAS" fica centrado na bolinha no mobile');
+ok(/#lay2v \.plan-btn \.b-main\{display:flex!important/.test(idx), 'botão .b-main blindado com display:flex!important -> a setinha › não vaza pro fim do texto quebrado no mobile');
+
+/* ---- 22) e2MigraModel CRIA o molde (model) no PRINCIPAL se faltar (colega que só atualizou o sistema ganha o layout novo) ---- */
+ok(/if\(WS==='principal'\)\{[\s\S]{0,120}if\(!model\.model\)\{model\.model=\{layout2:true/.test(bld), 'e2MigraModel cria o model no principal quando não existe -> quem atualiza o sistema já tem o molde pra clonar');
+
 console.log('\n' + pass + ' passou, ' + fail + ' falhou');
 process.exit(fail ? 1 : 0);
