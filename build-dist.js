@@ -59,7 +59,8 @@ async function dl(baseUrl, rel, distDir, force) {
   try {
     const r = await fetch(url, { cache: 'no-store', headers });
     if (r.status === 304 && have) return true;                       // NAO mudou -> usa o cache da dist, pula o download
-    if (!r.ok) return have;                                          // 404/erro: se ja tenho em cache, uso; senao falha (protegida -> cancela la fora)
+    if (r.status === 404 || r.status === 410) return have ? true : 'gone';   // imagem NAO existe no ar (permanente): se tenho cache uso; senao marca 'gone' -> NAO cancela (ebook ja quebrado no ar)
+    if (!r.ok) return have;                                          // 5xx/outros (TRANSITORIO): se ja tenho em cache uso; senao falha (protegida -> cancela la fora)
     fs.mkdirSync(path.dirname(dst), { recursive: true });
     fs.writeFileSync(dst, Buffer.from(await r.arrayBuffer()));
     const et = r.headers.get('etag'); if (et) { ETAGS[rel] = et; } else { delete ETAGS[rel]; }
@@ -127,19 +128,32 @@ async function writeSite(sub, localAll, onlyKeys, globalName) {
     else jobs.push({ rel: rel, force: false });                  // só do local mas faltou -> tenta do ar
   });
   // baixa em PARALELO (o deploy tem timeout curto; sequencial estourava 60s)
-  let air = 0; const gone = [];
+  let air = 0; const gone = [], gone404 = [];
   if (PROD && jobs.length) {
     let i = 0;
-    const worker = async function () { while (i < jobs.length) { const j = jobs[i++]; if (await dl(baseUrl, j.rel, dir, j.force)) air++; else gone.push(j.rel); } };
+    const worker = async function () {
+      while (i < jobs.length) {
+        const j = jobs[i++];
+        const st = await dl(baseUrl, j.rel, dir, j.force);
+        if (st === true) air++;
+        else if (st === 'gone') gone404.push(j.rel);   // 404 no ar (imagem ja nao existe) -> nao cancela
+        else gone.push(j.rel);                          // falha TRANSITORIA (rede/5xx) -> cancela se for de ebook protegido
+      }
+    };
     await Promise.all(Array.from({ length: Math.min(16, jobs.length) }, worker));
   } else { jobs.forEach(function (j) { gone.push(j.rel); }); }
-  // NÃO consegui preservar imagem de ebook de outra máquina -> CANCELA (não publica quebrando ele)
+  // Imagem de ebook de OUTRA maquina que falhou por REDE (transitorio) -> CANCELA (nao arrisca quebrar por blip de rede).
   const protGone = gone.filter(function (r) { return protect.has(r); });
   if (protGone.length) {
-    console.error('\n>>> DEPLOY CANCELADO (' + (isMain ? 'principal' : sub) + '): nao consegui preservar do ar imagens de ebooks que nao sao desta maquina:');
+    console.error('\n>>> DEPLOY CANCELADO (' + (isMain ? 'principal' : sub) + '): falha de REDE ao baixar do ar imagens de ebooks que nao sao desta maquina:');
     console.error('>>> ' + protGone.join(', '));
     console.error('>>> Confira a internet e tente de novo (nao vou publicar quebrando ebook de outra pessoa).\n');
     process.exit(2);
+  }
+  // Imagem 404 no ar (nunca existiu / ja apagada): o ebook JA esta assim no ar -> publicar sem ela NAO piora. So avisa.
+  const protGone404 = gone404.filter(function (r) { return protect.has(r); });
+  if (protGone404.length) {
+    console.log('AVISO: ' + protGone404.length + ' imagem(ns) de ebook do ar deram 404 (ja quebradas no ar) -> publicando assim mesmo (nao piora): ' + protGone404.slice(0, 6).join(', ') + (protGone404.length > 6 ? ' ...' : ''));
   }
 
   // api/ (serverless: track/stats/hotmart/sales)
@@ -150,7 +164,7 @@ async function writeSite(sub, localAll, onlyKeys, globalName) {
     (plan.fromLive.length ? ' | preservados do ar: ' + plan.fromLive.join(', ') : '') +
     ' | imagens: ' + local + ' local + ' + air + ' do ar' + (dcN ? ' + ' + dcN + ' des-colididas' : ''));
   if (dcN) console.log('INFO: ' + dcN + ' imagem(ns) compartilhada(s) publicadas com NOME PROPRIO pro(s) seu(s) ebook(s) (pra nao brigar com ebook de outra maquina).');
-  const realGone = gone.filter(function (r) { return !protect.has(r); });
+  const realGone = gone.concat(gone404).filter(function (r) { return !protect.has(r); });
   if (realGone.length) console.log('AVISO imagens nao achadas (nem local nem no ar): ' + realGone.join(', '));
 }
 

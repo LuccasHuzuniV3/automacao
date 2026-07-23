@@ -43,17 +43,21 @@ function mergeEb(localEb, liveEb) {
   return { eb: out, preserved: preserved };
 }
 
+// o molde 'model' é template DO BUILDER (pra clonar) — NUNCA vai pro ar. Se um deploy antigo publicou por
+// engano (nome de imagem acumulando '-model-model'), o próximo deploy o REMOVE do ar (é dropped de propósito).
+var NAO_PUBLICAR = { model: 1 };
+
 function planEbooks(local, live, only) {
   local = local || {};
   live = live || {};
   only = (Array.isArray(only) ? only : (only ? [only] : [])).filter(Boolean);
   var merge = only.length > 0;
-  // ebooks LOCAIS que entram: no merge só os selecionados (que existem local); senão todos os locais
-  var localApplied = (merge ? only : Object.keys(local)).filter(function (k) { return local[k]; });
+  // ebooks LOCAIS que entram: no merge só os selecionados (que existem local); senão todos os locais. NUNCA o molde.
+  var localApplied = (merge ? only : Object.keys(local)).filter(function (k) { return local[k] && !NAO_PUBLICAR[k]; });
   var localSet = {};
   localApplied.forEach(function (k) { localSet[k] = 1; });
   var out = {}, preservedPaises = {};
-  Object.keys(live).forEach(function (k) { out[k] = live[k]; });   // 1) preserva TUDO que está no ar
+  Object.keys(live).forEach(function (k) { if (!NAO_PUBLICAR[k]) out[k] = live[k]; });   // 1) preserva o que está no ar (menos o molde)
   localApplied.forEach(function (k) {                              // 2) atualiza/adiciona — JUNTANDO país a país
     if (live[k]) {
       var m = mergeEb(local[k], live[k]);
@@ -64,7 +68,7 @@ function planEbooks(local, live, only) {
     }
   });
   var fromLive = Object.keys(out).filter(function (k) { return !localSet[k]; });   // ebook 100% do ar -> baixar imagens
-  var dropped = Object.keys(live).filter(function (k) { return !(k in out); });    // ebook do ar sumindo -> SEMPRE []
+  var dropped = Object.keys(live).filter(function (k) { return !(k in out) && !NAO_PUBLICAR[k]; });    // ebook do ar sumindo -> SEMPRE [] (o molde 'model' é removido DE PROPÓSITO, não conta)
   var droppedPaises = [];                                                          // país do ar sumindo de ebook mesclado -> SEMPRE []
   localApplied.forEach(function (k) {
     var lp = live[k] && live[k].paises; if (!lp) return;

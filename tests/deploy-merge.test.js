@@ -151,5 +151,21 @@ eqJSON(protectedImages(null, null), [], 'protectedImages nulo -> []');
 })();
 ok(decollide(null, null, null) && JSON.stringify(decollide(null, null, null).copies) === '{}', 'decollide nulo nao quebra');
 
+/* ===== O MOLDE 'model' NUNCA vai pro ar (e é REMOVIDO se um deploy antigo o publicou) ===== */
+(function () {
+  var live = { arcturianos: ARC_AR, model: { broken: 'img/arc-hero-model-model-model.png' } };
+  var r = planEbooks({ arcanjo2: NOVO }, live, []);
+  ok(!('model' in r.out), "molde 'model' do ar NAO e publicado (removido de proposito)");
+  ok(r.out.arcturianos === ARC_AR, 'outros ebooks do ar seguem preservados');
+  ok(r.out.arcanjo2 === NOVO, 'ebook local novo entra normalmente');
+  eqJSON(r.dropped, [], 'INTEGRIDADE: dropped vazio (o molde nao conta como violacao)');
+  ok(r.fromLive.indexOf('model') < 0, "'model' fora do fromLive -> nao tenta preservar imagem quebrada -> deploy nao cancela");
+})();
+(function () {   // model LOCAL também não é publicado
+  var r = planEbooks({ model: { v: 'local' }, arcanjo3: NOVO }, {}, []);
+  ok(!('model' in r.out), "molde 'model' LOCAL tambem nao vai pro ar");
+  ok(r.out.arcanjo3 === NOVO, 'o ebook local normal vai');
+})();
+
 console.log('\n' + pass + ' passou, ' + fail + ' falhou');
 process.exit(fail ? 1 : 0);
