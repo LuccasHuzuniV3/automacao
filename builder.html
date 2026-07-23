@@ -554,6 +554,7 @@
 <div class="toast" id="toast"></div>
 
 <script src="ebooks.js"></script>
+<script src="model-default.js"></script>
 <script src="ebooks-upsell.js"></script>
 <script src="ebooks-downsell.js"></script>
 <script src="ebooks-downsell2.js"></script>
@@ -741,7 +742,9 @@ function e2Fill(tt,idoc){
 function e2MigraModel(){
   if(!model)return;
   if(WS==='principal'){
-    if(!model.model){model.model={layout2:true,tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}};}   /* CRIA o molde se não existir -> quem só ATUALIZOU O SISTEMA (sem receber o ebooks.js) já ganha o layout novo pra clonar. Textos padrão vêm do próprio template. */
+    if(!model.model){   /* CRIA o molde se não existir -> quem só ATUALIZOU O SISTEMA (sem receber o ebooks.js) já ganha o model do Luccas (copy/preços/tema arrumados) pra clonar */
+      model.model=(window.MODEL_DEFAULT&&window.MODEL_DEFAULT.paises)?JSON.parse(JSON.stringify(window.MODEL_DEFAULT)):{layout2:true,tema:{},paises:{br:{idioma:'pt-BR',flag:'BR',nome:'Brasil',hotmart:'',img:{},redes:{},t:{}}}};   /* MODEL_DEFAULT (model-default.js) = model do Luccas; fallback = molde em branco */
+    }
     else if(!model.model.layout2){model.model.layout2=true;}   /* model já existe -> só grava a flag (DUPLICATAS/clones herdam o layout novo) */
   }
   if(WS==='upsell'&&!model.model){   /* UPSELL: cria o model do template "Obrigado/Coleção" JÁ PRONTO (sem precisar clonar nada) — textos padrão vêm do próprio template; grava no arquivo no 1º save */
@@ -1238,6 +1241,21 @@ function geminiTranslateBatch(texts,srcLang,tgtLang){
     })();
   }).then(function(){ return out.map(function(v,i){ return v!=null?v:String(texts[i]==null?'':texts[i]); }); });   /* TODOS os lotes falharam (ex.: PC sem o CLI do agy) -> rejeita -> o .catch em translatePais cai no MyMemory (grátis) e traduz de verdade */
 }
+/* ===== BANCO DE DEPOIMENTOS =====
+   img/depo/<codigo>/1.png|2.png|3.png (normalizado). Ao TRADUZIR pra um país, se o banco tiver
+   fotos daquele país, preenche e2i.depo1/2/3 automático. So lay2 principal (upsell/lay3 não tem esses campos). */
+window.DEPO_BANK=window.DEPO_BANK||{};
+(function(){ try{ fetch('/api/depo-manifest').then(function(r){return r.json();}).then(function(d){ if(d&&d.ok&&d.depo)window.DEPO_BANK=d.depo; }).catch(function(){}); }catch(e){} })();
+function aplicarDepoBanco(T,code){
+  if(WS==='upsell'||!isLay2(curEbook)||!T)return false;   /* depo1/2/3 = e2i (principal do lay2); upsell (e3) não tem */
+  var arr=window.DEPO_BANK&&window.DEPO_BANK[code];
+  if(!arr||!arr.length)return false;
+  T.t=T.t||{};
+  setByPath(T.t,'e2i.depo1',arr[0]||'');
+  if(arr[1])setByPath(T.t,'e2i.depo2',arr[1]);
+  if(arr[2])setByPath(T.t,'e2i.depo3',arr[2]);
+  return true;
+}
 function translatePais(srcCode,tgtCode,onStep){
   return new Promise(function(resolve){
     var ps=model[curEbook].paises, S=ps[srcCode], T=ps[tgtCode];
@@ -1272,6 +1290,7 @@ function translatePais(srcCode,tgtCode,onStep){
     /* MOEDA: ao traduzir pra FORA do Brasil, troca R$ -> US$ no preço (Brasil mantém R$). Só o SÍMBOLO; o valor numérico você ajusta. */
     var ehBR=/pt-?br/i.test(String(T.idioma||tgtCode||''));
     function aplicarMoeda(){ try{aplicarPrecosFamilia(T,tgtCode);}catch(e){}   /* V2 família: preços do lay2 na moeda do país de destino (roda mesmo pra BR/EUR; a função decide) */
+      try{aplicarDepoBanco(T,tgtCode);}catch(e){}   /* banco de depoimentos: puxa os prints img/depo/<code>/ pro país destino */
       if(ehBR)return; var sw=function(v){return String(v).split('R$').join('US$');};
       ['precoDe','preco'].forEach(function(k){ if(T.t[k]) T.t[k]=sw(T.t[k]); });   /* preço da OFERTA (antigo/novo) */
       if(T.t.bundle&&T.t.bundle.length) T.t.bundle.forEach(function(b){ if(b&&b.precoDe)b.precoDe=sw(b.precoDe); if(b&&b.precoPor)b.precoPor=sw(b.precoPor); });   /* preços dos COMBOS: precoDe (antigo) + precoPor (novo) de CADA combo */
