@@ -277,6 +277,8 @@ ok(/fetch\('\/api\/depo-manifest'\)[\s\S]{0,120}window\.DEPO_BANK=d\.depo/.test(
 ok(/try\{aplicarDepoBanco\(T,tgtCode\);\}catch/.test(bld), 'ao TRADUZIR, puxa os depoimentos do país de destino (dentro do aplicarMoeda)');
 ok(/var arr=bancoDe\(window\.DEPO_BANK,code\)/.test(bld), 'aplicarDepoBanco puxa da rede selecionada (bancoDe)');
 ok(/setByPath\(T\.t,'e2i\.depo1'/.test(bld) && /setByPath\(T\.t,'e2i\.depo2'/.test(bld) && /setByPath\(T\.t,'e2i\.depo3'/.test(bld), 'aplicarDepoBanco seta e2i.depo1/2/3');
+const mkman = fs.readFileSync(path.join(__dirname, '..', 'make-manifest.js'), 'utf8');
+ok(/walkDepo\('img\/depo'\)/.test(mkman), 'make-manifest inclui img/depo no manifest (senão "Atualizar sistema" não distribui as fotos pros operadores)');
 
 /* ---- 26-rede) seleção de banco POR PÁGINA em campo PRÓPRIO (model[ebook].bancoMidia), default 'principal', sem fallback ----
    IMPORTANTE: NÃO pode usar model[ebook].rede (esse campo já é o canal/rede do ebook na analytics/vendas). */

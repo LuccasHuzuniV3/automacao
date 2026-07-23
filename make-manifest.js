@@ -21,6 +21,19 @@ if (fs.existsSync(apiDir)) {
   fs.readdirSync(apiDir).filter(function (n) { return /\.js$/.test(n); }).forEach(function (n) { files.push('api/' + n); });
 }
 
+// BANCO DE DEPOIMENTOS (img/depo/<rede>/<pais>/*.png) -> precisa chegar nos operadores pelo "Atualizar sistema".
+// (VIDEOS nao entram: sao grandes e estao no .gitignore -> nem estao no repositorio; vao manualmente ou por CDN.)
+function walkDepo(rel) {
+  const abs = path.join(ROOT, rel);
+  if (!fs.existsSync(abs)) return;
+  fs.readdirSync(abs, { withFileTypes: true }).forEach(function (e) {
+    const r = rel + '/' + e.name;
+    if (e.isDirectory()) walkDepo(r);
+    else if (/\.(png|jpe?g|webp|gif)$/i.test(e.name)) files.push(r);
+  });
+}
+walkDepo('img/depo');
+
 // incrementa a VERSAO (numero) a cada publicacao -> da pra saber quem esta atrasado
 let v = 0, fresh = false;
 try { const _vj = JSON.parse(fs.readFileSync(path.join(ROOT, 'version.json'), 'utf8')); v = parseInt(_vj.version, 10) || 0; fresh = !!_vj.fresh; } catch (e) {}
