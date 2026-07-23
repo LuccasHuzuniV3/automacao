@@ -390,24 +390,55 @@ const server = http.createServer(async function (req, res) {
     return;
   }
 
-  // ---- BANCO DE DEPOIMENTOS: lista img/depo/<codigo-pais>/<foto>. O builder usa pra auto-preencher e2i.depo1/2/3 ao traduzir. ----
+  // ---- BANCO DE DEPOIMENTOS: lista img/depo/<rede>/<codigo-pais>/<foto>. O builder usa pra auto-preencher e2i.depo1/2/3 ao traduzir. Retorna {rede:{code:[paths]}}. ----
   if (p === '/api/depo-manifest' && req.method === 'GET') {
     const out = {};
     try {
       const base = path.join(ROOT, 'img', 'depo');
       if (fs.existsSync(base)) {
-        fs.readdirSync(base, { withFileTypes: true }).forEach(function (ent) {
-          if (!ent.isDirectory()) return;
-          const code = ent.name;                         // pasta ja normalizada = codigo do pais (de, br, hu...)
-          const imgs = fs.readdirSync(path.join(base, code))
-            .filter(function (f) { return /\.(png|jpe?g|webp|gif)$/i.test(f); })
-            .sort(function (a, b) { return a.localeCompare(b, undefined, { numeric: true }); })   // 1.png, 2.png, 3.png
-            .map(function (f) { return 'img/depo/' + code + '/' + f; });
-          if (imgs.length) out[code] = imgs;
+        fs.readdirSync(base, { withFileTypes: true }).forEach(function (rede) {   // 1o nivel = rede (principal, saude, ...)
+          if (!rede.isDirectory()) return;
+          const reg = {};
+          fs.readdirSync(path.join(base, rede.name), { withFileTypes: true }).forEach(function (ent) {   // 2o nivel = codigo do pais
+            if (!ent.isDirectory()) return;
+            const code = ent.name;
+            const imgs = fs.readdirSync(path.join(base, rede.name, code))
+              .filter(function (f) { return /\.(png|jpe?g|webp|gif)$/i.test(f); })
+              .sort(function (a, b) { return a.localeCompare(b, undefined, { numeric: true }); })   // 1.png, 2.png, 3.png
+              .map(function (f) { return 'img/depo/' + rede.name + '/' + code + '/' + f; });
+            if (imgs.length) reg[code] = imgs;
+          });
+          if (Object.keys(reg).length) out[rede.name] = reg;
         });
       }
       json(res, 200, { ok: true, depo: out });
     } catch (e) { json(res, 200, { ok: false, error: String(e), depo: {} }); }
+    return;
+  }
+
+  // ---- BANCO DE VIDEOS: lista img/video/<rede>/<codigo-pais>/<slot>.mp4. O builder usa pra auto-preencher e2v.v1/v2 ao traduzir. Retorna {rede:{code:[paths]}}. ----
+  if (p === '/api/video-manifest' && req.method === 'GET') {
+    const out = {};
+    try {
+      const base = path.join(ROOT, 'img', 'video');
+      if (fs.existsSync(base)) {
+        fs.readdirSync(base, { withFileTypes: true }).forEach(function (rede) {   // 1o nivel = rede
+          if (!rede.isDirectory()) return;
+          const reg = {};
+          fs.readdirSync(path.join(base, rede.name), { withFileTypes: true }).forEach(function (ent) {   // 2o nivel = codigo do pais
+            if (!ent.isDirectory()) return;
+            const code = ent.name;
+            const vids = fs.readdirSync(path.join(base, rede.name, code))
+              .filter(function (f) { return /\.(mp4|webm|mov|m4v)$/i.test(f); })
+              .sort(function (a, b) { return a.localeCompare(b, undefined, { numeric: true }); })   // 1.mp4, 2.mp4
+              .map(function (f) { return 'img/video/' + rede.name + '/' + code + '/' + f; });
+            if (vids.length) reg[code] = vids;
+          });
+          if (Object.keys(reg).length) out[rede.name] = reg;
+        });
+      }
+      json(res, 200, { ok: true, video: out });
+    } catch (e) { json(res, 200, { ok: false, error: String(e), video: {} }); }
     return;
   }
 

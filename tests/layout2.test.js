@@ -268,31 +268,69 @@ const mdef = fs.readFileSync(path.join(__dirname, '..', 'model-default.js'), 'ut
 ok(/window\.MODEL_DEFAULT\s*=/.test(mdef) && /\{diff\}|\{colecao\}/.test(mdef), 'model-default.js = model do Luccas com a copy de placeholder ({colecao}/{diff})');
 ok(/pay\.hotmart\.com\/XXXXXXXX/.test(mdef) && !/J106390212Q/.test(mdef), 'model-default.js: checkout resetado pra placeholder (não vaza o link do Luccas)');
 
-/* ---- 26) BANCO DE DEPOIMENTOS: ao traduzir, auto-preenche e2i.depo1/2/3 a partir de img/depo/<code>/ ---- */
+/* ---- 26) BANCO DE DEPOIMENTOS: ao traduzir, auto-preenche e2i.depo1/2/3 a partir de img/depo/<rede>/<code>/ ---- */
 const srv = fs.readFileSync(path.join(__dirname, '..', 'server.js'), 'utf8');
 ok(/p === '\/api\/depo-manifest' && req\.method === 'GET'/.test(srv), 'server: existe o endpoint GET /api/depo-manifest');
-ok(/'img\/depo\/'\s*\+\s*code/.test(srv), 'server: o manifesto monta os paths img/depo/<code>/<foto>');
+ok(/'img\/depo\/'\s*\+\s*rede\.name\s*\+\s*'\/'\s*\+\s*code/.test(srv), 'server: o manifesto monta os paths img/depo/<rede>/<code>/<foto>');
 ok(/function aplicarDepoBanco\(T,code\)/.test(bld), 'existe a função aplicarDepoBanco');
 ok(/fetch\('\/api\/depo-manifest'\)[\s\S]{0,120}window\.DEPO_BANK=d\.depo/.test(bld), 'builder carrega o banco (/api/depo-manifest) pro window.DEPO_BANK no boot');
 ok(/try\{aplicarDepoBanco\(T,tgtCode\);\}catch/.test(bld), 'ao TRADUZIR, puxa os depoimentos do país de destino (dentro do aplicarMoeda)');
-ok(/if\(WS==='upsell'\|\|!isLay2\(curEbook\)\|\|!T\)return false/.test(bld), 'aplicarDepoBanco só roda no lay2 principal (upsell/lay3 não tem e2i.depo*)');
+ok(/var arr=bancoDe\(window\.DEPO_BANK,code\)/.test(bld), 'aplicarDepoBanco puxa da rede selecionada (bancoDe)');
 ok(/setByPath\(T\.t,'e2i\.depo1'/.test(bld) && /setByPath\(T\.t,'e2i\.depo2'/.test(bld) && /setByPath\(T\.t,'e2i\.depo3'/.test(bld), 'aplicarDepoBanco seta e2i.depo1/2/3');
 
-/* ---- 26b) o banco no disco está normalizado: pasta = código do país, foto = N.png (sem espaço/acento, senão o imgsOf/build-dist ignora) ---- */
+/* ---- 26-rede) seleção de banco POR PÁGINA em campo PRÓPRIO (model[ebook].bancoMidia), default 'principal', sem fallback ----
+   IMPORTANTE: NÃO pode usar model[ebook].rede (esse campo já é o canal/rede do ebook na analytics/vendas). */
+ok(/function bancoDoEbook\(\)\{ return \(model\[curEbook\]&&model\[curEbook\]\.bancoMidia\)\|\|'principal'/.test(bld), 'bancoDoEbook: banco por página em model[ebook].bancoMidia (campo próprio), default principal');
+ok(/function bancoDe\(BANK,code\)\{[\s\S]{0,120}BANK\[bancoDoEbook\(\)\]/.test(bld), 'bancoDe pega SÓ o banco escolhido (não mistura)');
+ok(/function bancosDisponiveis\(\)/.test(bld), 'existe bancosDisponiveis (lista os bancos dos dois manifests)');
+ok(/model\[curEbook\]\.bancoMidia=sel\.value/.test(bld), 'o seletor 🗂️ grava em model.bancoMidia');
+ok(!/model\[curEbook\]\.rede=sel\.value/.test(bld), 'GUARDA: o seletor de mídia NÃO grava em model.rede (não sobrescreve o canal/rede do ebook)');
+
+/* ---- 26b) o banco no disco: img/depo/<rede>/<código>/N.png (sem espaço/acento, senão o imgsOf/build-dist ignora) ---- */
 const depoDir = path.join(__dirname, '..', 'img', 'depo');
 if (fs.existsSync(depoDir)) {
-  const folders = fs.readdirSync(depoDir, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).map(function (e) { return e.name; });
-  const badFolder = folders.filter(function (f) { return !/^[a-z]{2,3}$/.test(f); });
-  ok(badFolder.length === 0, 'img/depo: toda pasta é um código de país (ruins: ' + badFolder.slice(0, 4).join(', ') + ')');
-  const badFile = [];
-  folders.forEach(function (f) {
-    fs.readdirSync(path.join(depoDir, f)).forEach(function (n) {
-      if (/\.(png|jpe?g|webp|gif)$/i.test(n) && !/^\d+\.(png|jpe?g|webp|gif)$/i.test(n)) badFile.push(f + '/' + n);
+  const badFolder = [], badFile = [];
+  fs.readdirSync(depoDir, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).forEach(function (rede) {
+    fs.readdirSync(path.join(depoDir, rede.name), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).forEach(function (cd) {
+      if (!/^[a-z]{2,3}$/.test(cd.name)) badFolder.push(rede.name + '/' + cd.name);
+      fs.readdirSync(path.join(depoDir, rede.name, cd.name)).forEach(function (n) {
+        if (/\.(png|jpe?g|webp|gif)$/i.test(n) && !/^\d+\.(png|jpe?g|webp|gif)$/i.test(n)) badFile.push(rede.name + '/' + cd.name + '/' + n);
+      });
     });
   });
-  ok(badFile.length === 0, 'img/depo: fotos normalizadas 1.png/2.png/3.png sem espaço/acento (ruins: ' + badFile.slice(0, 4).join(', ') + ')');
+  ok(badFolder.length === 0, 'img/depo: estrutura <rede>/<código país> (ruins: ' + badFolder.slice(0, 4).join(', ') + ')');
+  ok(badFile.length === 0, 'img/depo: fotos normalizadas N.png (ruins: ' + badFile.slice(0, 4).join(', ') + ')');
 } else {
-  ok(true, 'img/depo ainda não existe nesta máquina — auto-preencher fica inativo (sem erro)');
+  ok(true, 'img/depo ainda não existe — auto-preencher inativo (sem erro)');
+}
+
+/* ---- 27) BANCO DE VÍDEOS: ao traduzir, auto-preenche e2v.v1/v2 a partir de img/video/<rede>/<code>/ ---- */
+ok(/p === '\/api\/video-manifest' && req\.method === 'GET'/.test(srv), 'server: existe o endpoint GET /api/video-manifest');
+ok(/'img\/video\/'\s*\+\s*rede\.name\s*\+\s*'\/'\s*\+\s*code/.test(srv), 'server: o manifesto de vídeo monta os paths img/video/<rede>/<code>/<slot>');
+ok(/function aplicarVideoBanco\(T,code\)/.test(bld), 'existe a função aplicarVideoBanco');
+ok(/fetch\('\/api\/video-manifest'\)[\s\S]{0,120}window\.VIDEO_BANK=d\.video/.test(bld), 'builder carrega o banco de vídeo (/api/video-manifest) no boot');
+ok(/try\{aplicarVideoBanco\(T,tgtCode\);\}catch/.test(bld), 'ao TRADUZIR, puxa os vídeos do país de destino (dentro do aplicarMoeda)');
+ok(/var arr=bancoDe\(window\.VIDEO_BANK,code\)/.test(bld), 'aplicarVideoBanco puxa da rede selecionada (bancoDe)');
+ok(/setByPath\(T\.t,'e2v\.v'\+m\[1\]/.test(bld), 'aplicarVideoBanco mapeia pelo número do arquivo (1.mp4 -> e2v.v1)');
+const dmerge = require('../deploy-merge.js');
+ok(dmerge.imgsOf('"img/video/principal/de/1.mp4"').length === 1, 'imgsOf casa o path de vídeo com rede (sem espaço) -> build-dist copia pro Vercel');
+
+/* ---- 27b) o banco de vídeo no disco: img/video/<rede>/<código>/N.mp4 ---- */
+const vidDir = path.join(__dirname, '..', 'img', 'video');
+if (fs.existsSync(vidDir)) {
+  const badVF = [], badVfile = [];
+  fs.readdirSync(vidDir, { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).forEach(function (rede) {
+    fs.readdirSync(path.join(vidDir, rede.name), { withFileTypes: true }).filter(function (e) { return e.isDirectory(); }).forEach(function (cd) {
+      if (!/^[a-z]{2,3}$/.test(cd.name)) badVF.push(rede.name + '/' + cd.name);
+      fs.readdirSync(path.join(vidDir, rede.name, cd.name)).forEach(function (n) {
+        if (/\.(mp4|webm|mov|m4v)$/i.test(n) && !/^\d+\.(mp4|webm|mov|m4v)$/i.test(n)) badVfile.push(rede.name + '/' + cd.name + '/' + n);
+      });
+    });
+  });
+  ok(badVF.length === 0, 'img/video: estrutura <rede>/<código país> (ruins: ' + badVF.slice(0, 4).join(', ') + ')');
+  ok(badVfile.length === 0, 'img/video: vídeos normalizados N.mp4 (ruins: ' + badVfile.slice(0, 4).join(', ') + ')');
+} else {
+  ok(true, 'img/video ainda não existe (compressão/inativo) — sem erro');
 }
 
 console.log('\n' + pass + ' passou, ' + fail + ' falhou');

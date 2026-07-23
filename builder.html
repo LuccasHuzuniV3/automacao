@@ -1091,6 +1091,19 @@ function renderForm(){var form=$('form');form.innerHTML='';var P=model[curEbook]
   }
   form.appendChild(groupFields('Configuração do país',META,P));
   if(isLay2(curEbook)){   /* 💰 preços por moeda: principal (Guia+Coleção) e upsell (1 oferta). Botão aplica no país aberto; ao traduzir já sai automático */
+    (function(){   /* 🗂️ Banco de mídia: de qual PASTA vêm depoimentos+vídeos ao traduzir. Campo próprio (bancoMidia), separado do model.rede (canal do ebook). */
+      var gre=group('🗂️ Banco de mídia');
+      var hre=document.createElement('div');hre.style.cssText='font-size:11.5px;color:var(--muted);margin:-2px 2px 9px;line-height:1.5';
+      hre.innerHTML='De qual <b>pasta</b> vêm os <b>depoimentos</b> e <b>vídeos</b> ao traduzir. Vale pra <b>página inteira</b> (todos os países). Banco novo = criar <code>img/depo/&lt;nome&gt;/</code> e <code>img/video/&lt;nome&gt;/</code> e recarregar.';
+      gre.appendChild(hre);
+      var sel=document.createElement('select');sel.style.cssText='width:100%;background:#0a1322;border:1px solid var(--line2);color:var(--txt);border-radius:9px;padding:10px 11px;font-size:13px';
+      var bancos=bancosDisponiveis(),cur=bancoDoEbook();
+      if(bancos.indexOf(cur)<0)bancos.push(cur);
+      bancos.forEach(function(r){var o=document.createElement('option');o.value=r;o.textContent=r;if(r===cur)o.selected=true;sel.appendChild(o);});
+      sel.onchange=function(){ model[curEbook].bancoMidia=sel.value; save(); toast('Banco de mídia: '+sel.value+' (aplica ao traduzir)'); };
+      gre.appendChild(sel);
+      form.appendChild(gre);
+    })();
     var gpm=group('💰 Preços por moeda');
     var mi=precoMoedaFam(curPais,P.idioma);
     var hpm=document.createElement('div');hpm.style.cssText='font-size:11.5px;color:var(--muted);margin:-2px 2px 9px;line-height:1.5';
@@ -1246,15 +1259,33 @@ function geminiTranslateBatch(texts,srcLang,tgtLang){
    fotos daquele país, preenche e2i.depo1/2/3 automático. So lay2 principal (upsell/lay3 não tem esses campos). */
 window.DEPO_BANK=window.DEPO_BANK||{};
 (function(){ try{ fetch('/api/depo-manifest').then(function(r){return r.json();}).then(function(d){ if(d&&d.ok&&d.depo)window.DEPO_BANK=d.depo; }).catch(function(){}); }catch(e){} })();
+/* Bancos são {pasta:{código:[paths]}}. A PASTA/banco é escolhida POR PÁGINA em model[ebook].bancoMidia
+   — campo PRÓPRIO, NÃO confundir com model[ebook].rede (que é o canal/rede do ebook na analytics/vendas). Default 'principal'. */
+function bancoDoEbook(){ return (model[curEbook]&&model[curEbook].bancoMidia)||'principal'; }
+function bancosDisponiveis(){ var s={}; [window.DEPO_BANK,window.VIDEO_BANK].forEach(function(B){ if(B)Object.keys(B).forEach(function(k){s[k]=1;}); }); var a=Object.keys(s).sort(); if(a.indexOf('principal')<0)a.unshift('principal'); return a; }
+function bancoDe(BANK,code){ if(!BANK)return null; var reg=BANK[bancoDoEbook()]; return (reg&&reg[code])||null; }   /* SEM fallback entre bancos: banco escolhido sem o país -> não preenche (evita misturar marcas) */
 function aplicarDepoBanco(T,code){
   if(WS==='upsell'||!isLay2(curEbook)||!T)return false;   /* depo1/2/3 = e2i (principal do lay2); upsell (e3) não tem */
-  var arr=window.DEPO_BANK&&window.DEPO_BANK[code];
+  var arr=bancoDe(window.DEPO_BANK,code);
   if(!arr||!arr.length)return false;
   T.t=T.t||{};
   setByPath(T.t,'e2i.depo1',arr[0]||'');
   if(arr[1])setByPath(T.t,'e2i.depo2',arr[1]);
   if(arr[2])setByPath(T.t,'e2i.depo3',arr[2]);
   return true;
+}
+/* ===== BANCO DE VÍDEOS =====
+   img/video/<codigo>/1.mp4|2.mp4 (comprimido/normalizado). Ao TRADUZIR, preenche e2v.v1/v2 do país destino.
+   Mapeia pelo NÚMERO no nome (1.mp4 -> e2v.v1), então slot faltando não desloca. So lay2 principal (upsell tem e3v.vsl próprio). */
+window.VIDEO_BANK=window.VIDEO_BANK||{};
+(function(){ try{ fetch('/api/video-manifest').then(function(r){return r.json();}).then(function(d){ if(d&&d.ok&&d.video)window.VIDEO_BANK=d.video; }).catch(function(){}); }catch(e){} })();
+function aplicarVideoBanco(T,code){
+  if(WS==='upsell'||!isLay2(curEbook)||!T)return false;
+  var arr=bancoDe(window.VIDEO_BANK,code);
+  if(!arr||!arr.length)return false;
+  T.t=T.t||{};var achou=false;
+  arr.forEach(function(p){ var m=String(p).match(/(\d+)\.(?:mp4|webm|mov|m4v)$/i); if(m){ setByPath(T.t,'e2v.v'+m[1],p); achou=true; } });
+  return achou;
 }
 function translatePais(srcCode,tgtCode,onStep){
   return new Promise(function(resolve){
@@ -1291,6 +1322,7 @@ function translatePais(srcCode,tgtCode,onStep){
     var ehBR=/pt-?br/i.test(String(T.idioma||tgtCode||''));
     function aplicarMoeda(){ try{aplicarPrecosFamilia(T,tgtCode);}catch(e){}   /* V2 família: preços do lay2 na moeda do país de destino (roda mesmo pra BR/EUR; a função decide) */
       try{aplicarDepoBanco(T,tgtCode);}catch(e){}   /* banco de depoimentos: puxa os prints img/depo/<code>/ pro país destino */
+      try{aplicarVideoBanco(T,tgtCode);}catch(e){}   /* banco de vídeos: puxa img/video/<code>/1.mp4|2.mp4 pro e2v.v1/v2 */
       if(ehBR)return; var sw=function(v){return String(v).split('R$').join('US$');};
       ['precoDe','preco'].forEach(function(k){ if(T.t[k]) T.t[k]=sw(T.t[k]); });   /* preço da OFERTA (antigo/novo) */
       if(T.t.bundle&&T.t.bundle.length) T.t.bundle.forEach(function(b){ if(b&&b.precoDe)b.precoDe=sw(b.precoDe); if(b&&b.precoPor)b.precoPor=sw(b.precoPor); });   /* preços dos COMBOS: precoDe (antigo) + precoPor (novo) de CADA combo */
